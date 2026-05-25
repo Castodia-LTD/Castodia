@@ -158,6 +158,14 @@ export default function ServiceUserPage() {
   const [behaviour, setBehaviour] = useState("");
   const [consequence, setConsequence] = useState("");
 
+  const [medicationProfiles, setMedicationProfiles] = useState<any[]>([]);
+  const [selectedRound, setSelectedRound] = useState("Morning");
+  const [medicationStatuses, setMedicationStatuses] = useState<
+  Record<string, string>
+  >({});
+  const [medicationReasons, setMedicationReasons] = useState<
+  Record<string, string>
+  >({});
   const viewingToday = isSameDay(selectedDate, new Date());
 
   async function loadServiceUser() {
@@ -218,13 +226,122 @@ export default function ServiceUserPage() {
 
     setEntries(entriesWithNames);
   }
+async function loadMedicationProfiles() {
+  const { data, error } = await supabase
+    .from("medication_profiles")
+    .select("*")
+    .eq("service_user_id", serviceUserId)
+    .eq("active", true)
+    .order("round");
 
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setMedicationProfiles(data || []);
+}
   async function addEntry() {
     if (!viewingToday) {
       alert("Entries can only be added to today’s record.");
       return;
     }
+if (entryType === "Medication") {
+  const medsForRound = medicationProfiles.filter(
+    (med) => med.round === selectedRound
+  );
 
+  if (medsForRound.length === 0) {
+    alert("No medications found for this round.");
+    return;
+  }
+
+  for (const med of medsForRound) {
+    const status = medicationStatuses[med.id];
+    const reason = medicationReasons[med.id];
+
+    if (!status) {
+      alert(`Please select a status for ${med.medication_name}.`);
+      return;
+    }
+
+    if (status !== "Administered" && !reason) {
+      alert(`Please select a reason for ${med.medication_name}.`);
+      return;
+    }
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    alert("You must be logged in to create an entry.");
+    return;
+  }
+
+  const eventTime = combineDateAndTime(new Date(), entryTime);
+
+  const administrationRows = medsForRound.map((med) => ({
+    service_user_id: serviceUserId,
+    medication_profile_id: med.id,
+    administered_by: user.id,
+    round: selectedRound,
+    status: medicationStatuses[med.id],
+    reason:
+      medicationStatuses[med.id] === "Administered"
+        ? null
+        : medicationReasons[med.id],
+    administered_at: eventTime,
+administration_date: new Date(eventTime)
+  .toISOString()
+  .slice(0, 10),
+  }));
+
+  const { error: medError } = await supabase
+    .from("medication_administrations")
+    .insert(administrationRows);
+
+  if (medError) {
+    alert(medError.message);
+    return;
+  }
+
+  const summary = medsForRound
+    .map((med) => {
+      const status = medicationStatuses[med.id];
+      const reason = medicationReasons[med.id];
+
+      return `${med.medication_name} ${med.dose} — ${status}${
+        status !== "Administered" ? ` (${reason})` : ""
+      }`;
+    })
+    .join("\n");
+
+  const { error: timelineError } = await supabase
+    .from("timeline_entries")
+    .insert({
+      service_user_id: serviceUserId,
+      created_by: user.id,
+      entry_type: "Medication",
+      content: `${selectedRound} medication round:\n${summary}`,
+      event_time: eventTime,
+    });
+
+  if (timelineError) {
+    alert(timelineError.message);
+    return;
+  }
+
+  setMedicationStatuses({});
+  setMedicationReasons({});
+  setEntryTime(getTimeNow());
+  setEntryPanelOpen(false);
+
+  await loadEntries();
+  return;
+}
     const isIncident = entryType === "Incident";
 
     const finalContent = isIncident
@@ -312,6 +429,10 @@ ${consequence.trim()}`
   useEffect(() => {
     loadEntries();
   }, [serviceUserId, selectedDate]);
+
+  useEffect(() => {
+  loadMedicationProfiles();
+  }, [serviceUserId]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white pb-24">
@@ -544,37 +665,119 @@ ${consequence.trim()}`
   </option>
 </select>
 
-          {entryType === "Incident" ? (
-            <div className="space-y-2">
-              <textarea
-                value={antecedent}
-                onChange={(e) => setAntecedent(e.target.value)}
-                placeholder="Antecedent — what happened before?"
-                className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-              />
+         {entryType === "Incident" ? (
+  <div className="space-y-2">
+    <textarea
+      value={antecedent}
+      onChange={(e) => setAntecedent(e.target.value)}
+      placeholder="Antecedent — what happened before?"
+      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+    />
 
-              <textarea
-                value={behaviour}
-                onChange={(e) => setBehaviour(e.target.value)}
-                placeholder="Behaviour — what happened?"
-                className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-              />
+    <textarea
+      value={behaviour}
+      onChange={(e) => setBehaviour(e.target.value)}
+      placeholder="Behaviour — what happened?"
+      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+    />
 
-              <textarea
-                value={consequence}
-                onChange={(e) => setConsequence(e.target.value)}
-                placeholder="Consequence / Outcome — what happened afterwards?"
-                className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-              />
-            </div>
-          ) : (
-            <input
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write entry..."
-              className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-            />
-          )}
+    <textarea
+      value={consequence}
+      onChange={(e) => setConsequence(e.target.value)}
+      placeholder="Consequence / Outcome — what happened afterwards?"
+      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+    />
+  </div>
+) : entryType === "Medication" ? (
+  <div className="space-y-4">
+
+    <select
+      value={selectedRound}
+      onChange={(e) => setSelectedRound(e.target.value)}
+      className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+    >
+      <option value="Morning">Morning</option>
+      <option value="Lunch">Lunch</option>
+      <option value="Tea">Tea</option>
+      <option value="Night">Night</option>
+      <option value="PRN">PRN</option>
+    </select>
+
+    {medicationProfiles
+      .filter((med) => med.round === selectedRound)
+      .map((med) => (
+        <div
+          key={med.id}
+          className="space-y-3 rounded-2xl border border-white/10 bg-white/10 p-4"
+        >
+          <div>
+            <p className="font-semibold text-white">
+              {med.medication_name}
+            </p>
+
+            <p className="text-sm text-slate-300">
+              {med.dose}
+            </p>
+          </div>
+
+          <select
+            value={medicationStatuses[med.id] || ""}
+            onChange={(e) =>
+              setMedicationStatuses({
+                ...medicationStatuses,
+                [med.id]: e.target.value,
+              })
+            }
+            className="w-full rounded-2xl border border-white/10 bg-slate-900 p-3 text-white outline-none"
+          >
+            <option value="">Select status</option>
+            <option value="Administered">Administered</option>
+            <option value="Refused">Refused</option>
+            <option value="Unavailable">Unavailable</option>
+            <option value="Omitted">Omitted</option>
+          </select>
+
+          {medicationStatuses[med.id] &&
+            medicationStatuses[med.id] !== "Administered" && (
+              <select
+                value={medicationReasons[med.id] || ""}
+                onChange={(e) =>
+                  setMedicationReasons({
+                    ...medicationReasons,
+                    [med.id]: e.target.value,
+                  })
+                }
+                className="w-full rounded-2xl border border-red-500/20 bg-red-950/40 p-3 text-white outline-none"
+              >
+                <option value="">Select reason</option>
+                <option value="Refused by service user">
+                  Refused by service user
+                </option>
+                <option value="Medication unavailable">
+                  Medication unavailable
+                </option>
+                <option value="Asleep">
+                  Asleep
+                </option>
+                <option value="Away from service">
+                  Away from service
+                </option>
+                <option value="Clinical decision">
+                  Clinical decision
+                </option>
+              </select>
+            )}
+        </div>
+      ))}
+  </div>
+) : (
+  <input
+    value={content}
+    onChange={(e) => setContent(e.target.value)}
+    placeholder="Write entry..."
+    className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+  />
+)}
 
           <button
             onClick={addEntry}

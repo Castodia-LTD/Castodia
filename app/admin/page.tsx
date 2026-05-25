@@ -26,7 +26,15 @@ export default function AdminPage() {
               Review incident entries across all service users.
             </p>
           </Link>
-
+          <Link
+            href="/admin/medications"
+            className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur"
+          >
+            <h2 className="text-xl font-semibold">Medication Profiles</h2>
+            <p className="mt-2 text-slate-400">
+              Manage medication profiles for all service users.
+            </p>
+          </Link>
           <Link
             href="/admin/staff"
             className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur"
