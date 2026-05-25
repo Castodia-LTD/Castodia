@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -27,20 +26,17 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-500 to-teal-400 shadow-2xl shadow-blue-900/40">
+            <span className="text-4xl font-bold text-white">C</span>
+          </div>
 
-        <div className="mb-8 flex justify-center">
-          <Image
-            src="/logo.png"
-            alt="Castodia"
-            width={340}
-            height={100}
-            priority
-          />
+          <h1 className="text-4xl font-bold tracking-tight">Castodia</h1>
+          <p className="mt-2 text-slate-300">Care records. Protected.</p>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur">
           <h2 className="text-xl font-semibold">Welcome back</h2>
-
           <p className="mt-1 text-sm text-slate-300">
             Sign in to continue to your dashboard.
           </p>
