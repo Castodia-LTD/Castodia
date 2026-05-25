@@ -131,7 +131,7 @@ export default function IncidentPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white p-6">
       <Link
-        href={`/service-user/${incident.service_user_id}`}
+        href={`/timelines/${incident.service_user_id}`}
         className="text-slate-400"
       >
         ← Back to Timeline

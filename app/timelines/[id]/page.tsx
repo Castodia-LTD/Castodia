@@ -506,20 +506,43 @@ ${consequence.trim()}`
             className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
           />
 
-          <select
-            value={entryType}
-            onChange={(e) => setEntryType(e.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-          >
-            <option>Medication</option>
-            <option>Food / Fluid</option>
-            <option>Toileting</option>
-            <option>Behaviour</option>
-            <option>Incident</option>
-            <option>Sleep</option>
-            <option>Body Map</option>
-            <option>Activity</option>
-          </select>
+<select
+  value={entryType}
+  onChange={(e) => setEntryType(e.target.value)}
+  className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+>
+  <option value="Medication" className="bg-slate-900 text-white">
+    Medication
+  </option>
+
+  <option value="Food / Fluid" className="bg-slate-900 text-white">
+    Food / Fluid
+  </option>
+
+  <option value="Toileting" className="bg-slate-900 text-white">
+    Toileting
+  </option>
+
+  <option value="Behaviour" className="bg-slate-900 text-white">
+    Behaviour
+  </option>
+
+  <option value="Incident" className="bg-slate-900 text-white">
+    Incident
+  </option>
+
+  <option value="Sleep" className="bg-slate-900 text-white">
+    Sleep
+  </option>
+
+  <option value="Body Map" className="bg-slate-900 text-white">
+    Body Map
+  </option>
+
+  <option value="Activity" className="bg-slate-900 text-white">
+    Activity
+  </option>
+</select>
 
           {entryType === "Incident" ? (
             <div className="space-y-2">
