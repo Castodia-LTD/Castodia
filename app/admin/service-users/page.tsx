@@ -83,15 +83,15 @@ export default function ServiceUsersAdminPage() {
   }
 
   async function createServiceUser() {
-    if (!firstName.trim() || !houseName.trim()) {
-      alert("Name and house are required.");
-      return;
-    }
+  if (!firstName.trim()) {
+  alert("First name is required.");
+  return;
+  }
 
     const { error } = await supabase.from("service_users").insert({
       first_name: firstName.trim(),
       surname: surname.trim(),
-      house_name: houseName.trim(),
+      house_name: houseName.trim() || null,
       organisation_id: organisationId,
       photo_url: null,
       key_notes: null,
