@@ -27,6 +27,15 @@ export default function AdminPage() {
             </p>
           </Link>
           <Link
+  href="/admin/reports"
+  className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur"
+>
+  <h2 className="text-xl font-semibold">Reports & Auditing</h2>
+  <p className="mt-2 text-slate-400">
+    View monthly service data and manager oversight reports.
+  </p>
+</Link>
+          <Link
             href="/admin/medications"
             className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur"
           >

@@ -32,6 +32,8 @@ export default function HandoversPage() {
   const [selectedServiceUsers, setSelectedServiceUsers] = useState<string[]>(
     []
   );
+  const [generating, setGenerating] = useState(false);
+  const [handoverPeriod, setHandoverPeriod] = useState("24");
   const [formOpen, setFormOpen] = useState(false);
 
   async function loadData() {
@@ -165,6 +167,141 @@ const userRole = profile?.role || "staff";
         : [...current, id]
     );
   }
+async function generateAutomaticSummary() {
+  if (selectedServiceUsers.length === 0) {
+    alert("Select at least one service user.");
+    return;
+  }
+
+  setGenerating(true);
+
+  try {
+    const lines: string[] = [];
+
+    const since = new Date();
+
+since.setHours(
+  since.getHours() - Number(handoverPeriod)
+);
+
+    for (const serviceUserId of selectedServiceUsers) {
+      const serviceUser = serviceUsers.find(
+        (su) => su.id === serviceUserId
+      );
+
+      if (!serviceUser) continue;
+
+      lines.push(`${serviceUser.full_name}`);
+
+      const { data: recentTimeline } = await supabase
+        .from("timeline_entries")
+        .select("entry_type, created_at")
+        .eq("service_user_id", serviceUserId)
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: false })
+
+      const sleepEntries =
+        recentTimeline?.filter(
+          (entry) => entry.entry_type === "Sleep"
+        ) || [];
+
+        if (sleepEntries.length > 0) {
+        lines.push("");
+        lines.push("Sleep:");
+        lines.push(
+        `• ${sleepEntries.length} sleep observations recorded`
+      );
+    }
+
+      const { data: toileting } = await supabase
+        .from("toileting_records")
+        .select("toileting_outcome")
+        .eq("service_user_id", serviceUserId)
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: false })
+
+      const bowelMovements =
+        toileting?.filter((t) =>
+          ["Bowel movement", "Both"].includes(
+            t.toileting_outcome
+          )
+        ).length || 0;
+
+        lines.push("");
+        lines.push("Continence:");
+        lines.push(
+        `• ${bowelMovements} bowel movements recorded`
+      );
+
+      const { data: personalCare } = await supabase
+  .from("personal_care_records")
+  .select("care_type, occurred_at")
+  .eq("service_user_id", serviceUserId)
+  .order("occurred_at", { ascending: false });
+
+      const lastWash = personalCare?.find((row) =>
+        ["Shower", "Bath", "Strip wash"].includes(
+          row.care_type
+        )
+      );
+
+      const lastClothing = personalCare?.find(
+        (row) => row.care_type === "Clothing changed"
+      );
+
+      function daysSince(dateString?: string) {
+        if (!dateString) return "No record";
+
+        const then = new Date(dateString);
+        const now = new Date();
+
+        const diff = Math.floor(
+          (now.getTime() - then.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+
+        if (diff === 0) return "Today";
+        if (diff === 1) return "Yesterday";
+
+        return `${diff} days ago`;
+      }
+
+      lines.push("");
+      lines.push("Personal Care:");
+
+      lines.push(
+      `• Last washed: ${daysSince(
+      lastWash?.occurred_at
+    )}`
+  );
+
+      lines.push(
+      `• Last clothing change: ${daysSince(
+      lastClothing?.occurred_at
+    )}`
+  );
+
+      const incidentCount =
+        recentTimeline?.filter(
+          (entry) => entry.entry_type === "Incident"
+        ).length || 0;
+
+      if (incidentCount > 0) {
+  lines.push("");
+  lines.push("Incidents:");
+  lines.push(
+    `• ${incidentCount} incidents recorded`
+  );
+}
+
+      lines.push("");
+    }
+
+    setContent(lines.join("\n"));
+  } finally {
+    setGenerating(false);
+  }
+}
 
   async function createHandover() {
     if (!title.trim() || !content.trim()) {
@@ -292,6 +429,23 @@ const userRole = profile?.role || "staff";
               />
 
               <div>
+                <div>
+  <h3 className="mb-3 font-semibold">
+    Handover Period
+  </h3>
+
+  <select
+    value={handoverPeriod}
+    onChange={(e) =>
+      setHandoverPeriod(e.target.value)
+    }
+    className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+  >
+    <option value="24">Last 24 Hours</option>
+    <option value="48">Last 48 Hours</option>
+    <option value="72">Last 72 Hours</option>
+  </select>
+</div>
                 <h3 className="mb-3 font-semibold">Select service users</h3>
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -318,6 +472,17 @@ const userRole = profile?.role || "staff";
                   })}
                 </div>
               </div>
+
+<button
+  type="button"
+  onClick={generateAutomaticSummary}
+  disabled={generating}
+  className="w-full rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4 font-semibold text-cyan-200"
+>
+  {generating
+    ? "Generating summary..."
+    : "Generate Automatic Summary"}
+</button>
 
               <button
                 onClick={createHandover}
