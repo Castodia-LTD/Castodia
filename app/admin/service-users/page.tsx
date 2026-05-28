@@ -127,6 +127,8 @@ export default function ServiceUsersAdminPage() {
       .update({
         first_name: editing.first_name,
         surname: editing.surname,
+        full_name:
+       `${editing.first_name} ${editing.surname}`.trim(),
         house_name: editing.house_name,
         photo_url: editing.photo_url,
         key_notes: editing.key_notes,
@@ -252,13 +254,13 @@ export default function ServiceUsersAdminPage() {
                     />
                   ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-bold text-cyan-300">
-                      {su.first_name.charAt(0)}
+                      {`${su.first_name?.charAt(0) || ""}${su.surname?.charAt(0) || ""}`}
                     </div>
                   )}
 
                   <div>
                     <h2 className="text-xl font-semibold">
-                      {su.first_name}
+                      {su.first_name} {su.surname}
                     </h2>
 
                     <p className="text-slate-400">
@@ -316,9 +318,20 @@ export default function ServiceUsersAdminPage() {
                       first_name: e.target.value,
                     })
                   }
-                  placeholder="Full name"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
-                />
+  placeholder="First name"
+  className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+/>
+<input
+  value={editing.surname || ""}
+  onChange={(e) =>
+    setEditing({
+      ...editing,
+      surname: e.target.value,
+    })
+  }
+  placeholder="Surname"
+  className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+/>
 
                 <input
                   value={editing.house_name || ""}
