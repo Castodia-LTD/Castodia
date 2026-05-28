@@ -29,7 +29,10 @@ export default function AppShell({
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) {
+      window.location.href = "/";
+      return;
+      }
 
       const { data } = await supabase
         .from("profiles")
@@ -50,7 +53,7 @@ useEffect(() => {
 
     logoutTimer.current = setTimeout(async () => {
       await supabase.auth.signOut();
-      window.location.href = "/login";
+      window.location.href = "/";
     }, 1000 * 60 * 3);
   };
 
