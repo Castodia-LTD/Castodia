@@ -7,7 +7,8 @@ import { supabase } from "@/lib/supabase";
 
 type ServiceUser = {
   id: string;
-  full_name: string;
+  first_name: string;
+  surname: string;
   house_name: string | null;
   photo_url: string | null;
   key_notes: string | null;
@@ -25,7 +26,8 @@ type ServiceUser = {
 export default function ServiceUsersAdminPage() {
   const [serviceUsers, setServiceUsers] = useState<ServiceUser[]>([]);
 
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [surname, setSurname] = useState("");
   const [houseName, setHouseName] = useState("");
 
   const [editing, setEditing] = useState<ServiceUser | null>(null);
@@ -55,7 +57,8 @@ export default function ServiceUsersAdminPage() {
       .from("service_users")
       .select(`
         id,
-        full_name,
+        first_name,
+        surname,
         house_name,
         photo_url,
         key_notes,
@@ -69,7 +72,7 @@ export default function ServiceUsersAdminPage() {
       `)
       .eq("organisation_id", profile.organisation_id)
       .eq("is_active", true)
-      .order("full_name");
+      .order("first_name");
 
     if (error) {
       alert(error.message);
@@ -80,13 +83,14 @@ export default function ServiceUsersAdminPage() {
   }
 
   async function createServiceUser() {
-    if (!fullName.trim() || !houseName.trim()) {
+    if (!firstName.trim() || !houseName.trim()) {
       alert("Name and house are required.");
       return;
     }
 
     const { error } = await supabase.from("service_users").insert({
-      full_name: fullName.trim(),
+      first_name: firstName.trim(),
+      surname: surname.trim(),
       house_name: houseName.trim(),
       organisation_id: organisationId,
       photo_url: null,
@@ -107,7 +111,8 @@ export default function ServiceUsersAdminPage() {
       return;
     }
 
-    setFullName("");
+    setFirstName("");
+    setSurname("");
     setHouseName("");
 
     await loadServiceUsers();
@@ -119,7 +124,8 @@ export default function ServiceUsersAdminPage() {
     const { error } = await supabase
       .from("service_users")
       .update({
-        full_name: editing.full_name,
+        first_name: editing.first_name,
+        surname: editing.surname,
         house_name: editing.house_name,
         photo_url: editing.photo_url,
         key_notes: editing.key_notes,
@@ -200,9 +206,15 @@ export default function ServiceUsersAdminPage() {
           </h2>
 
           <input
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Full name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="First name"
+            className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+          />
+          <input
+            value={surname}
+            onChange={(e) => setSurname(e.target.value)}
+            placeholder="Surname"
             className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
           />
 
@@ -234,18 +246,18 @@ export default function ServiceUsersAdminPage() {
                   {su.photo_url ? (
                     <img
                       src={su.photo_url}
-                      alt={su.full_name}
+                      alt={su.first_name}
                       className="h-16 w-16 rounded-2xl object-cover"
                     />
                   ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-bold text-cyan-300">
-                      {su.full_name.charAt(0)}
+                      {su.first_name.charAt(0)}
                     </div>
                   )}
 
                   <div>
                     <h2 className="text-xl font-semibold">
-                      {su.full_name}
+                      {su.first_name}
                     </h2>
 
                     <p className="text-slate-400">
@@ -296,11 +308,11 @@ export default function ServiceUsersAdminPage() {
               <div className="mt-6 space-y-4">
 
                 <input
-                  value={editing.full_name}
+                  value={editing.first_name}
                   onChange={(e) =>
                     setEditing({
                       ...editing,
-                      full_name: e.target.value,
+                      first_name: e.target.value,
                     })
                   }
                   placeholder="Full name"
