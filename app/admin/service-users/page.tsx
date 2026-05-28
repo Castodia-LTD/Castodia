@@ -136,7 +136,8 @@ export default function ServiceUsersAdminPage() {
         track_bristol_stool_chart:
           editing.track_bristol_stool_chart,
       })
-      .eq("id", editing.id);
+      .eq("id", editing.id)
+      .eq("organisation_id", organisationId);
 
     if (error) {
       alert(error.message);
