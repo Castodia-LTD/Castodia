@@ -91,6 +91,7 @@ export default function ServiceUsersAdminPage() {
     const { error } = await supabase.from("service_users").insert({
       first_name: firstName.trim(),
       surname: surname.trim(),
+      full_name: `${firstName.trim()} ${surname.trim()}`.trim(),
       house_name: houseName.trim() || null,
       organisation_id: organisationId,
       photo_url: null,
