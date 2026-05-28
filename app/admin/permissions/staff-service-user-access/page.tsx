@@ -30,26 +30,53 @@ export default function PermissionsPage() {
   const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedServiceUser, setSelectedServiceUser] = useState("");
 
-  async function loadData() {
-    const { data: staffData } = await supabase
-      .from("profiles")
-      .select("id, full_name, role")
-      .order("full_name");
+async function loadData() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    const { data: serviceUserData } = await supabase
-      .from("service_users")
-      .select("id, full_name, house_name")
-      .eq("is_active", true)
-      .order("full_name");
+  if (!user) return;
 
-    const { data: accessData } = await supabase
-      .from("staff_service_user_access")
-      .select("*");
+  const { data: currentProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select("organisation_id")
+    .eq("id", user.id)
+    .single();
 
-    setStaff(staffData || []);
-    setServiceUsers(serviceUserData || []);
-    setAccessRows(accessData || []);
+  if (profileError || !currentProfile?.organisation_id) {
+    alert("Organisation not found.");
+    return;
   }
+
+  const { data: staffData } = await supabase
+    .from("profiles")
+    .select("id, full_name, role")
+    .eq("organisation_id", currentProfile.organisation_id)
+    .order("full_name");
+
+  const { data: serviceUserData } = await supabase
+    .from("service_users")
+    .select("id, full_name, house_name")
+    .eq("organisation_id", currentProfile.organisation_id)
+    .eq("is_active", true)
+    .order("full_name");
+
+  const { data: accessData } = await supabase
+    .from("staff_service_user_access")
+    .select(`
+      id,
+      staff_id,
+      service_user_id,
+      profiles!staff_service_user_access_staff_id_fkey (
+        organisation_id
+      )
+    `)
+    .eq("profiles.organisation_id", currentProfile.organisation_id);
+
+  setStaff(staffData || []);
+  setServiceUsers(serviceUserData || []);
+  setAccessRows((accessData as any) || []);
+}
 
   async function assignAccess() {
     if (!selectedStaff || !selectedServiceUser) {

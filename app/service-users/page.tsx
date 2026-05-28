@@ -25,7 +25,7 @@ export default function ServiceUsersPage() {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, organisation_id")
       .eq("id", user.id)
       .single();
 
@@ -45,6 +45,7 @@ export default function ServiceUsersPage() {
           photo_url,
           allergies
         `)
+        .eq("organisation_id", profile.organisation_id)
         .eq("is_active", true)
         .order("full_name");
 

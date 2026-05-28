@@ -44,19 +44,37 @@ export default function AdminMedicationsPage() {
   const [managerUnlockRequired, setManagerUnlockRequired] = useState(false);
 
   async function loadServiceUsers() {
-    const { data, error } = await supabase
-      .from("service_users")
-      .select("id, full_name")
-      .eq("is_active", true)
-      .order("full_name");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+  if (!user) return;
 
-    setServiceUsers(data || []);
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("organisation_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile?.organisation_id) {
+    alert("Organisation not found.");
+    return;
   }
+
+  const { data, error } = await supabase
+    .from("service_users")
+    .select("id, full_name")
+    .eq("organisation_id", profile.organisation_id)
+    .eq("is_active", true)
+    .order("full_name");
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setServiceUsers(data || []);
+}
 
   async function loadMedications(serviceUserId: string) {
     if (!serviceUserId) {

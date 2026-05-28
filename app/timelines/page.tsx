@@ -24,7 +24,7 @@ export default function TimelinesPage() {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, organisation_id")
       .eq("id", user.id)
       .single();
 
@@ -39,6 +39,7 @@ export default function TimelinesPage() {
       const { data, error } = await supabase
         .from("service_users")
         .select("id, full_name, house_name")
+        .eq("organisation_id", profile.organisation_id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 

@@ -43,13 +43,13 @@ export default function HandoversPage() {
 
     setUserId(user.id);
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("role, organisation_id")
+  .eq("id", user.id)
+  .single();
 
-    const userRole = profile?.role || "staff";
+const userRole = profile?.role || "staff";
 
     let visibleServiceUsers: ServiceUser[] = [];
 
@@ -57,6 +57,7 @@ export default function HandoversPage() {
       const { data } = await supabase
         .from("service_users")
         .select("id, full_name, house_name")
+        .eq("organisation_id", profile?.organisation_id)
         .eq("is_active", true)
         .order("full_name");
 

@@ -75,6 +75,13 @@ function getEntryStyle(type: string) {
         border: "border-blue-400/30",
         text: "text-blue-200",
       };
+      case "Personal Care":
+  return {
+    icon: Soup,
+    accent: "from-pink-500 to-rose-400",
+    border: "border-pink-400/30",
+    text: "text-pink-200",
+  };
     case "Food / Fluid":
       return {
         icon: Utensils,
@@ -132,6 +139,7 @@ const filters = [
   "Medication",
   "Food / Fluid",
   "Toileting",
+  "Personal Care",
   "Behaviour",
   "Incident",
   "Sleep",
@@ -159,29 +167,72 @@ export default function ServiceUserPage() {
   const [consequence, setConsequence] = useState("");
 
   const [medicationProfiles, setMedicationProfiles] = useState<any[]>([]);
-  const [selectedRound, setSelectedRound] = useState("Morning");
-  const [medicationStatuses, setMedicationStatuses] = useState<
+const [selectedRound, setSelectedRound] = useState("Morning");
+
+const [medicationStatuses, setMedicationStatuses] = useState<
   Record<string, string>
-  >({});
-  const [medicationReasons, setMedicationReasons] = useState<
+>({});
+
+const [medicationReasons, setMedicationReasons] = useState<
   Record<string, string>
-  >({});
-  const viewingToday = isSameDay(selectedDate, new Date());
+>({});
 
-  async function loadServiceUser() {
-    const { data, error } = await supabase
-      .from("service_users")
-      .select("id, full_name")
-      .eq("id", serviceUserId)
-      .single();
+const [toiletingOutcome, setToiletingOutcome] = useState("");
+const [assistanceRequired, setAssistanceRequired] = useState("");
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+const [padChanged, setPadChanged] = useState("");
+const [bristolType, setBristolType] = useState("");
 
-    setServiceUser(data);
+const [toiletingNotes, setToiletingNotes] = useState("");
+
+const [continenceSettings, setContinenceSettings] = useState<any>(null);
+const [careType, setCareType] = useState("");
+const [assistanceLevel, setAssistanceLevel] = useState("");
+const [personalCareNotes, setPersonalCareNotes] = useState("");
+const [sleepStatus, setSleepStatus] = useState("");
+const [sleepNotes, setSleepNotes] = useState("");
+
+const viewingToday = isSameDay(selectedDate, new Date());
+
+ async function loadServiceUser() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("organisation_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile?.organisation_id) {
+    alert("Organisation not found.");
+    return;
   }
+
+  const { data, error } = await supabase
+    .from("service_users")
+    .select(`
+  id,
+  full_name,
+  continence_care_enabled,
+  track_pad_changes,
+  track_bristol_stool_chart
+`)
+    .eq("id", serviceUserId)
+    .eq("organisation_id", profile.organisation_id)
+    .single();
+
+  if (error || !data) {
+    alert("Service user not found.");
+    return;
+  }
+
+  setServiceUser(data);
+  setContinenceSettings(data);
+}
 
   async function loadEntries() {
     const startOfDay = new Date(selectedDate);
@@ -336,6 +387,229 @@ administration_date: new Date(eventTime)
 
   setMedicationStatuses({});
   setMedicationReasons({});
+  setEntryTime(getTimeNow());
+  setEntryPanelOpen(false);
+
+  await loadEntries();
+  return;
+}
+if (entryType === "Toileting") {
+  if (!toiletingOutcome) {
+    alert("Please select a toileting outcome.");
+    return;
+  }
+
+  if (!assistanceRequired) {
+    alert("Please select whether assistance was required.");
+    return;
+  }
+
+  if (continenceSettings?.track_pad_changes && !padChanged) {
+    alert("Please select whether pad was changed.");
+    return;
+  }
+
+  if (
+    continenceSettings?.track_bristol_stool_chart &&
+    (toiletingOutcome === "Bowel movement" || toiletingOutcome === "Both") &&
+    !bristolType
+  ) {
+    alert("Please select a Bristol stool type.");
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    alert("You must be logged in to create an entry.");
+    return;
+  }
+
+  const eventTime = combineDateAndTime(new Date(), entryTime);
+
+  const { error: toiletingError } = await supabase
+    .from("toileting_records")
+    .insert({
+      service_user_id: serviceUserId,
+      created_by: user.id,
+      toileting_outcome: toiletingOutcome,
+      assistance_required: assistanceRequired,
+      pad_changed: continenceSettings?.track_pad_changes
+        ? padChanged
+        : null,
+      bristol_stool_type:
+        continenceSettings?.track_bristol_stool_chart &&
+        (toiletingOutcome === "Bowel movement" || toiletingOutcome === "Both")
+          ? Number(bristolType)
+          : null,
+      notes: toiletingNotes.trim() || null,
+      occurred_at: eventTime,
+    });
+
+  if (toiletingError) {
+    alert(toiletingError.message);
+    return;
+  }
+
+  const summaryParts = [
+    `Outcome: ${toiletingOutcome}`,
+    `Assistance: ${assistanceRequired}`,
+  ];
+
+  if (continenceSettings?.track_pad_changes) {
+    summaryParts.push(`Pad changed: ${padChanged}`);
+  }
+
+  if (
+    continenceSettings?.track_bristol_stool_chart &&
+    (toiletingOutcome === "Bowel movement" || toiletingOutcome === "Both")
+  ) {
+    summaryParts.push(`Bristol stool type: ${bristolType}`);
+  }
+
+  if (toiletingNotes.trim()) {
+    summaryParts.push(`Notes: ${toiletingNotes.trim()}`);
+  }
+
+  const { error: timelineError } = await supabase
+    .from("timeline_entries")
+    .insert({
+      service_user_id: serviceUserId,
+      created_by: user.id,
+      entry_type: "Toileting",
+      content: summaryParts.join("\n"),
+      event_time: eventTime,
+    });
+
+  if (timelineError) {
+    alert(timelineError.message);
+    return;
+  }
+
+  setToiletingOutcome("");
+  setAssistanceRequired("");
+  setPadChanged("");
+  setBristolType("");
+  setToiletingNotes("");
+  setEntryTime(getTimeNow());
+  setEntryPanelOpen(false);
+
+  await loadEntries();
+  return;
+}
+if (entryType === "Personal Care") {
+  if (!careType) {
+    alert("Please select care completed.");
+    return;
+  }
+
+  if (!assistanceLevel) {
+    alert("Please select assistance level.");
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    alert("You must be logged in to create an entry.");
+    return;
+  }
+
+  const eventTime = combineDateAndTime(new Date(), entryTime);
+
+  const { error: personalCareError } = await supabase
+    .from("personal_care_records")
+    .insert({
+      service_user_id: serviceUserId,
+      created_by: user.id,
+      care_type: careType,
+      assistance_level: assistanceLevel,
+      notes: personalCareNotes.trim() || null,
+      occurred_at: eventTime,
+    });
+
+  if (personalCareError) {
+    alert(personalCareError.message);
+    return;
+  }
+
+  const summaryParts = [
+    `Care completed: ${careType}`,
+    `Assistance: ${assistanceLevel}`,
+  ];
+
+  if (personalCareNotes.trim()) {
+    summaryParts.push(`Notes: ${personalCareNotes.trim()}`);
+  }
+
+  const { error: timelineError } = await supabase
+    .from("timeline_entries")
+    .insert({
+      service_user_id: serviceUserId,
+      created_by: user.id,
+      entry_type: "Personal Care",
+      content: summaryParts.join("\n"),
+      event_time: eventTime,
+    });
+
+  if (timelineError) {
+    alert(timelineError.message);
+    return;
+  }
+
+  setCareType("");
+  setAssistanceLevel("");
+  setPersonalCareNotes("");
+
+  setEntryTime(getTimeNow());
+  setEntryPanelOpen(false);
+
+  await loadEntries();
+  return;
+}
+if (entryType === "Sleep") {
+  if (!sleepStatus) {
+    alert("Please select sleep status.");
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    alert("You must be logged in to create an entry.");
+    return;
+  }
+
+  const eventTime = combineDateAndTime(new Date(), entryTime);
+
+  const summary = sleepNotes.trim()
+    ? `${sleepStatus} — ${sleepNotes.trim()}`
+    : sleepStatus;
+
+  const { error } = await supabase.from("timeline_entries").insert({
+    service_user_id: serviceUserId,
+    created_by: user.id,
+    entry_type: "Sleep",
+    content: summary,
+    event_time: eventTime,
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setSleepStatus("");
+  setSleepNotes("");
   setEntryTime(getTimeNow());
   setEntryPanelOpen(false);
 
@@ -644,6 +918,10 @@ ${consequence.trim()}`
     Toileting
   </option>
 
+  <option value="Personal Care" className="bg-slate-900 text-white">
+    Personal Care
+  </option>
+
   <option value="Behaviour" className="bg-slate-900 text-white">
     Behaviour
   </option>
@@ -769,6 +1047,139 @@ ${consequence.trim()}`
             )}
         </div>
       ))}
+  </div>
+) : entryType === "Toileting" ? (
+  <div className="space-y-4">
+
+    <select
+      value={toiletingOutcome}
+      onChange={(e) => setToiletingOutcome(e.target.value)}
+      className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+    >
+      <option value="">Select outcome</option>
+      <option value="Passed urine">Passed urine</option>
+      <option value="Bowel movement">Bowel movement</option>
+      <option value="Both">Both</option>
+      <option value="No result">No result</option>
+    </select>
+
+    <select
+      value={assistanceRequired}
+      onChange={(e) => setAssistanceRequired(e.target.value)}
+      className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+    >
+      <option value="">Assistance required?</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+      <option value="N/A">N/A</option>
+    </select>
+
+    {continenceSettings?.track_pad_changes && (
+      <select
+        value={padChanged}
+        onChange={(e) => setPadChanged(e.target.value)}
+        className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+      >
+        <option value="">Pad changed?</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    )}
+
+    {continenceSettings?.track_bristol_stool_chart &&
+      (toiletingOutcome === "Bowel movement" ||
+        toiletingOutcome === "Both") && (
+        <select
+          value={bristolType}
+          onChange={(e) => setBristolType(e.target.value)}
+          className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+        >
+          <option value="">Bristol stool type</option>
+
+          <option value="1">Type 1</option>
+          <option value="2">Type 2</option>
+          <option value="3">Type 3</option>
+          <option value="4">Type 4</option>
+          <option value="5">Type 5</option>
+          <option value="6">Type 6</option>
+          <option value="7">Type 7</option>
+        </select>
+      )}
+
+    <textarea
+      value={toiletingNotes}
+      onChange={(e) => setToiletingNotes(e.target.value)}
+      placeholder="Additional notes..."
+      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+    />
+
+  </div>
+) : entryType === "Personal Care" ? (
+  <div className="space-y-4">
+
+    <select
+      value={careType}
+      onChange={(e) => setCareType(e.target.value)}
+      className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+    >
+      <option value="">Select care completed</option>
+
+      <option value="Shower">Shower</option>
+      <option value="Bath">Bath</option>
+      <option value="Strip wash">Strip wash</option>
+      <option value="Face / hands">Face / hands</option>
+      <option value="Oral care">Oral care</option>
+      <option value="Hair wash">Hair wash</option>
+      <option value="Shave">Shave</option>
+      <option value="Clothing changed">Clothing changed</option>
+      <option value="No personal care completed">
+        No personal care completed
+      </option>
+    </select>
+
+    <select
+      value={assistanceLevel}
+      onChange={(e) => setAssistanceLevel(e.target.value)}
+      className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+    >
+      <option value="">Select assistance level</option>
+
+      <option value="Independent">Independent</option>
+      <option value="Prompted">Prompted</option>
+      <option value="Assisted">Assisted</option>
+      <option value="Fully supported">Fully supported</option>
+      <option value="Refused">Refused</option>
+    </select>
+
+    <textarea
+      value={personalCareNotes}
+      onChange={(e) => setPersonalCareNotes(e.target.value)}
+      placeholder="Additional notes..."
+      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+    />
+
+  </div>
+  ) : entryType === "Sleep" ? (
+  <div className="space-y-4">
+
+    <select
+      value={sleepStatus}
+      onChange={(e) => setSleepStatus(e.target.value)}
+      className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+    >
+      <option value="">Select sleep status</option>
+
+      <option value="Asleep">Asleep</option>
+      <option value="Awake">Awake</option>
+    </select>
+
+    <textarea
+      value={sleepNotes}
+      onChange={(e) => setSleepNotes(e.target.value)}
+      placeholder="Optional notes..."
+      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+    />
+
   </div>
 ) : (
   <input

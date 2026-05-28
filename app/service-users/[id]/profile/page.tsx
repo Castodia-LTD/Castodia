@@ -29,29 +29,47 @@ export default function ServiceUserProfilePage() {
   const [serviceUser, setServiceUser] =
     useState<ServiceUser | null>(null);
 
-  async function loadServiceUser() {
-    const { data, error } = await supabase
-      .from("service_users")
-      .select(`
-        id,
-        full_name,
-        photo_url,
-        house_name,
-        key_notes,
-        allergies,
-        communication_needs,
-        risk_notes
-      `)
-      .eq("id", id)
-      .single();
+async function loadServiceUser() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+  if (!user) return;
 
-    setServiceUser(data);
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("organisation_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile?.organisation_id) {
+    alert("Organisation not found.");
+    return;
   }
+
+  const { data, error } = await supabase
+    .from("service_users")
+    .select(`
+      id,
+      full_name,
+      photo_url,
+      house_name,
+      key_notes,
+      allergies,
+      communication_needs,
+      risk_notes
+    `)
+    .eq("id", id)
+    .eq("organisation_id", profile.organisation_id)
+    .single();
+
+  if (error || !data) {
+    alert("Service user not found.");
+    return;
+  }
+
+  setServiceUser(data);
+}
 
   useEffect(() => {
     loadServiceUser();

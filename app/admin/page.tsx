@@ -56,7 +56,7 @@ export default function AdminPage() {
           </Link>
 
           <Link
-            href="/admin/permissions"
+            href="/admin/permissions/staff-service-user-access"
             className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur"
           >
             <h2 className="text-xl font-semibold">Access Permissions</h2>

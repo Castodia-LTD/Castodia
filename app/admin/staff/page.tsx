@@ -18,11 +18,29 @@ export default function StaffAdminPage() {
   const [role, setRole] = useState<"manager" | "staff">("staff");
 
   async function loadStaff() {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name, role")
-      .order("full_name");
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 
+if (!user) return;
+
+const { data: currentProfile, error: profileError } = await supabase
+  .from("profiles")
+  .select("organisation_id")
+  .eq("id", user.id)
+  .single();
+
+if (profileError || !currentProfile?.organisation_id) {
+  alert("Organisation not found.");
+  return;
+}
+
+const { data, error } = await supabase
+  .from("profiles")
+  .select("id, full_name, role")
+  .eq("organisation_id", currentProfile.organisation_id)
+  .order("full_name");
+  
     if (error) {
       alert(error.message);
       return;
@@ -31,36 +49,46 @@ export default function StaffAdminPage() {
     setStaff(data || []);
   }
 
-  async function createStaff() {
-    const response = await fetch("/api/admin/create-staff", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fullName,
-        email,
-        password,
-        role,
-      }),
-    });
+async function createStaff() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      alert(result.error);
-      return;
-    }
-
-    setFullName("");
-    setEmail("");
-    setPassword("");
-    setRole("staff");
-
-    await loadStaff();
-
-    alert("Staff member created successfully.");
+  if (!user) {
+    alert("You must be logged in.");
+    return;
   }
+
+  const response = await fetch("/api/admin/create-staff", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      fullName,
+      email,
+      password,
+      role,
+      creatorId: user.id,
+    }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    alert(result.error);
+    return;
+  }
+
+  setFullName("");
+  setEmail("");
+  setPassword("");
+  setRole("staff");
+
+  await loadStaff();
+
+  alert("Staff member created successfully.");
+}
 
   useEffect(() => {
     loadStaff();

@@ -14,6 +14,11 @@ type ServiceUser = {
   allergies: string | null;
   communication_needs: string | null;
   risk_notes: string | null;
+
+  continence_care_enabled: boolean;
+  track_pad_changes: boolean;
+  track_bristol_stool_chart: boolean;
+
   is_active: boolean;
 };
 
@@ -24,8 +29,28 @@ export default function ServiceUsersAdminPage() {
   const [houseName, setHouseName] = useState("");
 
   const [editing, setEditing] = useState<ServiceUser | null>(null);
+  const [organisationId, setOrganisationId] = useState<string | null>(null);
 
   async function loadServiceUsers() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("organisation_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile?.organisation_id) {
+      alert("Organisation not found.");
+      return;
+    }
+
+    setOrganisationId(profile.organisation_id);
+
     const { data, error } = await supabase
       .from("service_users")
       .select(`
@@ -37,8 +62,12 @@ export default function ServiceUsersAdminPage() {
         allergies,
         communication_needs,
         risk_notes,
+        continence_care_enabled,
+        track_pad_changes,
+        track_bristol_stool_chart,
         is_active
       `)
+      .eq("organisation_id", profile.organisation_id)
       .eq("is_active", true)
       .order("full_name");
 
@@ -59,11 +88,17 @@ export default function ServiceUsersAdminPage() {
     const { error } = await supabase.from("service_users").insert({
       full_name: fullName.trim(),
       house_name: houseName.trim(),
+      organisation_id: organisationId,
       photo_url: null,
       key_notes: null,
       allergies: null,
       communication_needs: null,
       risk_notes: null,
+
+      continence_care_enabled: false,
+      track_pad_changes: false,
+      track_bristol_stool_chart: false,
+
       is_active: true,
     });
 
@@ -91,6 +126,15 @@ export default function ServiceUsersAdminPage() {
         allergies: editing.allergies,
         communication_needs: editing.communication_needs,
         risk_notes: editing.risk_notes,
+
+        continence_care_enabled:
+          editing.continence_care_enabled,
+
+        track_pad_changes:
+          editing.track_pad_changes,
+
+        track_bristol_stool_chart:
+          editing.track_bristol_stool_chart,
       })
       .eq("id", editing.id);
 
@@ -274,18 +318,6 @@ export default function ServiceUsersAdminPage() {
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
                 />
 
-                <input
-                  value={editing.photo_url || ""}
-                  onChange={(e) =>
-                    setEditing({
-                      ...editing,
-                      photo_url: e.target.value,
-                    })
-                  }
-                  placeholder="Photo URL"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
-                />
-
                 <textarea
                   value={editing.key_notes || ""}
                   onChange={(e) =>
@@ -333,6 +365,61 @@ export default function ServiceUsersAdminPage() {
                   placeholder="Risk notes"
                   className="min-h-28 w-full rounded-2xl border border-amber-500/20 bg-amber-950/30 p-4 text-white outline-none"
                 />
+
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-4">
+                  <h3 className="text-lg font-semibold text-emerald-300">
+                    Continence Care
+                  </h3>
+
+                  <div className="mt-4 space-y-3">
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={editing.continence_care_enabled || false}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            continence_care_enabled: e.target.checked,
+                          })
+                        }
+                      />
+
+                      <span>Enable continence care</span>
+                    </label>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={editing.track_pad_changes || false}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            track_pad_changes: e.target.checked,
+                          })
+                        }
+                      />
+
+                      <span>Track pad changes</span>
+                    </label>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={editing.track_bristol_stool_chart || false}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            track_bristol_stool_chart: e.target.checked,
+                          })
+                        }
+                      />
+
+                      <span>Track Bristol stool chart</span>
+                    </label>
+
+                  </div>
+                </div>
 
                 <button
                   onClick={saveProfile}

@@ -20,43 +20,70 @@ type Incident = {
 export default function IncidentAuditPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
 
-  async function loadIncidents() {
-    const { data: incidentData, error } = await supabase
-      .from("timeline_entries")
-      .select("*")
-      .eq("entry_type", "Incident")
-      .order("created_at", { ascending: false });
+ async function loadIncidents() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+  if (!user) return;
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name");
+  const { data: currentProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select("organisation_id")
+    .eq("id", user.id)
+    .single();
 
-    const { data: serviceUsers } = await supabase
-      .from("service_users")
-      .select("id, full_name, house_name");
-
-    const enriched =
-      incidentData?.map((incident) => {
-        const staff = profiles?.find((p) => p.id === incident.created_by);
-        const su = serviceUsers?.find(
-          (s) => s.id === incident.service_user_id
-        );
-
-        return {
-          ...incident,
-          staff_name: staff?.full_name || "Unknown staff member",
-          service_user_name: su?.full_name || "Unknown service user",
-          house_name: su?.house_name || "",
-        };
-      }) || [];
-
-    setIncidents(enriched);
+  if (profileError || !currentProfile?.organisation_id) {
+    alert("Organisation not found.");
+    return;
   }
+
+  const { data: serviceUsers } = await supabase
+    .from("service_users")
+    .select("id, full_name, house_name")
+    .eq("organisation_id", currentProfile.organisation_id);
+
+  const serviceUserIds = serviceUsers?.map((su) => su.id) || [];
+
+  if (serviceUserIds.length === 0) {
+    setIncidents([]);
+    return;
+  }
+
+  const { data: incidentData, error } = await supabase
+    .from("timeline_entries")
+    .select("*")
+    .eq("entry_type", "Incident")
+    .in("service_user_id", serviceUserIds)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("organisation_id", currentProfile.organisation_id);
+
+  const enriched =
+    incidentData?.map((incident) => {
+      const staff = profiles?.find((p) => p.id === incident.created_by);
+      const su = serviceUsers?.find(
+        (s) => s.id === incident.service_user_id
+      );
+
+      return {
+        ...incident,
+        staff_name: staff?.full_name || "Unknown staff member",
+        service_user_name: su?.full_name || "Unknown service user",
+        house_name: su?.house_name || "",
+      };
+    }) || [];
+
+  setIncidents(enriched);
+}
 
   useEffect(() => {
     loadIncidents();
