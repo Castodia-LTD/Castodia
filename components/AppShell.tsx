@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function AppShell({
@@ -21,6 +21,7 @@ export default function AppShell({
   const pathname = usePathname();
 
   const [role, setRole] = useState<string | null>(null);
+  const logoutTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     async function loadRole() {
@@ -41,7 +42,42 @@ export default function AppShell({
 
     loadRole();
   }, []);
+useEffect(() => {
+  const resetTimer = () => {
+    if (logoutTimer.current) {
+      clearTimeout(logoutTimer.current);
+    }
 
+    logoutTimer.current = setTimeout(async () => {
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+    }, 1000 * 60 * 3);
+  };
+
+  const events = [
+    "mousemove",
+    "mousedown",
+    "keydown",
+    "touchstart",
+    "scroll",
+  ];
+
+  events.forEach((event) => {
+    window.addEventListener(event, resetTimer);
+  });
+
+  resetTimer();
+
+  return () => {
+    if (logoutTimer.current) {
+      clearTimeout(logoutTimer.current);
+    }
+
+    events.forEach((event) => {
+      window.removeEventListener(event, resetTimer);
+    });
+  };
+}, []);
   const links = [
     {
       href: "/dashboard",
