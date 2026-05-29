@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import WellbeingObservationForm from "@/components/wellbeing/WellbeingObservationForm";
 import {
   Activity,
   AlertTriangle,
@@ -14,6 +15,7 @@ import {
   Toilet,
   UserRound,
   Utensils,
+  HeartPulse,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -31,7 +33,8 @@ type TimelineEntry = {
 
 type ServiceUser = {
   id: string;
-  full_name: string;
+  first_name: string | null;
+  surname: string | null;
 };
 
 function isSameDay(dateA: Date, dateB: Date) {
@@ -124,6 +127,13 @@ function getEntryStyle(type: string) {
         border: "border-amber-400/30",
         text: "text-amber-200",
       };
+      case "Wellbeing":
+  return {
+    icon: HeartPulse,
+    accent: "from-emerald-500 to-green-400",
+    border: "border-emerald-400/30",
+    text: "text-emerald-200",
+  };
     default:
       return {
         icon: Activity,
@@ -144,6 +154,7 @@ const filters = [
   "Incident",
   "Sleep",
   "Body Map",
+  "Wellbeing",
   "Activity",
 ];
 
@@ -216,7 +227,8 @@ const viewingToday = isSameDay(selectedDate, new Date());
     .from("service_users")
     .select(`
   id,
-  full_name,
+  first_name,
+  surname,
   continence_care_enabled,
   track_pad_changes,
   track_bristol_stool_chart
@@ -708,8 +720,13 @@ ${consequence.trim()}`
   loadMedicationProfiles();
   }, [serviceUserId]);
 
+const serviceUserName =
+  `${serviceUser?.first_name ?? ""} ${serviceUser?.surname ?? ""}`.trim() ||
+  "Service user";
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white pb-24">
+
       <div className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/80 px-4 py-3 backdrop-blur">
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="text-sm text-slate-400">
@@ -717,7 +734,7 @@ ${consequence.trim()}`
           </Link>
 
           <h1 className="text-lg font-semibold text-center">
-            {serviceUser?.full_name || "Loading..."}
+            {serviceUserName}
           </h1>
 
           <button
@@ -882,8 +899,9 @@ ${consequence.trim()}`
       )}
 
       {viewingToday && entryPanelOpen && (
-        <div className="fixed bottom-0 left-0 right-0 space-y-2 rounded-t-3xl border-t border-white/10 bg-slate-950/95 p-4 shadow-2xl backdrop-blur">
+        <div className="fixed bottom-0 left-0 right-0 max-h-[75vh] space-y-2 overflow-y-auto rounded-t-3xl border-t border-white/10 bg-slate-950/95 p-4 shadow-2xl backdrop-blur">auto rounded-t-3xl border-t border-white/10 bg-slate-950/95 p-4 shadow-2xl backdrop-blur"
           <div className="flex items-center justify-between">
+            
             <h2 className="text-lg font-semibold">Add Entry</h2>
 
             <button
@@ -937,7 +955,7 @@ ${consequence.trim()}`
   <option value="Body Map" className="bg-slate-900 text-white">
     Body Map
   </option>
-
+<option value="Wellbeing">Wellbeing</option>
   <option value="Activity" className="bg-slate-900 text-white">
     Activity
   </option>
@@ -1181,6 +1199,16 @@ ${consequence.trim()}`
     />
 
   </div>
+) : entryType === "Wellbeing" ? (
+  <WellbeingObservationForm
+    serviceUserId={serviceUserId}
+    serviceUserName={serviceUserName}
+    onSaved={async () => {
+      setEntryTime(getTimeNow());
+      setEntryPanelOpen(false);
+      await loadEntries();
+    }}
+  />
 ) : (
   <input
     value={content}
@@ -1190,14 +1218,17 @@ ${consequence.trim()}`
   />
 )}
 
-          <button
-            onClick={addEntry}
-            className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 text-xl font-semibold"
-          >
-            Save Entry
-          </button>
-        </div>
-      )}
+{entryType !== "Wellbeing" && (
+  <button
+    onClick={addEntry}
+    className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 text-xl font-semibold"
+  >
+    Save Entry
+  </button>
+)}
+    </div>
+)}
+
     </main>
-  );
+);
 }
