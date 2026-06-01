@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+import AppShell from "@/components/AppShell";
 import TimelineHeader from "@/components/timelines/TimelineHeader";
 import TimelineEntryCard from "@/components/timelines/TimelineEntryCard";
 import MedicationForm from "@/components/timelines/MedicationForm";
@@ -255,8 +256,9 @@ ${consequence.trim()}`
     loadMedicationProfiles();
   }, [serviceUserId]);
 
-  return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 pb-24 text-white">
+ return (
+  <AppShell>
+    <main className="min-h-screen pb-24 text-white">
       <TimelineHeader
         serviceUserName={serviceUserName}
         selectedDate={selectedDate}
@@ -459,5 +461,6 @@ ${consequence.trim()}`
         </div>
       )}
     </main>
+      </AppShell>
   );
 }

@@ -21,6 +21,8 @@ export default function AppShell({
   const pathname = usePathname();
 
   const [role, setRole] = useState<string | null>(null);
+  const [loadingRole, setLoadingRole] = useState(true);
+
   const logoutTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -30,8 +32,8 @@ export default function AppShell({
       } = await supabase.auth.getUser();
 
       if (!user) {
-      window.location.href = "/";
-      return;
+        window.location.href = "/";
+        return;
       }
 
       const { data } = await supabase
@@ -41,46 +43,47 @@ export default function AppShell({
         .single();
 
       setRole(data?.role || "staff");
+      setLoadingRole(false);
     }
 
     loadRole();
   }, []);
-useEffect(() => {
-  const resetTimer = () => {
-    if (logoutTimer.current) {
-      clearTimeout(logoutTimer.current);
-    }
 
-    logoutTimer.current = setTimeout(async () => {
-      await supabase.auth.signOut();
-      window.location.href = "/";
-    }, 1000 * 60 * 3);
-  };
+  useEffect(() => {
+    const resetTimer = () => {
+      if (logoutTimer.current) {
+        clearTimeout(logoutTimer.current);
+      }
 
-  const events = [
-    "mousemove",
-    "mousedown",
-    "keydown",
-    "touchstart",
-    "scroll",
-  ];
+      logoutTimer.current = setTimeout(async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/";
+      }, 1000 * 60 * 3);
+    };
 
-  events.forEach((event) => {
-    window.addEventListener(event, resetTimer);
-  });
-
-  resetTimer();
-
-  return () => {
-    if (logoutTimer.current) {
-      clearTimeout(logoutTimer.current);
-    }
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
 
     events.forEach((event) => {
-      window.removeEventListener(event, resetTimer);
+      window.addEventListener(event, resetTimer);
     });
-  };
-}, []);
+
+    resetTimer();
+
+    return () => {
+      if (logoutTimer.current) {
+        clearTimeout(logoutTimer.current);
+      }
+
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, []);
+
+  if (loadingRole) {
+    return null;
+  }
+
   const links = [
     {
       href: "/dashboard",
@@ -92,7 +95,7 @@ useEffect(() => {
       label: "Timelines",
       icon: Clock3,
     },
-        {
+    {
       href: "/service-users",
       label: "Service Users",
       icon: Users,
@@ -115,10 +118,7 @@ useEffect(() => {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white">
       <div className="flex min-h-screen">
-
-        {/* Desktop Sidebar */}
         <aside className="hidden w-64 border-r border-white/10 bg-slate-950/70 p-5 backdrop-blur md:block">
-
           <Image
             src="/logo.png"
             alt="Castodia"
@@ -132,8 +132,7 @@ useEffect(() => {
               const Icon = item.icon;
 
               const active =
-                pathname === item.href ||
-                pathname.startsWith(item.href + "/");
+                pathname === item.href || pathname.startsWith(item.href + "/");
 
               return (
                 <Link
@@ -153,36 +152,23 @@ useEffect(() => {
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <section className="flex-1 pb-24 md:pb-0">
-          {children}
-        </section>
+        <section className="flex-1 pb-24 md:pb-0">{children}</section>
       </div>
 
-      {/* Mobile Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-slate-950/90 backdrop-blur md:hidden">
-        <div
-          className={`grid ${
-            role === "manager"
-              ? "grid-cols-5"
-              : "grid-cols-4"
-          }`}
-        >
+        <div className={`grid ${role === "manager" ? "grid-cols-5" : "grid-cols-4"}`}>
           {links.map((item) => {
             const Icon = item.icon;
 
             const active =
-              pathname === item.href ||
-              pathname.startsWith(item.href + "/");
+              pathname === item.href || pathname.startsWith(item.href + "/");
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition ${
-                  active
-                    ? "text-cyan-300"
-                    : "text-slate-400"
+                  active ? "text-cyan-300" : "text-slate-400"
                 }`}
               >
                 <Icon size={18} />
