@@ -1,92 +1,108 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import AppShell from "@/components/AppShell";
+import AccessRowCard from "@/components/admin/permissions/AccessRowCard";
 import { supabase } from "@/lib/supabase";
 
-type Staff = {
-  id: string;
-  full_name: string;
-  role: string;
-};
+import type {
+  AccessRow,
+  ServiceUser,
+  Staff,
+} from "@/lib/admin/permissions/types";
 
-type ServiceUser = {
-  id: string;
-  full_name: string;
-  house_name: string;
-};
-
-type AccessRow = {
-  id: string;
-  staff_id: string;
-  service_user_id: string;
-};
-
-export default function PermissionsPage() {
+export default function StaffServiceUserAccessPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [serviceUsers, setServiceUsers] = useState<ServiceUser[]>([]);
   const [accessRows, setAccessRows] = useState<AccessRow[]>([]);
 
-  const [selectedStaff, setSelectedStaff] = useState("");
-  const [selectedServiceUser, setSelectedServiceUser] = useState("");
+  const [selectedStaffId, setSelectedStaffId] = useState("");
+  const [selectedServiceUserId, setSelectedServiceUserId] = useState("");
 
-async function loadData() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  async function getCurrentOrganisationId() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) return;
+    if (!user) return null;
 
-  const { data: currentProfile, error: profileError } = await supabase
-    .from("profiles")
-    .select("organisation_id")
-    .eq("id", user.id)
-    .single();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("organisation_id")
+      .eq("id", user.id)
+      .single();
 
-  if (profileError || !currentProfile?.organisation_id) {
-    alert("Organisation not found.");
-    return;
+    if (error || !profile?.organisation_id) {
+      alert("Organisation not found.");
+      return null;
+    }
+
+    return profile.organisation_id;
   }
 
-  const { data: staffData } = await supabase
-    .from("profiles")
-    .select("id, full_name, role")
-    .eq("organisation_id", currentProfile.organisation_id)
-    .order("full_name");
+  async function loadData() {
+    const organisationId = await getCurrentOrganisationId();
 
-  const { data: serviceUserData } = await supabase
-    .from("service_users")
-    .select("id, full_name, house_name")
-    .eq("organisation_id", currentProfile.organisation_id)
-    .eq("is_active", true)
-    .order("full_name");
+    if (!organisationId) return;
 
-  const { data: accessData } = await supabase
-    .from("staff_service_user_access")
-    .select(`
-      id,
-      staff_id,
-      service_user_id,
-      profiles!staff_service_user_access_staff_id_fkey (
-        organisation_id
-      )
-    `)
-    .eq("profiles.organisation_id", currentProfile.organisation_id);
+    const { data: staffData, error: staffError } = await supabase
+      .from("profiles")
+      .select("id, full_name, role")
+      .eq("organisation_id", organisationId)
+      .order("full_name");
 
-  setStaff(staffData || []);
-  setServiceUsers(serviceUserData || []);
-  setAccessRows((accessData as any) || []);
-}
+    if (staffError) {
+      alert(staffError.message);
+      return;
+    }
 
-  async function assignAccess() {
-    if (!selectedStaff || !selectedServiceUser) {
-      alert("Select staff and service user.");
+    const { data: serviceUserData, error: serviceUserError } = await supabase
+      .from("service_users")
+      .select("id, full_name, house_name")
+      .eq("organisation_id", organisationId)
+      .eq("is_active", true)
+      .order("full_name");
+
+    if (serviceUserError) {
+      alert(serviceUserError.message);
+      return;
+    }
+
+    const { data: accessData, error: accessError } = await supabase
+      .from("staff_service_user_access")
+      .select("id, staff_id, service_user_id")
+      .order("created_at", { ascending: false });
+
+    if (accessError) {
+      alert(accessError.message);
+      return;
+    }
+
+    setStaff(staffData || []);
+    setServiceUsers(serviceUserData || []);
+    setAccessRows(accessData || []);
+  }
+
+  async function addAccess() {
+    if (!selectedStaffId || !selectedServiceUserId) {
+      alert("Please select both a staff member and a service user.");
+      return;
+    }
+
+    const existing = accessRows.find(
+      (row) =>
+        row.staff_id === selectedStaffId &&
+        row.service_user_id === selectedServiceUserId
+    );
+
+    if (existing) {
+      alert("This staff member already has access to this service user.");
       return;
     }
 
     const { error } = await supabase.from("staff_service_user_access").insert({
-      staff_id: selectedStaff,
-      service_user_id: selectedServiceUser,
+      staff_id: selectedStaffId,
+      service_user_id: selectedServiceUserId,
     });
 
     if (error) {
@@ -94,12 +110,17 @@ async function loadData() {
       return;
     }
 
-    setSelectedStaff("");
-    setSelectedServiceUser("");
+    setSelectedStaffId("");
+    setSelectedServiceUserId("");
+
     await loadData();
   }
 
   async function removeAccess(id: string) {
+    const confirmed = confirm("Remove this access permission?");
+
+    if (!confirmed) return;
+
     const { error } = await supabase
       .from("staff_service_user_access")
       .delete()
@@ -113,13 +134,21 @@ async function loadData() {
     await loadData();
   }
 
-  function getStaffName(id: string) {
-    return staff.find((person) => person.id === id)?.full_name || "Unknown";
+  function getStaffName(staffId: string) {
+    return (
+      staff.find((person) => person.id === staffId)?.full_name ||
+      "Unknown staff member"
+    );
   }
 
-  function getServiceUserName(id: string) {
-    const su = serviceUsers.find((person) => person.id === id);
-    return su ? `${su.full_name} — ${su.house_name}` : "Unknown";
+  function getServiceUserName(serviceUserId: string) {
+    const serviceUser = serviceUsers.find((user) => user.id === serviceUserId);
+
+    if (!serviceUser) return "Unknown service user";
+
+    return serviceUser.house_name
+      ? `${serviceUser.full_name} — ${serviceUser.house_name}`
+      : serviceUser.full_name;
   }
 
   useEffect(() => {
@@ -127,70 +156,73 @@ async function loadData() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-6">
-      <Link href="/admin" className="text-slate-400">
-        ← Admin Portal
-      </Link>
+    <AppShell>
+      <main className="min-h-screen p-6 text-white">
+        <div className="mx-auto max-w-5xl">
+          <h1 className="text-3xl font-bold">Access Permissions</h1>
 
-      <h1 className="mt-6 text-3xl font-bold">Access Permissions</h1>
+          <p className="mt-2 text-slate-400">
+            Assign staff members to the service users they support.
+          </p>
 
-      <div className="mt-8 rounded-2xl bg-slate-900 p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Assign Staff Access</h2>
+          <div className="mt-8 space-y-4 rounded-2xl bg-slate-900 p-6">
+            <h2 className="text-xl font-semibold">Assign Access</h2>
 
-        <select
-          value={selectedStaff}
-          onChange={(e) => setSelectedStaff(e.target.value)}
-          className="w-full rounded-xl bg-slate-800 p-4 text-white outline-none"
-        >
-          <option value="">Select staff member</option>
-          {staff.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.full_name} —{" "}
-              {person.role === "manager" ? "Manager" : "Support Worker"}
-            </option>
-          ))}
-        </select>
+            <select
+              value={selectedStaffId}
+              onChange={(e) => setSelectedStaffId(e.target.value)}
+              className="w-full rounded-xl bg-slate-800 p-4 text-white outline-none"
+            >
+              <option value="">Select staff member</option>
 
-        <select
-          value={selectedServiceUser}
-          onChange={(e) => setSelectedServiceUser(e.target.value)}
-          className="w-full rounded-xl bg-slate-800 p-4 text-white outline-none"
-        >
-          <option value="">Select service user</option>
-          {serviceUsers.map((su) => (
-            <option key={su.id} value={su.id}>
-              {su.full_name} — {su.house_name}
-            </option>
-          ))}
-        </select>
+              {staff.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.full_name}{" "}
+                  {person.role === "manager" ? "(Manager)" : "(Staff)"}
+                </option>
+              ))}
+            </select>
 
-        <button
-          onClick={assignAccess}
-          className="w-full rounded-xl bg-blue-500 p-4 font-semibold"
-        >
-          Assign Access
-        </button>
-      </div>
+            <select
+              value={selectedServiceUserId}
+              onChange={(e) => setSelectedServiceUserId(e.target.value)}
+              className="w-full rounded-xl bg-slate-800 p-4 text-white outline-none"
+            >
+              <option value="">Select service user</option>
 
-      <div className="mt-8 space-y-4">
-        {accessRows.map((row) => (
-          <div key={row.id} className="rounded-2xl bg-slate-900 p-5">
-            <h2 className="text-xl font-semibold">
-              {getStaffName(row.staff_id)}
-            </h2>
-            <p className="text-slate-400">
-              Can access: {getServiceUserName(row.service_user_id)}
-            </p>
+              {serviceUsers.map((serviceUser) => (
+                <option key={serviceUser.id} value={serviceUser.id}>
+                  {serviceUser.house_name
+                    ? `${serviceUser.full_name} — ${serviceUser.house_name}`
+                    : serviceUser.full_name}
+                </option>
+              ))}
+            </select>
 
             <button
-              onClick={() => removeAccess(row.id)}
-              className="mt-4 rounded-xl bg-red-600 px-4 py-2 font-semibold"
+              onClick={addAccess}
+              className="w-full rounded-xl bg-blue-500 p-4 font-semibold"
             >
-              Remove Access
+              Assign Access
             </button>
           </div>
-        ))}
-      </div>
-    </main>
+
+          <div className="mt-8 space-y-4">
+            {accessRows.length === 0 && (
+              <p className="text-slate-400">No access permissions assigned.</p>
+            )}
+
+            {accessRows.map((row) => (
+              <AccessRowCard
+                key={row.id}
+                staffName={getStaffName(row.staff_id)}
+                serviceUserName={getServiceUserName(row.service_user_id)}
+                onRemove={() => removeAccess(row.id)}
+              />
+            ))}
+          </div>
+        </div>
+      </main>
+    </AppShell>
   );
 }
