@@ -35,6 +35,8 @@ export default function CompetencyForm({
 }: Props) {
   const [staffId, setStaffId] = useState("");
 
+  const [saving, setSaving] = useState(false);
+
   const [assessmentDate, setAssessmentDate] =
     useState("");
 
@@ -129,9 +131,16 @@ export default function CompetencyForm({
         <input
           type="date"
           value={reviewDate}
-          onChange={(e) =>
-            setReviewDate(e.target.value)
-          }
+          onChange={(e) => {
+  const selectedDate = e.target.value;
+  setAssessmentDate(selectedDate);
+
+  if (selectedDate) {
+    const review = new Date(selectedDate);
+    review.setFullYear(review.getFullYear() + 1);
+    setReviewDate(review.toISOString().slice(0, 10));
+  }
+}}
           className="rounded-2xl bg-slate-900 p-4"
         />
       </div>
@@ -257,23 +266,44 @@ export default function CompetencyForm({
       </div>
 
       <button
-        onClick={() =>
-          onCreate({
-            staffId,
-            assessmentDate,
-            reviewDate,
-            outcome,
-            strengths,
-            developmentAreas,
-            actions,
-            knowledgeResults,
-            practicalResults,
-          })
-        }
-        className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-semibold"
-      >
-        Save Competency
-      </button>
+  disabled={saving}
+  onClick={async () => {
+    if (saving) return;
+
+    setSaving(true);
+
+    try {
+      await onCreate({
+        staffId,
+        assessmentDate,
+        reviewDate,
+        outcome,
+        strengths,
+        developmentAreas,
+        actions,
+        knowledgeResults,
+        practicalResults,
+      });
+
+      setStaffId("");
+      setAssessmentDate("");
+      setReviewDate("");
+      setOutcome("Competent");
+      setStrengths("");
+      setDevelopmentAreas("");
+      setActions([]);
+      setKnowledgeResults({});
+      setPracticalResults({});
+
+      alert("Medication competency logged successfully.");
+    } finally {
+      setSaving(false);
+    }
+  }}
+  className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-semibold disabled:opacity-50"
+>
+  {saving ? "Saving..." : "Save Competency"}
+</button>
     </div>
   );
 }
