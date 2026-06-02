@@ -1,8 +1,9 @@
+import type { Dispatch, SetStateAction } from "react";
 import type { ServiceUser } from "@/lib/admin/service-users/types";
 
 type Props = {
   editing: ServiceUser | null;
-  setEditing: (value: ServiceUser | null) => void;
+  setEditing: Dispatch<SetStateAction<ServiceUser | null>>;
   onSave: () => void;
 };
 
@@ -17,9 +18,13 @@ export default function EditServiceUserModal({
     key: K,
     value: ServiceUser[K]
   ) {
-    setEditing({
-      ...editing,
-      [key]: value,
+    setEditing((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        [key]: value,
+      };
     });
   }
 
@@ -74,9 +79,7 @@ export default function EditServiceUserModal({
 
         <textarea
           value={editing.communication_needs || ""}
-          onChange={(e) =>
-            updateField("communication_needs", e.target.value)
-          }
+          onChange={(e) => updateField("communication_needs", e.target.value)}
           placeholder="Communication needs"
           className="min-h-24 w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
         />
