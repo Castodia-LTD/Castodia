@@ -1,4 +1,4 @@
-import type { CareAudit } from "@/lib/admin/reports/types";
+import type { CareAudit } from "@/lib/admin/reports/service-user/types";
 
 type Props = {
   audit: CareAudit;
