@@ -16,8 +16,8 @@ export const adminMenuItems = [
   },
   {
     href: "/admin/staff",
-    title: "Staff Management",
-    description: "Add staff, set roles and manage access.",
+    title: "User Management",
+    description: "Add users, set roles and manage access.",
   },
   {
     href: "/admin/service-users",
@@ -29,4 +29,14 @@ export const adminMenuItems = [
     title: "Access Permissions",
     description: "Assign staff to service users.",
   },
+    {
+    href: "/admin/supervisions",
+    title: "Staff Supervisions",
+    description: "Create and manage staff supervisions.",
+  },
+  {
+  href: "/admin/competencies",
+  title: "Competencies",
+  description: "Record staff competency assessments and review dates.",
+},
 ];

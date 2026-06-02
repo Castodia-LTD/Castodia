@@ -4,9 +4,17 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import ReportStatCard from "@/components/admin/reports/ReportStatCard";
 import CareAuditCard from "@/components/admin/reports/CareAuditCard";
+import ReportFilters from "@/components/admin/reports/ReportFilters";
+import { supabase } from "@/lib/supabase";
 import type { CareAudit } from "@/lib/admin/reports/types";
 import { daysSince } from "@/lib/admin/reports/date";
-import { supabase } from "@/lib/supabase";
+import { downloadCsv, printReport } from "@/lib/admin/reports/export";
+import { loadReportEntries } from "@/lib/admin/reports/queries";
+
+type ServiceUserOption = {
+  id: string;
+  full_name: string;
+};
 
 const washingTypes = ["Shower", "Bath", "Strip wash"];
 
@@ -21,7 +29,14 @@ export default function ReportsPage() {
   const [toiletingCount, setToiletingCount] = useState(0);
   const [personalCareCount, setPersonalCareCount] = useState(0);
 
+  const [serviceUsers, setServiceUsers] = useState<ServiceUserOption[]>([]);
   const [careAudits, setCareAudits] = useState<CareAudit[]>([]);
+
+  const [selectedServiceUser, setSelectedServiceUser] = useState("all");
+  const [selectedEntryType, setSelectedEntryType] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [reportEntries, setReportEntries] = useState<any[]>([]);
 
   useEffect(() => {
     loadReports();
@@ -70,39 +85,33 @@ export default function ReportsPage() {
       getCount("timeline_entries", (query) =>
         query.gte("event_time", startIso).lte("event_time", endIso)
       ),
-
       getCount("timeline_entries", (query) =>
         query
           .eq("entry_type", "Incident")
           .gte("event_time", startIso)
           .lte("event_time", endIso)
       ),
-
       getCount("timeline_entries", (query) =>
         query
           .eq("entry_type", "Sleep")
           .gte("event_time", startIso)
           .lte("event_time", endIso)
       ),
-
       getCount("medication_administrations", (query) =>
         query
           .eq("round", "PRN")
           .gte("administered_at", startIso)
           .lte("administered_at", endIso)
       ),
-
       getCount("medication_administrations", (query) =>
         query
           .neq("status", "Administered")
           .gte("administered_at", startIso)
           .lte("administered_at", endIso)
       ),
-
       getCount("toileting_records", (query) =>
         query.gte("occurred_at", startIso).lte("occurred_at", endIso)
       ),
-
       getCount("personal_care_records", (query) =>
         query.gte("occurred_at", startIso).lte("occurred_at", endIso)
       ),
@@ -122,15 +131,27 @@ export default function ReportsPage() {
   }
 
   async function loadCareAudits() {
-    const { data: serviceUsers, error: serviceUsersError } = await supabase
+    const { data: serviceUserData, error: serviceUsersError } = await supabase
       .from("service_users")
       .select("id, first_name, surname")
+      .eq("is_active", true)
       .order("first_name", { ascending: true });
 
     if (serviceUsersError) {
       console.error(serviceUsersError);
       return;
     }
+
+    const formattedServiceUsers =
+      serviceUserData?.map((serviceUser) => ({
+        id: serviceUser.id,
+        full_name:
+          `${serviceUser.first_name ?? ""} ${
+            serviceUser.surname ?? ""
+          }`.trim() || "Unnamed service user",
+      })) || [];
+
+    setServiceUsers(formattedServiceUsers);
 
     const { data: personalCareRecords, error: careError } = await supabase
       .from("personal_care_records")
@@ -143,7 +164,7 @@ export default function ReportsPage() {
     }
 
     const audits =
-      serviceUsers?.map((serviceUser) => {
+      serviceUserData?.map((serviceUser) => {
         const records =
           personalCareRecords?.filter(
             (record) => record.service_user_id === serviceUser.id
@@ -176,6 +197,35 @@ export default function ReportsPage() {
     setCareAudits(audits);
   }
 
+  async function runReport() {
+    try {
+      const data = await loadReportEntries({
+        serviceUserId: selectedServiceUser,
+        entryType: selectedEntryType,
+        dateFrom,
+        dateTo,
+      });
+
+      setReportEntries(data);
+    } catch (error) {
+      console.error(error);
+      alert("Unable to generate report.");
+    }
+  }
+
+  function exportCurrentReport() {
+    downloadCsv(
+      "castodia-report.csv",
+      reportEntries.map((entry) => ({
+        Date: entry.event_time,
+        Type: entry.entry_type,
+        Content: entry.content,
+        ServiceUser: entry.service_user_id,
+        Staff: entry.created_by,
+      }))
+    );
+  }
+
   return (
     <AppShell>
       <main className="min-h-screen p-6 text-white">
@@ -183,7 +233,7 @@ export default function ReportsPage() {
           <h1 className="text-3xl font-bold">Reports & Auditing</h1>
 
           <p className="mt-2 text-slate-400">
-            View monthly service data and manager oversight reports.
+            View monthly service data, care audits and export filtered records.
           </p>
 
           {loading ? (
@@ -222,6 +272,71 @@ export default function ReportsPage() {
                     value={personalCareCount}
                   />
                 </div>
+              </section>
+
+              <section className="mt-10">
+                <ReportFilters
+                  serviceUsers={serviceUsers.map((serviceUser) => ({
+                    id: serviceUser.id,
+                    name: serviceUser.full_name,
+                  }))}
+                  selectedServiceUserId={selectedServiceUser}
+                  setSelectedServiceUserId={setSelectedServiceUser}
+                  selectedEntryType={selectedEntryType}
+                  setSelectedEntryType={setSelectedEntryType}
+                  dateFrom={dateFrom}
+                  setDateFrom={setDateFrom}
+                  dateTo={dateTo}
+                  setDateTo={setDateTo}
+                  onApply={runReport}
+                />
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    onClick={exportCurrentReport}
+                    className="rounded-2xl bg-green-600 px-5 py-3 font-semibold"
+                  >
+                    Export CSV
+                  </button>
+
+                  <button
+                    onClick={printReport}
+                    className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold"
+                  >
+                    Print / Save PDF
+                  </button>
+                </div>
+
+                {reportEntries.length > 0 && (
+                  <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6 backdrop-blur">
+                    <h2 className="text-2xl font-bold">Report Results</h2>
+
+                    <div className="mt-4 space-y-3">
+                      {reportEntries.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="rounded-2xl bg-slate-950/50 p-4"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <p className="text-xs font-semibold text-cyan-300">
+                              {entry.entry_type}
+                            </p>
+
+                            <p className="text-xs text-slate-400">
+                              {new Date(entry.event_time).toLocaleString(
+                                "en-GB"
+                              )}
+                            </p>
+                          </div>
+
+                          <p className="mt-2 whitespace-pre-wrap text-slate-100">
+                            {entry.content}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
 
               <section className="mt-10">
