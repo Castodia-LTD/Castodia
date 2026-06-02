@@ -1,4 +1,4 @@
-import type { MedicationProfile } from "@/lib/admin/medications/types";
+import type { MedicationProfile } from "@/lib/admin/medication-profiles/types";
 
 type Props = {
   medication: MedicationProfile;
