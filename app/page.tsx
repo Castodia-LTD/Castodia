@@ -45,7 +45,13 @@ export default function Home() {
             Sign in to continue to your dashboard.
           </p>
 
-          <div className="mt-6 space-y-4">
+          <form
+  className="mt-6 space-y-4"
+  onSubmit={(e) => {
+    e.preventDefault();
+    handleLogin();
+  }}
+>
             <input
               className="w-full rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-white outline-none placeholder:text-slate-500"
               placeholder="Email address"
@@ -62,12 +68,12 @@ export default function Home() {
             />
 
             <button
-              onClick={handleLogin}
-              className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-bold text-white shadow-lg shadow-blue-900/30"
-            >
-              Log in
-            </button>
-          </div>
+  type="submit"
+  className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-bold text-white shadow-lg shadow-blue-900/30"
+>
+  Log in
+</button>
+          </form>.
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-500">
