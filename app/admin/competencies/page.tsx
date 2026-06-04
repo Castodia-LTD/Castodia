@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import CompetencyForm from "@/components/admin/competencies/CompetencyForm";
 import CompetencyCard from "@/components/admin/competencies/CompetencyCard";
 import { supabase } from "@/lib/supabase";
@@ -177,7 +177,7 @@ export default function CompetenciesPage() {
   }, []);
 
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-3xl font-bold">Competencies</h1>
@@ -271,6 +271,6 @@ export default function CompetenciesPage() {
           </section>
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

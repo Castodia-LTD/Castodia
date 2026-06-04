@@ -1,10 +1,10 @@
 "use client";
 
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 
 export default function StaffReportsPage() {
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-5xl">
           <h1 className="text-3xl font-bold">Staff Reports & Auditing</h1>
@@ -15,6 +15,6 @@ export default function StaffReportsPage() {
           </p>
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

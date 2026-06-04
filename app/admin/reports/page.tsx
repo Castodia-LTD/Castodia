@@ -1,6 +1,6 @@
 "use client";
 
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import AdminMenuCard from "@/components/admin/AdminMenuCard";
 
 const reportMenuItems = [
@@ -20,7 +20,7 @@ const reportMenuItems = [
 
 export default function ReportsMenuPage() {
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-5xl">
           <h1 className="text-3xl font-bold">Reports & Auditing</h1>
@@ -42,6 +42,6 @@ export default function ReportsMenuPage() {
           </div>
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

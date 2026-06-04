@@ -1,12 +1,12 @@
 "use client";
 
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import AdminMenuCard from "@/components/admin/AdminMenuCard";
 import { adminMenuItems } from "@/lib/admin/constants";
 
 export default function AdminPage() {
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-5xl">
           <h1 className="text-3xl font-bold">Admin Portal</h1>
@@ -27,6 +27,6 @@ export default function AdminPage() {
           </div>
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

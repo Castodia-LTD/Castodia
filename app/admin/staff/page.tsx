@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import StaffCard from "@/components/admin/staff/StaffCard";
 import { supabase } from "@/lib/supabase";
 import type { Staff } from "@/lib/admin/staff/types";
@@ -91,7 +91,7 @@ export default function StaffAdminPage() {
   }, []);
 
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-5xl">
           <h1 className="text-3xl font-bold">Staff Management</h1>
@@ -145,6 +145,6 @@ export default function StaffAdminPage() {
           </div>
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

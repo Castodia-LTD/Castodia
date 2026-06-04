@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import AccessRowCard from "@/components/admin/permissions/AccessRowCard";
 import { supabase } from "@/lib/supabase";
 
@@ -156,7 +156,7 @@ export default function StaffServiceUserAccessPage() {
   }, []);
 
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-5xl">
           <h1 className="text-3xl font-bold">Access Permissions</h1>
@@ -223,6 +223,6 @@ export default function StaffServiceUserAccessPage() {
           </div>
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

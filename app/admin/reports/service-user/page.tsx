@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import ReportStatCard from "@/components/admin/reports/ReportStatCard";
 import CareAuditCard from "@/components/admin/reports/CareAuditCard";
 import ReportFilters from "@/components/admin/reports/ReportFilters";
@@ -227,7 +227,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-3xl font-bold">Reports & Auditing</h1>
@@ -356,6 +356,6 @@ export default function ReportsPage() {
           )}
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

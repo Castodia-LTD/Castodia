@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import SupervisionCard from "@/components/admin/supervisions/SupervisionCard";
 import SupervisionForm from "@/components/admin/supervisions/SupervisionForm";
 import { supabase } from "@/lib/supabase";
@@ -172,7 +172,7 @@ async function searchSupervisions() {
   setHasSearched(true);
 }
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-3xl font-bold">Supervisions</h1>
@@ -266,6 +266,6 @@ async function searchSupervisions() {
           </section>
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

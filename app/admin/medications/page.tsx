@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import MedicationProfileCard from "@/components/admin/medication-profiles/MedicationProfileCard";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -151,7 +151,7 @@ export default function AdminMedicationsPage() {
   }, [selectedServiceUser]);
 
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto w-full max-w-screen-lg">
           <h1 className="text-3xl font-bold">Medication Profiles</h1>
@@ -310,6 +310,6 @@ export default function AdminMedicationsPage() {
           )}
         </div>
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
+import ManagerShell from "@/components/layouts/ManagerShell";
 import CreateServiceUserForm from "@/components/admin/service-users/CreateServiceUserForm";
 import EditServiceUserModal from "@/components/admin/service-users/EditServiceUserModal";
 import ServiceUserCard from "@/components/admin/service-users/ServiceUserCard";
@@ -166,7 +166,7 @@ export default function AdminServiceUsersPage() {
   }, []);
 
   return (
-    <AppShell>
+    <ManagerShell>
       <main className="min-h-screen p-6 text-white">
         <div className="mx-auto max-w-5xl">
           <h1 className="text-3xl font-bold">Service Users</h1>
@@ -207,6 +207,6 @@ export default function AdminServiceUsersPage() {
           onSave={saveProfile}
         />
       </main>
-    </AppShell>
+    </ManagerShell>
   );
 }
