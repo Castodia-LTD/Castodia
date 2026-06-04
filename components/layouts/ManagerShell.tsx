@@ -108,6 +108,15 @@ export default function ManagerShell({
           >
             Switch to Support Portal
           </Link>
+          <button
+  onClick={async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }}
+  className="mt-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-semibold text-red-300 hover:bg-red-500/20"
+>
+  Log Out
+</button>
         </aside>
 
         <section className="flex-1 pb-24 md:pb-0">{children}</section>
