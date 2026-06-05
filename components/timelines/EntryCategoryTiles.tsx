@@ -38,12 +38,14 @@ export default function EntryCategoryTiles({
         <div className="grid grid-cols-2 gap-4">
           {selectedCategory.options.map((option) => (
             <button
-              key={option}
-              onClick={() => setEntryType(option)}
-              className={`min-h-28 rounded-3xl p-5 text-left shadow-xl transition hover:scale-[1.02] ${selectedCategory.colour}`}
+              key={option.entryType}
+              onClick={() => setEntryType(option.entryType)}
+              className={`min-h-32 rounded-3xl p-5 text-left shadow-xl transition hover:scale-[1.02] ${selectedCategory.colour}`}
             >
-              <p className="text-lg font-bold">{option}</p>
-              <p className="mt-2 text-xs opacity-75">Tap to continue</p>
+              <p className="text-lg font-bold">{option.label}</p>
+              <p className="mt-2 text-sm opacity-80">
+                {option.description}
+              </p>
             </button>
           ))}
         </div>
@@ -64,17 +66,26 @@ export default function EntryCategoryTiles({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {entryCategories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => setSelectedCategoryId(category.id)}
-            className={`min-h-32 rounded-3xl p-5 text-left shadow-xl transition hover:scale-[1.02] ${category.colour}`}
-          >
-            <p className="text-lg font-bold">{category.title}</p>
-            <p className="mt-2 text-sm opacity-80">{category.description}</p>
-          </button>
-        ))}
-      </div>
+  {entryCategories.map((category) => {
+    const isIncident = category.id === "incident";
+
+    return (
+      <button
+        key={category.id}
+        onClick={() => setSelectedCategoryId(category.id)}
+        className={`rounded-3xl p-5 text-left shadow-xl transition hover:scale-[1.02] ${
+          isIncident ? "col-span-2 min-h-28" : "min-h-36"
+        } ${category.colour}`}
+      >
+        <div className="flex h-full items-center justify-center text-center">
+  <p className="text-xl font-bold">
+    {category.title}
+  </p>
+</div>
+      </button>
+    );
+  })}
+</div>
     </div>
   );
 }
