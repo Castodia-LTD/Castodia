@@ -151,9 +151,9 @@ export const entryCategories: EntryCategory[] = [
         description: "Record an accident or injury using incident format.",
       },
       {
-        label: "Fall",
-        entryType: "Incident",
-        description: "Record a fall or fall-related incident.",
+        label: "body-map",
+        entryType: "Body Map",
+         description: "Record injuries, marks, bruising or other observations using a body map."
       },
       {
         label: "Behaviour Incident",
