@@ -23,7 +23,7 @@ import {
 export default function ServiceUserPage() {
   const params = useParams();
   const serviceUserId = params.id as string;
-
+  const [organisationId, setOrganisationId] = useState("");
   const entryPanelRef = useRef<HTMLDivElement | null>(null);
 
   const [serviceUser, setServiceUser] = useState<ServiceUser | null>(null);
@@ -87,7 +87,8 @@ export default function ServiceUserPage() {
   const [communityDestination, setCommunityDestination] = useState("");
   const [communityTransport, setCommunityTransport] = useState("");
   const [communitySupportProvided, setCommunitySupportProvided] = useState("");
-
+  const [bodyMapMarkers, setBodyMapMarkers] = useState<any[]>([]);
+  const [bodyMapNotes, setBodyMapNotes] = useState("");
   const viewingToday = isSameDay(selectedDate, new Date());
 
   const serviceUserName =
@@ -130,6 +131,8 @@ export default function ServiceUserPage() {
 
     setSleepStatus("");
     setSleepNotes("");
+    setBodyMapMarkers([]);
+    setBodyMapNotes("");
   }
 
   async function loadServiceUser() {
@@ -149,6 +152,7 @@ export default function ServiceUserPage() {
       alert("Organisation not found.");
       return;
     }
+setOrganisationId(profile.organisation_id);
 
     const { data, error } = await supabase
       .from("service_users")
@@ -157,6 +161,7 @@ export default function ServiceUserPage() {
         id,
         first_name,
         surname,
+        gender,
         continence_care_enabled,
         track_pad_changes,
         track_bristol_stool_chart
@@ -254,31 +259,35 @@ export default function ServiceUserPage() {
 
     if (saveHandler) {
       await saveHandler({
-        supabase,
-        serviceUserId,
-        userId: user.id,
-        eventTime,
-        resetEntryPanel,
-        setEntryPanelOpen,
-        loadEntries,
+  supabase,
+  organisationId,
+  serviceUserId,
+  userId: user.id,
+  eventTime,
+  resetEntryPanel,
+  setEntryPanelOpen,
+  loadEntries,
 
-        activityTitle,
-        activityLocation,
-        activityPeople,
-        activityParticipation,
-        activityOutcome,
-        activityNotes,
+  activityTitle,
+  activityLocation,
+  activityPeople,
+  activityParticipation,
+  activityOutcome,
+  activityNotes,
 
-        communityDestination,
-        communityTransport,
-        communitySupportProvided,
+  communityDestination,
+  communityTransport,
+  communitySupportProvided,
 
-        behaviourObserved,
-        behaviourFrequency,
-        behaviourSupportProvided,
-        behaviourOutcome,
-        behaviourNotes,
-      });
+  behaviourObserved,
+  behaviourFrequency,
+  behaviourSupportProvided,
+  behaviourOutcome,
+  behaviourNotes,
+
+  bodyMapMarkers,
+  bodyMapNotes,
+});
 
       return;
     }
@@ -397,7 +406,11 @@ ${consequence.trim()}`
             )}
 
             {filteredEntries.map((entry) => (
-              <TimelineEntryCard key={entry.id} entry={entry} />
+              <TimelineEntryCard
+  key={entry.id}
+  entry={entry}
+  serviceUserGender={serviceUser?.gender}
+/>
             ))}
           </div>
         </div>
@@ -574,6 +587,11 @@ ${consequence.trim()}`
                     setBehaviour={setBehaviour}
                     consequence={consequence}
                     setConsequence={setConsequence}
+                    bodyMapMarkers={bodyMapMarkers}
+                    setBodyMapMarkers={setBodyMapMarkers}
+                    bodyMapNotes={bodyMapNotes}
+                    setBodyMapNotes={setBodyMapNotes}
+                    serviceUserGender={serviceUser?.gender}
                   />
                 ) : (
                   <input

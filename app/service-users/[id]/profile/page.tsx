@@ -11,6 +11,7 @@ import {
   MessageSquare,
   ShieldAlert,
   StickyNote,
+  UserRound,
 } from "lucide-react";
 
 type ServiceUser = {
@@ -19,6 +20,7 @@ type ServiceUser = {
   surname: string | null;
   photo_url: string | null;
   house_name: string | null;
+  gender: string | null;
   key_notes: string | null;
   allergies: string | null;
   communication_needs: string | null;
@@ -64,6 +66,7 @@ export default function ServiceUserProfilePage() {
         surname,
         photo_url,
         house_name,
+        gender,
         key_notes,
         allergies,
         communication_needs,
@@ -129,6 +132,15 @@ export default function ServiceUserProfilePage() {
         </div>
 
         <div className="mt-6 space-y-4">
+          <ProfileCard
+            icon={<UserRound size={22} />}
+            title="Service User Details"
+            subtitle="Basic profile information used across Castodia."
+            content={`Gender: ${serviceUser.gender || "Not recorded"}`}
+            emptyText="No details recorded."
+            colour="cyan"
+          />
+
           <ProfileCard
             icon={<StickyNote size={22} />}
             title="Key Notes"

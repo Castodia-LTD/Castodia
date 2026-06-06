@@ -55,7 +55,19 @@ export default function EditServiceUserModal({
           placeholder="Surname"
           className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
         />
+        <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Gender</label>
 
+        <select
+          value={editing.gender || ""}
+          onChange={(e) => updateField("gender", e.target.value || null)}
+          className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+         >
+          <option value="">Not recorded</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          </select>
+        </div>
         <input
           value={editing.house_name || ""}
           onChange={(e) => updateField("house_name", e.target.value)}

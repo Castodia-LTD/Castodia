@@ -48,6 +48,7 @@ export default function AdminServiceUsersPage() {
         id,
         first_name,
         surname,
+        gender,
         house_name,
         photo_url,
         key_notes,
@@ -116,6 +117,7 @@ export default function AdminServiceUsersPage() {
       .update({
         first_name: editing.first_name.trim(),
         surname: editing.surname.trim(),
+        gender: editing.gender || null,
         house_name: editing.house_name?.trim() || null,
         photo_url: editing.photo_url?.trim() || null,
         key_notes: editing.key_notes?.trim() || null,
@@ -180,6 +182,7 @@ export default function AdminServiceUsersPage() {
             setFirstName={setFirstName}
             surname={surname}
             setSurname={setSurname}
+            
             houseName={houseName}
             setHouseName={setHouseName}
             onCreate={createServiceUser}

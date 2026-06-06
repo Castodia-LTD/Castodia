@@ -14,4 +14,5 @@ export type ServiceUser = {
   id: string;
   first_name: string | null;
   surname: string | null;
+  gender: string | null;
 };

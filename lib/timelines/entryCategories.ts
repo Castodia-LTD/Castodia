@@ -75,11 +75,6 @@ export const entryCategories: EntryCategory[] = [
         description: "Record clinical care or health-related support.",
       },
       {
-        label: "Body Map",
-        entryType: "Body Map",
-        description: "Record marks, bruising, injury location or body map evidence.",
-      },
-      {
         label: "eMAR",
         entryType: "Medication",
         description: "Record medication administration.",
@@ -151,7 +146,7 @@ export const entryCategories: EntryCategory[] = [
         description: "Record an accident or injury using incident format.",
       },
       {
-        label: "body-map",
+        label: "Body Map",
         entryType: "Body Map",
          description: "Record injuries, marks, bruising or other observations using a body map."
       },

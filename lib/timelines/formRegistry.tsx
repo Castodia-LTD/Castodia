@@ -10,6 +10,7 @@ import ContactVisitForm from "@/components/timelines/forms/activities/ContactVis
 import ShoppingForm from "@/components/timelines/forms/activities/ShoppingForm";
 import HouseholdTasksForm from "@/components/timelines/forms/activities/HouseholdTasksForm";
 import BehaviourObservationForm from "@/components/timelines/forms/wellbeing/BehaviourObservationForm";
+import BodyMapForm from "@/components/timelines/forms/incidents/BodyMapForm";
 
 export const formRegistry: Record<string, any> = {
   Activity: (props: any) => (
@@ -195,6 +196,15 @@ export const formRegistry: Record<string, any> = {
       setBehaviourOutcome={props.setBehaviourOutcome}
       behaviourNotes={props.behaviourNotes}
       setBehaviourNotes={props.setBehaviourNotes}
+    />
+  ),
+    "Body Map": (props: any) => (
+    <BodyMapForm
+      bodyMapMarkers={props.bodyMapMarkers}
+      setBodyMapMarkers={props.setBodyMapMarkers}
+      bodyMapNotes={props.bodyMapNotes}
+      setBodyMapNotes={props.setBodyMapNotes}
+      serviceUserGender={props.serviceUserGender}
     />
   ),
 };

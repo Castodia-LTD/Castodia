@@ -2,6 +2,7 @@ export type ServiceUser = {
   id: string;
   first_name: string;
   surname: string;
+  gender: string | null;
   house_name: string | null;
   photo_url: string | null;
   key_notes: string | null;
