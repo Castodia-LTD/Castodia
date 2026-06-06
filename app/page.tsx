@@ -1,85 +1,91 @@
-"use client";
-
 import Image from "next/image";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
-export default function Home() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  async function handleLogin() {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    router.push("/dashboard");
-  }
+export default function HomePage() {
+  const features = [
+    "Service User Timelines",
+    "eMAR",
+    "Incident Recording",
+    "Behaviour Monitoring",
+    "Wellbeing Tracking",
+    "Digital Body Maps",
+    "Handover Management",
+    "Reporting & Analytics",
+  ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
+    <main className="min-h-screen bg-slate-950 text-white">
+      <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8 sm:px-10 lg:px-14">
+        <header className="flex items-center justify-end">
+          <Link
+            href="/login"
+            className="rounded-full border border-white/15 bg-white/10 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/20"
+          >
+            Log in
+          </Link>
+        </header>
 
-        <div className="mb-8 flex justify-center">
-          <Image
-            src="/logo.png"
-            alt="Castodia"
-            width={340}
-            height={100}
-            priority
-          />
-        </div>
+        <section className="grid flex-1 items-center gap-14 py-16 lg:grid-cols-[1.08fr_0.92fr] lg:py-20">
+          <div>
+            <div className="mb-10">
+              <Image
+                src="/logo.png"
+                alt="Castodia"
+                width={430}
+                height={125}
+                priority
+                className="drop-shadow-[0_0_35px_rgba(45,212,191,0.18)]"
+              />
+            </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur">
-          <h2 className="text-xl font-semibold">Welcome back</h2>
+            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.35em] text-teal-300">
+              Helping teams care more
+            </p>
 
-          <p className="mt-1 text-sm text-slate-300">
-            Sign in to continue to your dashboard.
-          </p>
+            <h1 className="max-w-4xl text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+              Built around care.
+Designed for teams.
+            </h1>
 
-          <form
-  className="mt-6 space-y-4"
-  onSubmit={(e) => {
-    e.preventDefault();
-    handleLogin();
-  }}
->
-            <input
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-white outline-none placeholder:text-slate-500"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <p className="mt-8 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
+              Castodia is developed by experienced health and social care professionals who understand the challenges faced by providers, managers and frontline staff. Every feature is designed with real-world practice in mind.
+            </p>
 
-            <input
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-white outline-none placeholder:text-slate-500"
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="mt-10 inline-flex rounded-full border border-teal-300/25 bg-teal-300/10 px-5 py-3 text-sm font-semibold text-teal-200">
+              Currently under active development by Castodia LTD
+            </div>
+          </div>
 
-            <button
-  type="submit"
-  className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-bold text-white shadow-lg shadow-blue-900/30"
->
-  Log in
-</button>
-          </form>.
-        </div>
+          <div className="rounded-[2rem] border border-white/10 bg-white/10 p-6 shadow-2xl shadow-black/30 backdrop-blur">
+            <div className="rounded-[1.5rem] bg-slate-900/90 p-6">
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                Platform areas
+              </p>
 
-        <p className="mt-6 text-center text-xs text-slate-500">
-          Powered by Castodia
-        </p>
-      </div>
+              <div className="mt-6 grid gap-3">
+                {features.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-100"
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-400/20 text-xs text-teal-300">
+                      ✓
+                    </span>
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer className="border-t border-white/10 py-6">
+          <div className="flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 Castodia LTD</p>
+            <p>Digital care management software in development.</p>
+          </div>
+        </footer>
+      </section>
     </main>
   );
 }
