@@ -7,15 +7,13 @@ import { supabase } from "@/lib/supabase";
 import AppShell from "@/components/AppShell";
 import TimelineHeader from "@/components/timelines/TimelineHeader";
 import TimelineEntryCard from "@/components/timelines/TimelineEntryCard";
-import MedicationForm from "@/components/timelines/MedicationForm";
-import ToiletingForm from "@/components/timelines/ToiletingForm";
-import PersonalCareForm from "@/components/timelines/PersonalCareForm";
-import SleepForm from "@/components/timelines/SleepForm";
 import EntryCategoryTiles from "@/components/timelines/EntryCategoryTiles";
-import WellbeingObservationForm from "@/components/wellbeing/WellbeingObservationForm";
 
 import { filters } from "@/lib/timelines/constants";
+import { formRegistry } from "@/lib/timelines/formRegistry";
+import { saveRegistry } from "@/lib/timelines/saveRegistry";
 import type { ServiceUser, TimelineEntry } from "@/lib/timelines/types";
+
 import {
   combineDateAndTime,
   getTimeNow,
@@ -26,12 +24,13 @@ export default function ServiceUserPage() {
   const params = useParams();
   const serviceUserId = params.id as string;
 
+  const entryPanelRef = useRef<HTMLDivElement | null>(null);
+
   const [serviceUser, setServiceUser] = useState<ServiceUser | null>(null);
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [content, setContent] = useState("");
 
   const [entryType, setEntryType] = useState("");
-  const entryPanelRef = useRef<HTMLDivElement | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null
   );
@@ -46,6 +45,14 @@ export default function ServiceUserPage() {
   const [antecedent, setAntecedent] = useState("");
   const [behaviour, setBehaviour] = useState("");
   const [consequence, setConsequence] = useState("");
+
+  const [behaviourObserved, setBehaviourObserved] = useState<string[]>([]);
+  const [behaviourFrequency, setBehaviourFrequency] = useState("");
+  const [behaviourSupportProvided, setBehaviourSupportProvided] = useState<
+    string[]
+  >([]);
+  const [behaviourOutcome, setBehaviourOutcome] = useState("");
+  const [behaviourNotes, setBehaviourNotes] = useState("");
 
   const [medicationProfiles, setMedicationProfiles] = useState<any[]>([]);
   const [selectedRound, setSelectedRound] = useState("Morning");
@@ -70,6 +77,17 @@ export default function ServiceUserPage() {
   const [sleepStatus, setSleepStatus] = useState("");
   const [sleepNotes, setSleepNotes] = useState("");
 
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityLocation, setActivityLocation] = useState("");
+  const [activityPeople, setActivityPeople] = useState("");
+  const [activityParticipation, setActivityParticipation] = useState("");
+  const [activityOutcome, setActivityOutcome] = useState("");
+  const [activityNotes, setActivityNotes] = useState("");
+
+  const [communityDestination, setCommunityDestination] = useState("");
+  const [communityTransport, setCommunityTransport] = useState("");
+  const [communitySupportProvided, setCommunitySupportProvided] = useState("");
+
   const viewingToday = isSameDay(selectedDate, new Date());
 
   const serviceUserName =
@@ -81,14 +99,37 @@ export default function ServiceUserPage() {
       ? entries
       : entries.filter((entry) => entry.entry_type === activeFilter);
 
+  const SelectedForm = formRegistry[entryType];
+
   function resetEntryPanel() {
     setContent("");
-    setAntecedent("");
-    setBehaviour("");
-    setConsequence("");
     setEntryType("");
     setSelectedCategoryId(null);
     setEntryTime(getTimeNow());
+
+    setAntecedent("");
+    setBehaviour("");
+    setConsequence("");
+
+    setBehaviourObserved([]);
+    setBehaviourFrequency("");
+    setBehaviourSupportProvided([]);
+    setBehaviourOutcome("");
+    setBehaviourNotes("");
+
+    setActivityTitle("");
+    setActivityLocation("");
+    setActivityPeople("");
+    setActivityParticipation("");
+    setActivityOutcome("");
+    setActivityNotes("");
+
+    setCommunityDestination("");
+    setCommunityTransport("");
+    setCommunitySupportProvided("");
+
+    setSleepStatus("");
+    setSleepNotes("");
   }
 
   async function loadServiceUser() {
@@ -111,14 +152,16 @@ export default function ServiceUserPage() {
 
     const { data, error } = await supabase
       .from("service_users")
-      .select(`
+      .select(
+        `
         id,
         first_name,
         surname,
         continence_care_enabled,
         track_pad_changes,
         track_bristol_stool_chart
-      `)
+      `
+      )
       .eq("id", serviceUserId)
       .eq("organisation_id", profile.organisation_id)
       .single();
@@ -207,6 +250,39 @@ export default function ServiceUserPage() {
 
     const eventTime = combineDateAndTime(new Date(), entryTime);
 
+    const saveHandler = saveRegistry[entryType];
+
+    if (saveHandler) {
+      await saveHandler({
+        supabase,
+        serviceUserId,
+        userId: user.id,
+        eventTime,
+        resetEntryPanel,
+        setEntryPanelOpen,
+        loadEntries,
+
+        activityTitle,
+        activityLocation,
+        activityPeople,
+        activityParticipation,
+        activityOutcome,
+        activityNotes,
+
+        communityDestination,
+        communityTransport,
+        communitySupportProvided,
+
+        behaviourObserved,
+        behaviourFrequency,
+        behaviourSupportProvided,
+        behaviourOutcome,
+        behaviourNotes,
+      });
+
+      return;
+    }
+
     if (entryType === "Sleep") {
       if (!sleepStatus) return alert("Please select sleep status.");
 
@@ -224,8 +300,6 @@ export default function ServiceUserPage() {
 
       if (error) return alert(error.message);
 
-      setSleepStatus("");
-      setSleepNotes("");
       resetEntryPanel();
       setEntryPanelOpen(false);
       await loadEntries();
@@ -282,14 +356,15 @@ ${consequence.trim()}`
   useEffect(() => {
     loadMedicationProfiles();
   }, [serviceUserId]);
-useEffect(() => {
-  if (!entryPanelRef.current) return;
 
-  entryPanelRef.current.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}, [selectedCategoryId, entryType]);
+  useEffect(() => {
+    if (!entryPanelRef.current) return;
+
+    entryPanelRef.current.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [selectedCategoryId, entryType]);
 
   return (
     <AppShell>
@@ -377,9 +452,9 @@ useEffect(() => {
 
         {viewingToday && entryPanelOpen && (
           <div
-  ref={entryPanelRef}
-  className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl space-y-4 overflow-y-auto border-l border-white/10 bg-slate-950/95 p-6 shadow-2xl backdrop-blur md:left-auto"
->
+            ref={entryPanelRef}
+            className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl space-y-4 overflow-y-auto border-l border-white/10 bg-slate-950/95 p-6 shadow-2xl backdrop-blur md:left-auto"
+          >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Add Entry</h2>
 
@@ -428,31 +503,43 @@ useEffect(() => {
                   className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
                 />
 
-                {entryType === "Incident" ? (
-                  <div className="space-y-2">
-                    <textarea
-                      value={antecedent}
-                      onChange={(e) => setAntecedent(e.target.value)}
-                      placeholder="Antecedent — what happened before?"
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-                    />
-
-                    <textarea
-                      value={behaviour}
-                      onChange={(e) => setBehaviour(e.target.value)}
-                      placeholder="Behaviour — what happened?"
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-                    />
-
-                    <textarea
-                      value={consequence}
-                      onChange={(e) => setConsequence(e.target.value)}
-                      placeholder="Consequence / Outcome — what happened afterwards?"
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-                    />
-                  </div>
-                ) : entryType === "Medication" ? (
-                  <MedicationForm
+                {SelectedForm ? (
+                  <SelectedForm
+                    serviceUserId={serviceUserId}
+                    serviceUserName={serviceUserName}
+                    onSaved={async () => {
+                      resetEntryPanel();
+                      setEntryPanelOpen(false);
+                      await loadEntries();
+                    }}
+                    activityTitle={activityTitle}
+                    setActivityTitle={setActivityTitle}
+                    activityLocation={activityLocation}
+                    setActivityLocation={setActivityLocation}
+                    activityPeople={activityPeople}
+                    setActivityPeople={setActivityPeople}
+                    activityParticipation={activityParticipation}
+                    setActivityParticipation={setActivityParticipation}
+                    activityOutcome={activityOutcome}
+                    setActivityOutcome={setActivityOutcome}
+                    activityNotes={activityNotes}
+                    setActivityNotes={setActivityNotes}
+                    communityDestination={communityDestination}
+                    setCommunityDestination={setCommunityDestination}
+                    communityTransport={communityTransport}
+                    setCommunityTransport={setCommunityTransport}
+                    communitySupportProvided={communitySupportProvided}
+                    setCommunitySupportProvided={setCommunitySupportProvided}
+                    behaviourObserved={behaviourObserved}
+                    setBehaviourObserved={setBehaviourObserved}
+                    behaviourFrequency={behaviourFrequency}
+                    setBehaviourFrequency={setBehaviourFrequency}
+                    behaviourSupportProvided={behaviourSupportProvided}
+                    setBehaviourSupportProvided={setBehaviourSupportProvided}
+                    behaviourOutcome={behaviourOutcome}
+                    setBehaviourOutcome={setBehaviourOutcome}
+                    behaviourNotes={behaviourNotes}
+                    setBehaviourNotes={setBehaviourNotes}
                     selectedRound={selectedRound}
                     setSelectedRound={setSelectedRound}
                     medicationProfiles={medicationProfiles}
@@ -460,9 +547,6 @@ useEffect(() => {
                     setMedicationStatuses={setMedicationStatuses}
                     medicationReasons={medicationReasons}
                     setMedicationReasons={setMedicationReasons}
-                  />
-                ) : entryType === "Toileting" ? (
-                  <ToiletingForm
                     toiletingOutcome={toiletingOutcome}
                     setToiletingOutcome={setToiletingOutcome}
                     assistanceRequired={assistanceRequired}
@@ -474,32 +558,22 @@ useEffect(() => {
                     toiletingNotes={toiletingNotes}
                     setToiletingNotes={setToiletingNotes}
                     continenceSettings={continenceSettings}
-                  />
-                ) : entryType === "Personal Care" ? (
-                  <PersonalCareForm
                     careType={careType}
                     setCareType={setCareType}
                     assistanceLevel={assistanceLevel}
                     setAssistanceLevel={setAssistanceLevel}
                     personalCareNotes={personalCareNotes}
                     setPersonalCareNotes={setPersonalCareNotes}
-                  />
-                ) : entryType === "Sleep" ? (
-                  <SleepForm
                     sleepStatus={sleepStatus}
                     setSleepStatus={setSleepStatus}
                     sleepNotes={sleepNotes}
                     setSleepNotes={setSleepNotes}
-                  />
-                ) : entryType === "Wellbeing" ? (
-                  <WellbeingObservationForm
-                    serviceUserId={serviceUserId}
-                    serviceUserName={serviceUserName}
-                    onSaved={async () => {
-                      resetEntryPanel();
-                      setEntryPanelOpen(false);
-                      await loadEntries();
-                    }}
+                    antecedent={antecedent}
+                    setAntecedent={setAntecedent}
+                    behaviour={behaviour}
+                    setBehaviour={setBehaviour}
+                    consequence={consequence}
+                    setConsequence={setConsequence}
                   />
                 ) : (
                   <input
