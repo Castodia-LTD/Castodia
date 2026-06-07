@@ -152,7 +152,7 @@ export const entryCategories: EntryCategory[] = [
       },
       {
         label: "Behaviour Incident",
-        entryType: "Incident",
+        entryType: "Behaviour Incident",
         description: "Record a behaviour incident requiring incident review.",
       },
       {

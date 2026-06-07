@@ -90,7 +90,14 @@ export default function ServiceUserPage() {
   const [bodyMapMarkers, setBodyMapMarkers] = useState<any[]>([]);
   const [bodyMapNotes, setBodyMapNotes] = useState("");
   const viewingToday = isSameDay(selectedDate, new Date());
-
+  const [behaviourIncidentTrigger, setBehaviourIncidentTrigger] = useState("");
+  const [behaviourIncidentTypes, setBehaviourIncidentTypes] = useState<string[]>([]);
+  const [behaviourIncidentDescription, setBehaviourIncidentDescription] = useState("");
+  const [behaviourIncidentSupport, setBehaviourIncidentSupport] = useState<string[]>([]);
+  const [linkedPrnAdministrationId, setLinkedPrnAdministrationId] = useState("");
+  const [behaviourIncidentOutcomes, setBehaviourIncidentOutcomes] = useState<string[]>([]);
+  const [behaviourIncidentNotes, setBehaviourIncidentNotes] = useState("");
+  const [prnOptions, setPrnOptions] = useState<{ id: string; label: string }[]>([]);
   const serviceUserName =
     `${serviceUser?.first_name ?? ""} ${serviceUser?.surname ?? ""}`.trim() ||
     "Service user";
@@ -133,6 +140,14 @@ export default function ServiceUserPage() {
     setSleepNotes("");
     setBodyMapMarkers([]);
     setBodyMapNotes("");
+
+    setBehaviourIncidentTrigger("");
+    setBehaviourIncidentTypes([]);
+    setBehaviourIncidentDescription("");
+    setBehaviourIncidentSupport([]);
+    setLinkedPrnAdministrationId("");
+    setBehaviourIncidentOutcomes([]);
+    setBehaviourIncidentNotes("");
   }
 
   async function loadServiceUser() {
@@ -287,6 +302,13 @@ setOrganisationId(profile.organisation_id);
 
   bodyMapMarkers,
   bodyMapNotes,
+  behaviourIncidentTrigger,
+  behaviourIncidentTypes,
+  behaviourIncidentDescription,
+  behaviourIncidentSupport,
+  linkedPrnAdministrationId,
+  behaviourIncidentOutcomes,
+  behaviourIncidentNotes,
 });
 
       return;
@@ -592,6 +614,21 @@ ${consequence.trim()}`
                     bodyMapNotes={bodyMapNotes}
                     setBodyMapNotes={setBodyMapNotes}
                     serviceUserGender={serviceUser?.gender}
+                    behaviourIncidentTrigger={behaviourIncidentTrigger}
+                    setBehaviourIncidentTrigger={setBehaviourIncidentTrigger}
+                    behaviourIncidentTypes={behaviourIncidentTypes}
+                    setBehaviourIncidentTypes={setBehaviourIncidentTypes}
+                    behaviourIncidentDescription={behaviourIncidentDescription}
+                    setBehaviourIncidentDescription={setBehaviourIncidentDescription}
+                    behaviourIncidentSupport={behaviourIncidentSupport}
+                    setBehaviourIncidentSupport={setBehaviourIncidentSupport}
+                    linkedPrnAdministrationId={linkedPrnAdministrationId}
+                    setLinkedPrnAdministrationId={setLinkedPrnAdministrationId}
+                    behaviourIncidentOutcomes={behaviourIncidentOutcomes}
+                    setBehaviourIncidentOutcomes={setBehaviourIncidentOutcomes}
+                    behaviourIncidentNotes={behaviourIncidentNotes}
+                    setBehaviourIncidentNotes={setBehaviourIncidentNotes}
+                    prnOptions={prnOptions}
                   />
                 ) : (
                   <input

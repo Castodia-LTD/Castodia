@@ -26,6 +26,14 @@ type SaveContext = {
   bodyMapMarkers: any[];
   bodyMapNotes: string;
   organisationId: string;
+
+  behaviourIncidentTrigger: string;
+  behaviourIncidentTypes: string[];
+  behaviourIncidentDescription: string;
+  behaviourIncidentSupport: string[];
+  linkedPrnAdministrationId: string;
+  behaviourIncidentOutcomes: string[];
+  behaviourIncidentNotes: string;
 };
 
 export const saveRegistry: Record<
@@ -454,6 +462,74 @@ ${additionalNotes}`
 
   if (markerError) {
     alert(markerError.message);
+    return false;
+  }
+
+  ctx.resetEntryPanel();
+  ctx.setEntryPanelOpen(false);
+  await ctx.loadEntries();
+
+  return true;
+},
+"Behaviour Incident": async (ctx) => {
+  if (!ctx.behaviourIncidentTrigger.trim()) {
+    alert("Please record what happened before.");
+    return false;
+  }
+
+  if (ctx.behaviourIncidentTypes.length === 0) {
+    alert("Please select at least one behaviour type.");
+    return false;
+  }
+
+  if (!ctx.behaviourIncidentDescription.trim()) {
+    alert("Please describe what happened.");
+    return false;
+  }
+
+  if (ctx.behaviourIncidentSupport.length === 0) {
+    alert("Please select support provided.");
+    return false;
+  }
+
+  if (ctx.behaviourIncidentOutcomes.length === 0) {
+    alert("Please select the immediate outcome.");
+    return false;
+  }
+
+  const finalContent = `Behaviour Incident
+
+What happened before:
+${ctx.behaviourIncidentTrigger.trim()}
+
+Behaviour Type:
+${ctx.behaviourIncidentTypes.map((item) => `• ${item}`).join("\n")}
+
+What happened:
+${ctx.behaviourIncidentDescription.trim()}
+
+Support Provided:
+${ctx.behaviourIncidentSupport.map((item) => `• ${item}`).join("\n")}
+
+Immediate Outcome:
+${ctx.behaviourIncidentOutcomes.map((item) => `• ${item}`).join("\n")}
+
+Linked PRN Administration:
+${ctx.linkedPrnAdministrationId || "Not linked"}
+
+Additional Notes:
+${ctx.behaviourIncidentNotes.trim() || "Not recorded"}`;
+
+  const { error } = await ctx.supabase.from("timeline_entries").insert({
+    service_user_id: ctx.serviceUserId,
+    created_by: ctx.userId,
+    entry_type: "Behaviour Incident",
+    content: finalContent,
+    event_time: ctx.eventTime,
+  });
+
+  if (error) {
+    alert(error.message);
     return false;
   }
 

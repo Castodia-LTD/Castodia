@@ -4,6 +4,7 @@ import {
   FileText,
   HeartPulse,
   Home,
+  Pill,
   ShieldAlert,
   Users,
 } from "lucide-react";
@@ -28,6 +29,11 @@ export const managerMenuItems = [
     href: "/admin/service-users",
     label: "Service Users",
     icon: FileText,
+  },
+  {
+  href: "/manager/emar",
+  label: "eMAR",
+  icon: Pill,
   },
   {
     href: "/admin/supervisions",

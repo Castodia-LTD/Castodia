@@ -11,6 +11,7 @@ import ShoppingForm from "@/components/timelines/forms/activities/ShoppingForm";
 import HouseholdTasksForm from "@/components/timelines/forms/activities/HouseholdTasksForm";
 import BehaviourObservationForm from "@/components/timelines/forms/wellbeing/BehaviourObservationForm";
 import BodyMapForm from "@/components/timelines/forms/incidents/BodyMapForm";
+import BehaviourIncidentForm from "@/components/timelines/forms/incidents/BehaviourIncidentForm";
 
 export const formRegistry: Record<string, any> = {
   Activity: (props: any) => (
@@ -207,4 +208,23 @@ export const formRegistry: Record<string, any> = {
       serviceUserGender={props.serviceUserGender}
     />
   ),
+"Behaviour Incident": (props: any) => (
+  <BehaviourIncidentForm
+    trigger={props.behaviourIncidentTrigger}
+    setTrigger={props.setBehaviourIncidentTrigger}
+    behaviourTypes={props.behaviourIncidentTypes}
+    setBehaviourTypes={props.setBehaviourIncidentTypes}
+    description={props.behaviourIncidentDescription}
+    setDescription={props.setBehaviourIncidentDescription}
+    supportProvided={props.behaviourIncidentSupport}
+    setSupportProvided={props.setBehaviourIncidentSupport}
+    linkedPrnAdministrationId={props.linkedPrnAdministrationId}
+    setLinkedPrnAdministrationId={props.setLinkedPrnAdministrationId}
+    prnOptions={props.prnOptions}
+    immediateOutcomes={props.behaviourIncidentOutcomes}
+    setImmediateOutcomes={props.setBehaviourIncidentOutcomes}
+    notes={props.behaviourIncidentNotes}
+    setNotes={props.setBehaviourIncidentNotes}
+  />
+),
 };
