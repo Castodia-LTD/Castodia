@@ -103,7 +103,7 @@ export default function ManagerShell({
           </nav>
 
           <Link
-            href="/support"
+            href="/support/dashboard"
             className="mt-6 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-slate-200 hover:bg-white/20"
           >
             Switch to Support Portal

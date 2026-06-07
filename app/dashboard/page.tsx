@@ -25,9 +25,9 @@ export default function DashboardRedirectPage() {
         .single();
 
       if (profile?.role === "manager") {
-        router.replace("/manager");
+        router.replace("/manager/dashboard");
       } else {
-        router.replace("/support");
+        router.replace("/support/dashboard");
       }
     }
 

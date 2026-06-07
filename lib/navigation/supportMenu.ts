@@ -1,29 +1,29 @@
 import {
+  Home,
   ClipboardList,
-  Clock3,
-  LayoutDashboard,
+  FileText,
   Users,
 } from "lucide-react";
 
 export const supportMenuItems = [
   {
-    href: "/support",
     label: "Dashboard",
-    icon: LayoutDashboard,
+    href: "/support/dashboard",
+    icon: Home,
   },
   {
-    href: "/timelines",
     label: "Timelines",
-    icon: Clock3,
-  },
-  {
-    href: "/service-users",
-    label: "Service Users",
-    icon: Users,
-  },
-  {
-    href: "/handovers",
-    label: "Handovers",
+    href: "/support/timelines",
     icon: ClipboardList,
+  },
+  {
+    label: "Handovers",
+    href: "/support/handovers",
+    icon: FileText,
+  },
+   {
+    label: "Service Users",
+    href: "/support/service-users",
+    icon: Users,
   },
 ];
