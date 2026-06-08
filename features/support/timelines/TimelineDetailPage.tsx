@@ -559,6 +559,35 @@ ${consequence.trim()}`
                     setEntryPanelOpen(false);
                     await loadEntries();
                   }}
+onCreateTimelineEntry={async (summary: string) => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    alert("You must be logged in to create an entry.");
+    return;
+  }
+
+  const eventTime = combineDateAndTime(new Date(), entryTime);
+
+  const { error } = await supabase.from("timeline_entries").insert({
+    service_user_id: serviceUserId,
+    created_by: user.id,
+    entry_type: "Medication",
+    content: summary,
+    event_time: eventTime,
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  resetEntryPanel();
+  setEntryPanelOpen(false);
+  await loadEntries();
+}}
                   activityTitle={activityTitle}
                   setActivityTitle={setActivityTitle}
                   activityLocation={activityLocation}
@@ -653,7 +682,7 @@ ${consequence.trim()}`
                 />
               )}
 
-              {entryType !== "Wellbeing" && (
+              {entryType !== "Wellbeing" && entryType !== "Medication" && (
                 <button
                   onClick={addEntry}
                   className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 text-xl font-semibold"

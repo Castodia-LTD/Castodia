@@ -122,8 +122,8 @@ export default function ManagerEmarPage() {
       return;
     }
 
-    if (!medicationName.trim() || !dose.trim() || !route.trim()) {
-      alert("Please complete medication name, dose and route.");
+    if (!medicationName.trim() || !strength.trim() || !dose.trim() || !route.trim()) {
+      alert("Please complete medication name, strength, dose and route.");
       return;
     }
 
@@ -132,19 +132,21 @@ export default function ManagerEmarPage() {
       return;
     }
 
+    const isPrn = medicationType === "PRN";
+
     const { error } = await supabase.from("medication_profiles").insert({
       service_user_id: selectedServiceUserId,
       medication_name: medicationName.trim(),
-      strength: strength.trim() || null,
-      dose: dose.trim(),
+      dose: `${strength.trim()} - ${dose.trim()}`,
       route: route.trim(),
-      medication_type: medicationType,
-      rounds: medicationType === "Regular" ? rounds : null,
+      round: isPrn ? "PRN" : rounds.join(", "),
       instructions: instructions.trim() || null,
-      prn_reason_required:
-        medicationType === "PRN" ? prnReasonRequired : false,
-      prn_incident_recommended:
-        medicationType === "PRN" ? prnIncidentRecommended : false,
+      is_prn: isPrn,
+      titration_plan_available: false,
+      titration_trigger_missed_rounds: null,
+      titration_instructions: null,
+      manager_unlock_required: false,
+      locked: false,
       active: true,
     });
 

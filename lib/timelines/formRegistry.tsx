@@ -107,17 +107,13 @@ export const formRegistry: Record<string, any> = {
   />
 ),
 
-  Medication: (props: any) => (
-    <MedicationForm
-      selectedRound={props.selectedRound}
-      setSelectedRound={props.setSelectedRound}
-      medicationProfiles={props.medicationProfiles}
-      medicationStatuses={props.medicationStatuses}
-      setMedicationStatuses={props.setMedicationStatuses}
-      medicationReasons={props.medicationReasons}
-      setMedicationReasons={props.setMedicationReasons}
-    />
-  ),
+Medication: (props: any) => (
+  <MedicationForm
+    serviceUserId={props.serviceUserId}
+    onSaved={props.onSaved}
+    onCreateTimelineEntry={props.onCreateTimelineEntry}
+  />
+),
 
 "Household Tasks": (props: any) => (
   <HouseholdTasksForm
