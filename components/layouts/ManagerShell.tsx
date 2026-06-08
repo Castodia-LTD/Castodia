@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
 import { managerMenuItems } from "@/lib/navigation/managerMenu";
 import { supabase } from "@/lib/supabase";
 
@@ -16,6 +17,7 @@ export default function ManagerShell({
 
   const [fullName, setFullName] = useState("Manager");
   const [time, setTime] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -59,8 +61,95 @@ export default function ManagerShell({
     return () => clearInterval(interval);
   }, []);
 
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
+
+  function isActive(href: string) {
+    return pathname === href || pathname.startsWith(href + "/");
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white">
+      <header className="flex items-center justify-between border-b border-white/10 bg-slate-950/90 px-4 py-3 backdrop-blur md:hidden">
+        <Image
+          src="/logo.png"
+          alt="Castodia"
+          width={150}
+          height={48}
+          priority
+        />
+
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white"
+          aria-label="Open menu"
+        >
+          <Menu size={22} />
+        </button>
+      </header>
+
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 md:hidden">
+          <div className="ml-auto h-full w-80 max-w-[85vw] overflow-y-auto bg-slate-950 p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm text-slate-400">Manager Portal</p>
+                <p className="mt-1 text-xl font-bold">Hello {fullName}!</p>
+                <p className="mt-2 text-sm text-cyan-300">{time}</p>
+              </div>
+
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl bg-white/10 p-2 text-white"
+                aria-label="Close menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="mt-8 space-y-2">
+              {managerMenuItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                      active
+                        ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white"
+                        : "text-slate-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <Link
+              href="/support/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className="mt-6 block rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-slate-200 hover:bg-white/20"
+            >
+              Switch to Support Portal
+            </Link>
+
+            <button
+              onClick={logout}
+              className="mt-3 w-full rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/20"
+            >
+              Log Out
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex min-h-screen">
         <aside className="hidden w-72 border-r border-white/10 bg-slate-950/80 p-5 backdrop-blur md:flex md:flex-col">
           <Image
@@ -80,10 +169,7 @@ export default function ManagerShell({
           <nav className="mt-8 flex-1 space-y-2">
             {managerMenuItems.map((item) => {
               const Icon = item.icon;
-
-              const active =
-                pathname === item.href ||
-                pathname.startsWith(item.href + "/");
+              const active = isActive(item.href);
 
               return (
                 <Link
@@ -108,18 +194,16 @@ export default function ManagerShell({
           >
             Switch to Support Portal
           </Link>
+
           <button
-  onClick={async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  }}
-  className="mt-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-semibold text-red-300 hover:bg-red-500/20"
->
-  Log Out
-</button>
+            onClick={logout}
+            className="mt-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-semibold text-red-300 hover:bg-red-500/20"
+          >
+            Log Out
+          </button>
         </aside>
 
-        <section className="flex-1 pb-24 md:pb-0">{children}</section>
+        <section className="min-w-0 flex-1">{children}</section>
       </div>
     </main>
   );

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supportMenuItems } from "@/lib/navigation/supportMenu";
 import { supabase } from "@/lib/supabase";
+import { Users } from "lucide-react";
 
 export default function SupportShell({
   children,
@@ -122,6 +123,39 @@ export default function SupportShell({
 
         <section className="flex-1 pb-24 md:pb-0">{children}</section>
       </div>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-slate-950/95 px-2 py-2 backdrop-blur md:hidden">
+  <div className="grid grid-cols-4 gap-1">
+    {supportMenuItems.map((item) => {
+      const Icon = item.icon;
+
+      const active =
+        pathname === item.href || pathname.startsWith(item.href + "/");
+
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={`flex flex-col items-center justify-center rounded-xl px-2 py-2 text-[11px] font-semibold ${
+            active
+              ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white"
+              : "text-slate-400"
+          }`}
+        >
+          <Icon size={18} />
+          <span className="mt-1 truncate">{item.label}</span>
+        </Link>
+      );
+    })}
+
+    <Link
+      href="/manager/dashboard"
+      className="flex flex-col items-center justify-center rounded-xl px-2 py-2 text-[11px] font-semibold text-slate-400"
+    >
+      <Users size={18} />
+      <span className="mt-1 truncate">Manager</span>
+    </Link>
+  </div>
+</nav>
     </main>
   );
 }

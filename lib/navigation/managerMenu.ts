@@ -11,43 +11,43 @@ import {
 
 export const managerMenuItems = [
   {
-    href: "/manager",
+    href: "/manager/dashboard",
     label: "Dashboard",
     icon: Home,
   },
   {
-    href: "/admin/reports",
+    href: "/manager/reports",
     label: "Reports",
     icon: BarChart3,
   },
   {
-    href: "/admin/staff",
-    label: "User Management",
-    icon: Users,
-  },
-  {
-    href: "/admin/service-users",
+    href: "/manager/service-users",
     label: "Service Users",
     icon: FileText,
   },
   {
-  href: "/manager/emar",
-  label: "eMAR",
-  icon: Pill,
+    href: "/manager/emar",
+    label: "Medication Profiles",
+    icon: Pill,
   },
   {
-    href: "/admin/supervisions",
+    href: "/manager/supervisions",
     label: "Supervisions",
     icon: ClipboardCheck,
   },
   {
-    href: "/admin/competencies",
+    href: "/manager/competencies",
     label: "Competencies",
     icon: ShieldAlert,
   },
   {
-    href: "/admin/incidents",
-    label: "Incidents",
-    icon: HeartPulse,
-  },
+  href: "/manager/incidents",
+  label: "Behaviour Incidents",
+  icon: HeartPulse,
+},
+{
+  href: "/manager/admin",
+  label: "Admin",
+  icon: Users,
+}
 ];
