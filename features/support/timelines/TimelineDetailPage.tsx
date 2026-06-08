@@ -492,8 +492,7 @@ ${consequence.trim()}`
             resetEntryPanel();
             setEntryPanelOpen(true);
           }}
-          className="fixed bottom-6 right-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-teal-400 text-4xl font-light shadow-2xl shadow-blue-900/40"
-        >
+          className="fixed bottom-24 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-teal-400 text-3xl font-bold text-white shadow-2xl md:bottom-6"        >
           +
         </button>
       )}
