@@ -1,3 +1,5 @@
+import { CastodiaButton } from "@/components/castodia";
+
 type Props = {
   staff: {
     id: string;
@@ -13,6 +15,9 @@ type Props = {
   onClear: () => void;
 };
 
+const inputClass =
+  "mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
 export default function SupervisionSearchPanel({
   staff,
   selectedStaffId,
@@ -27,49 +32,61 @@ export default function SupervisionSearchPanel({
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
-        <select
-          value={selectedStaffId}
-          onChange={(event) => setSelectedStaffId(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
-        >
-          <option value="">All staff</option>
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Staff member
+          </label>
 
-          {staff.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.full_name}
-            </option>
-          ))}
-        </select>
+          <select
+            value={selectedStaffId}
+            onChange={(event) => setSelectedStaffId(event.target.value)}
+            className={inputClass}
+          >
+            <option value="">All staff</option>
 
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(event) => setDateFrom(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
-        />
+            {staff.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.full_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(event) => setDateTo(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
-        />
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Date from
+          </label>
+
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(event) => setDateFrom(event.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Date to
+          </label>
+
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(event) => setDateTo(event.target.value)}
+            className={inputClass}
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <button
-          onClick={onSearch}
-          className="rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 px-6 py-3 font-semibold text-white"
-        >
+        <CastodiaButton onClick={onSearch}>
           Search
-        </button>
+        </CastodiaButton>
 
-        <button
-          onClick={onClear}
-          className="rounded-2xl border border-white/10 bg-white/10 px-6 py-3 font-semibold text-white hover:bg-white/20"
-        >
+        <CastodiaButton variant="secondary" onClick={onClear}>
           Clear
-        </button>
+        </CastodiaButton>
       </div>
     </div>
   );

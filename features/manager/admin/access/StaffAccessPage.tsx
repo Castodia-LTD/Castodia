@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AccessRowCard from "@/components/admin/permissions/AccessRowCard";
 import { supabase } from "@/lib/supabase";
+
+import {
+  CastodiaPageShell,
+  CastodiaCard,
+  CastodiaButton,
+  CastodiaSection,
+} from "@/components/castodia";
 
 import type {
   AccessRow,
@@ -41,7 +47,6 @@ export default function StaffServiceUserAccessPage() {
 
   async function loadData() {
     const organisationId = await getCurrentOrganisationId();
-
     if (!organisationId) return;
 
     const { data: staffData, error: staffError } = await supabase
@@ -111,13 +116,11 @@ export default function StaffServiceUserAccessPage() {
 
     setSelectedStaffId("");
     setSelectedServiceUserId("");
-
     await loadData();
   }
 
   async function removeAccess(id: string) {
     const confirmed = confirm("Remove this access permission?");
-
     if (!confirmed) return;
 
     const { error } = await supabase
@@ -155,71 +158,101 @@ export default function StaffServiceUserAccessPage() {
   }, []);
 
   return (
-      <main className="min-h-screen p-6 text-white">
-        <div className="mx-auto max-w-5xl">
-          <h1 className="text-3xl font-bold">Access Permissions</h1>
+    <CastodiaPageShell
+      title="Access Permissions"
+      description="Assign staff members to the service users they support."
+      maxWidth="wide"
+    >
+      <CastodiaSection title="Assign Access">
+        <CastodiaCard>
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+            <div>
+              <label className="text-sm font-medium text-slate-700">
+                Staff member
+              </label>
+              <select
+                value={selectedStaffId}
+                onChange={(e) => setSelectedStaffId(e.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              >
+                <option value="">Select staff member</option>
 
-          <p className="mt-2 text-slate-400">
-            Assign staff members to the service users they support.
-          </p>
+                {staff.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.full_name}{" "}
+                    {person.role === "manager" ? "(Manager)" : "(Staff)"}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="mt-8 space-y-4 rounded-2xl bg-slate-900 p-6">
-            <h2 className="text-xl font-semibold">Assign Access</h2>
+            <div>
+              <label className="text-sm font-medium text-slate-700">
+                Service user
+              </label>
+              <select
+                value={selectedServiceUserId}
+                onChange={(e) => setSelectedServiceUserId(e.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              >
+                <option value="">Select service user</option>
 
-            <select
-              value={selectedStaffId}
-              onChange={(e) => setSelectedStaffId(e.target.value)}
-              className="w-full rounded-xl bg-slate-800 p-4 text-white outline-none"
-            >
-              <option value="">Select staff member</option>
+                {serviceUsers.map((serviceUser) => (
+                  <option key={serviceUser.id} value={serviceUser.id}>
+                    {serviceUser.house_name
+                      ? `${serviceUser.full_name} — ${serviceUser.house_name}`
+                      : serviceUser.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              {staff.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.full_name}{" "}
-                  {person.role === "manager" ? "(Manager)" : "(Staff)"}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedServiceUserId}
-              onChange={(e) => setSelectedServiceUserId(e.target.value)}
-              className="w-full rounded-xl bg-slate-800 p-4 text-white outline-none"
-            >
-              <option value="">Select service user</option>
-
-              {serviceUsers.map((serviceUser) => (
-                <option key={serviceUser.id} value={serviceUser.id}>
-                  {serviceUser.house_name
-                    ? `${serviceUser.full_name} — ${serviceUser.house_name}`
-                    : serviceUser.full_name}
-                </option>
-              ))}
-            </select>
-
-            <button
-              onClick={addAccess}
-              className="w-full rounded-xl bg-blue-500 p-4 font-semibold"
-            >
+            <CastodiaButton onClick={addAccess}>
               Assign Access
-            </button>
+            </CastodiaButton>
           </div>
+        </CastodiaCard>
+      </CastodiaSection>
 
-          <div className="mt-8 space-y-4">
-            {accessRows.length === 0 && (
-              <p className="text-slate-400">No access permissions assigned.</p>
-            )}
-
+      <CastodiaSection
+        title="Current Permissions"
+        description={`${accessRows.length} permission${
+          accessRows.length === 1 ? "" : "s"
+        } assigned`}
+      >
+        {accessRows.length === 0 ? (
+          <CastodiaCard>
+            <p className="text-sm text-slate-500">
+              No access permissions assigned.
+            </p>
+          </CastodiaCard>
+        ) : (
+          <div className="grid gap-3">
             {accessRows.map((row) => (
-              <AccessRowCard
-                key={row.id}
-                staffName={getStaffName(row.staff_id)}
-                serviceUserName={getServiceUserName(row.service_user_id)}
-                onRemove={() => removeAccess(row.id)}
-              />
+              <CastodiaCard key={row.id} padding="md">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-950">
+                      {getStaffName(row.staff_id)}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {getServiceUserName(row.service_user_id)}
+                    </p>
+                  </div>
+
+                  <CastodiaButton
+                    variant="danger"
+                    size="sm"
+                    onClick={() => removeAccess(row.id)}
+                  >
+                    Remove
+                  </CastodiaButton>
+                </div>
+              </CastodiaCard>
             ))}
           </div>
-        </div>
-      </main>
+        )}
+      </CastodiaSection>
+    </CastodiaPageShell>
   );
 }

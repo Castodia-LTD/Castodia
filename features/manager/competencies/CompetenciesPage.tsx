@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import CompetencyForm from "@/components/admin/competencies/CompetencyForm";
-import CompetencyCard from "@/components/admin/competencies/CompetencyCard";
-import { PageContainer, PageHeader, SectionCard } from "@/components/layouts";
+import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+
+import {
+  CastodiaBadge,
+  CastodiaButton,
+  CastodiaCard,
+  CastodiaPageShell,
+  CastodiaSection,
+} from "@/components/castodia";
+
 import type {
-  CompetencyAction,
   StaffCompetency,
   StaffMember,
 } from "@/lib/admin/competencies/types";
-import CompetencySearchPanel from "./components/CompetencySearchPanel";
 
 type CurrentUserProfile = {
   id: string;
@@ -19,15 +24,54 @@ type CurrentUserProfile = {
   role: string;
 };
 
+type MatrixStatus = "competent" | "due-soon" | "overdue" | "not-started" | "actions";
+
+const defaultCompetencyTypes = [
+  "Medication Administration",
+  "Moving & Handling",
+  "Safeguarding",
+  "Fire Safety",
+];
+
+function getStatus(competency?: StaffCompetency): MatrixStatus {
+  if (!competency) return "not-started";
+
+  if (competency.outcome === "Competent With Actions") return "actions";
+  if (competency.outcome !== "Competent") return "overdue";
+
+  if (!competency.review_date) return "competent";
+
+  const today = new Date();
+  const reviewDate = new Date(competency.review_date);
+  const daysUntilReview = Math.ceil(
+    (reviewDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysUntilReview < 0) return "overdue";
+  if (daysUntilReview <= 30) return "due-soon";
+
+  return "competent";
+}
+
+function getStatusLabel(status: MatrixStatus) {
+  if (status === "competent") return "Competent";
+  if (status === "due-soon") return "Due soon";
+  if (status === "overdue") return "Overdue";
+  if (status === "actions") return "Actions";
+  return "Not started";
+}
+
+function getStatusVariant(status: MatrixStatus) {
+  if (status === "competent") return "success";
+  if (status === "due-soon") return "warning";
+  if (status === "overdue") return "danger";
+  if (status === "actions") return "info";
+  return "neutral";
+}
+
 export default function CompetenciesPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [competencies, setCompetencies] = useState<StaffCompetency[]>([]);
-
-  const [selectedStaffId, setSelectedStaffId] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-
-  const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function getCurrentUserProfile(): Promise<CurrentUserProfile | null> {
@@ -51,41 +95,6 @@ export default function CompetenciesPage() {
     return data;
   }
 
-  async function loadStaff(profile: CurrentUserProfile) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name, role")
-      .eq("organisation_id", profile.organisation_id)
-      .order("full_name");
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setStaff(data || []);
-  }
-
-  async function loadRecentCompetencies(profile?: CurrentUserProfile) {
-    const currentProfile = profile || (await getCurrentUserProfile());
-
-    if (!currentProfile) return;
-
-    const { data, error } = await supabase
-      .from("staff_competencies")
-      .select("*")
-      .eq("organisation_id", currentProfile.organisation_id)
-      .order("assessment_date", { ascending: false })
-      .limit(30);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setCompetencies((data || []) as StaffCompetency[]);
-  }
-
   async function loadPageData() {
     setLoading(true);
 
@@ -96,176 +105,227 @@ export default function CompetenciesPage() {
       return;
     }
 
-    await Promise.all([loadStaff(profile), loadRecentCompetencies(profile)]);
+    const [staffResult, competencyResult] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("organisation_id", profile.organisation_id)
+        .order("full_name"),
 
+      supabase
+        .from("staff_competencies")
+        .select("*")
+        .eq("organisation_id", profile.organisation_id)
+        .order("assessment_date", { ascending: false }),
+    ]);
+
+    if (staffResult.error) {
+      alert(staffResult.error.message);
+      setLoading(false);
+      return;
+    }
+
+    if (competencyResult.error) {
+      alert(competencyResult.error.message);
+      setLoading(false);
+      return;
+    }
+
+    setStaff(staffResult.data || []);
+    setCompetencies((competencyResult.data || []) as StaffCompetency[]);
     setLoading(false);
-  }
-
-  async function searchCompetencies() {
-    const profile = await getCurrentUserProfile();
-
-    if (!profile) return;
-
-    let query = supabase
-      .from("staff_competencies")
-      .select("*")
-      .eq("organisation_id", profile.organisation_id)
-      .order("assessment_date", { ascending: false });
-
-    if (selectedStaffId) {
-      query = query.eq("staff_id", selectedStaffId);
-    }
-
-    if (dateFrom) {
-      query = query.gte("assessment_date", dateFrom);
-    }
-
-    if (dateTo) {
-      query = query.lte("assessment_date", dateTo);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setCompetencies((data || []) as StaffCompetency[]);
-    setHasSearched(true);
-  }
-
-  async function createCompetency(values: {
-    staffId: string;
-    assessmentDate: string;
-    reviewDate: string;
-    outcome: string;
-    strengths: string;
-    developmentAreas: string;
-    actions: CompetencyAction[];
-    knowledgeResults: Record<string, boolean>;
-    practicalResults: Record<string, boolean>;
-  }) {
-    const profile = await getCurrentUserProfile();
-
-    if (!profile) return;
-
-    if (!values.staffId) {
-      alert("Please select a staff member.");
-      return;
-    }
-
-    if (!values.assessmentDate) {
-      alert("Please enter an assessment date.");
-      return;
-    }
-
-    const { error } = await supabase.from("staff_competencies").insert({
-      organisation_id: profile.organisation_id,
-      staff_id: values.staffId,
-      assessor_id: profile.id,
-      competency_type: "Medication Administration",
-      assessment_date: values.assessmentDate,
-      review_date: values.reviewDate || null,
-      knowledge_checks: values.knowledgeResults,
-      practical_checks: values.practicalResults,
-      strengths: values.strengths.trim() || null,
-      development_areas: values.developmentAreas.trim() || null,
-      actions: values.actions.filter((action) => action.action.trim()),
-      outcome: values.outcome,
-      assessor_signed: true,
-      staff_signed: false,
-    });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setHasSearched(false);
-    await loadRecentCompetencies(profile);
-  }
-
-  function clearSearch() {
-    setSelectedStaffId("");
-    setDateFrom("");
-    setDateTo("");
-    setHasSearched(false);
-    loadRecentCompetencies();
-  }
-
-  function getStaffName(staffId: string) {
-    return (
-      staff.find((person) => person.id === staffId)?.full_name ||
-      "Unknown staff member"
-    );
   }
 
   useEffect(() => {
     loadPageData();
   }, []);
 
+  const competencyTypes = useMemo(() => {
+    const discovered = competencies.map((item) => item.competency_type);
+    return Array.from(new Set([...defaultCompetencyTypes, ...discovered]));
+  }, [competencies]);
+
+  const latestCompetencyMap = useMemo(() => {
+    const map = new Map<string, StaffCompetency>();
+
+    competencies.forEach((competency) => {
+      const key = `${competency.staff_id}:${competency.competency_type}`;
+
+      if (!map.has(key)) {
+        map.set(key, competency);
+      }
+    });
+
+    return map;
+  }, [competencies]);
+
+  const summary = useMemo(() => {
+    let competent = 0;
+    let dueSoon = 0;
+    let overdue = 0;
+    let notStarted = 0;
+    let actions = 0;
+
+    staff.forEach((person) => {
+      competencyTypes.forEach((type) => {
+        const competency = latestCompetencyMap.get(`${person.id}:${type}`);
+        const status = getStatus(competency);
+
+        if (status === "competent") competent += 1;
+        if (status === "due-soon") dueSoon += 1;
+        if (status === "overdue") overdue += 1;
+        if (status === "not-started") notStarted += 1;
+        if (status === "actions") actions += 1;
+      });
+    });
+
+    return { competent, dueSoon, overdue, notStarted, actions };
+  }, [staff, competencyTypes, latestCompetencyMap]);
+
   return (
-    <PageContainer>
-      <PageHeader
-        title="Competencies"
-        subtitle="Record staff competency assessments and review dates."
-      />
+    <CastodiaPageShell
+      title="Competencies"
+      description="Track staff competency status across required training and assessment areas."
+      maxWidth="wide"
+      actions={
+        <CastodiaButton onClick={() => alert("Add competency form coming next.")}>
+          <Plus size={16} />
+          Add Competency
+        </CastodiaButton>
+      }
+    >
+      <div className="grid gap-4 md:grid-cols-5">
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Competent</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.competent}
+          </p>
+        </CastodiaCard>
 
-      <section>
-        <CompetencyForm staff={staff} onCreate={createCompetency} />
-      </section>
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Due soon</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.dueSoon}
+          </p>
+        </CastodiaCard>
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold text-white">
-          Search Competencies
-        </h2>
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Overdue</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.overdue}
+          </p>
+        </CastodiaCard>
 
-        <div className="mt-4">
-          <SectionCard>
-            <CompetencySearchPanel
-              staff={staff}
-              selectedStaffId={selectedStaffId}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              setSelectedStaffId={setSelectedStaffId}
-              setDateFrom={setDateFrom}
-              setDateTo={setDateTo}
-              onSearch={searchCompetencies}
-              onClear={clearSearch}
-            />
-          </SectionCard>
-        </div>
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Actions</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.actions}
+          </p>
+        </CastodiaCard>
 
-        <h2 className="mt-8 text-xl font-semibold text-white">
-          {hasSearched
-            ? `Search Results (${competencies.length})`
-            : `Recent Competencies (${competencies.length})`}
-        </h2>
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Not started</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.notStarted}
+          </p>
+        </CastodiaCard>
+      </div>
 
-        <div className="mt-4 space-y-4">
-          {loading && (
-            <SectionCard>
-              <p className="text-slate-400">Loading competencies...</p>
-            </SectionCard>
+      <CastodiaSection title="Competency Matrix">
+        <CastodiaCard padding="none">
+          {loading ? (
+            <div className="p-8 text-sm text-slate-500">
+              Loading competency matrix...
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-left">
+                <thead className="border-b border-slate-200 bg-slate-50">
+                  <tr>
+                    <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Staff member
+                    </th>
+
+                    {competencyTypes.map((type) => (
+                      <th
+                        key={type}
+                        className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500"
+                      >
+                        {type}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-slate-100">
+                  {staff.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={competencyTypes.length + 1}
+                        className="px-4 py-8 text-center text-sm text-slate-500"
+                      >
+                        No staff found.
+                      </td>
+                    </tr>
+                  ) : (
+                    staff.map((person) => (
+                      <tr key={person.id} className="hover:bg-slate-50">
+                        <td className="sticky left-0 z-10 bg-white px-4 py-4">
+                          <p className="font-semibold text-slate-950">
+                            {person.full_name}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {person.role === "manager"
+                              ? "Manager"
+                              : "Support Worker"}
+                          </p>
+                        </td>
+
+                        {competencyTypes.map((type) => {
+                          const competency = latestCompetencyMap.get(
+                            `${person.id}:${type}`
+                          );
+
+                          const status = getStatus(competency);
+
+                          return (
+                            <td key={type} className="px-4 py-4">
+                              <button
+                                type="button"
+                                className="text-left"
+                                onClick={() =>
+                                  alert(
+                                    `${person.full_name} — ${type}\n${getStatusLabel(
+                                      status
+                                    )}`
+                                  )
+                                }
+                              >
+                                <CastodiaBadge variant={getStatusVariant(status)}>
+                                  {getStatusLabel(status)}
+                                </CastodiaBadge>
+
+                                {competency?.review_date && (
+                                  <p className="mt-2 text-xs text-slate-500">
+                                    Review{" "}
+                                    {new Date(
+                                      competency.review_date
+                                    ).toLocaleDateString("en-GB")}
+                                  </p>
+                                )}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
-
-          {!loading && competencies.length === 0 && (
-            <SectionCard>
-              <p className="text-slate-400">No competency records found.</p>
-            </SectionCard>
-          )}
-
-          {!loading &&
-            competencies.map((competency) => (
-              <CompetencyCard
-                key={competency.id}
-                competency={competency}
-                staffName={getStaffName(competency.staff_id)}
-              />
-            ))}
-        </div>
-      </section>
-    </PageContainer>
+        </CastodiaCard>
+      </CastodiaSection>
+    </CastodiaPageShell>
   );
 }

@@ -1,4 +1,7 @@
-import { SectionCard } from "@/components/layouts";
+import {
+  CastodiaButton,
+  CastodiaCard,
+} from "@/components/castodia";
 import type { ServiceUser } from "../types";
 
 type HandoverFormProps = {
@@ -17,6 +20,12 @@ type HandoverFormProps = {
   onClose: () => void;
 };
 
+const inputClass =
+  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
+const textareaClass =
+  "min-h-32 w-full rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
 export default function HandoverForm({
   title,
   content,
@@ -33,16 +42,15 @@ export default function HandoverForm({
   onClose,
 }: HandoverFormProps) {
   return (
-    <SectionCard>
+    <CastodiaCard>
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-white">Create Handover</h2>
+        <h2 className="text-xl font-semibold text-slate-950">
+          Create Handover
+        </h2>
 
-        <button
-          onClick={onClose}
-          className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-200"
-        >
+        <CastodiaButton variant="secondary" size="sm" onClick={onClose}>
           Close
-        </button>
+        </CastodiaButton>
       </div>
 
       <div className="mt-5 space-y-4">
@@ -50,23 +58,25 @@ export default function HandoverForm({
           value={title}
           onChange={(event) => onTitleChange(event.target.value)}
           placeholder="Handover title"
-          className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+          className={inputClass}
         />
 
         <textarea
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
           placeholder="Write handover details..."
-          className="min-h-32 w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+          className={textareaClass}
         />
 
         <div>
-          <h3 className="mb-3 font-semibold text-white">Handover Period</h3>
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Handover period
+          </label>
 
           <select
             value={handoverPeriod}
             onChange={(event) => onHandoverPeriodChange(event.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+            className={inputClass}
           >
             <option value="24">Last 24 Hours</option>
             <option value="48">Last 48 Hours</option>
@@ -75,7 +85,7 @@ export default function HandoverForm({
         </div>
 
         <div>
-          <h3 className="mb-3 font-semibold text-white">
+          <h3 className="mb-3 text-sm font-medium text-slate-700">
             Select service users
           </h3>
 
@@ -90,15 +100,15 @@ export default function HandoverForm({
                   onClick={() => onToggleServiceUser(serviceUser.id)}
                   className={`rounded-2xl border p-4 text-left transition ${
                     selected
-                      ? "border-cyan-300 bg-cyan-500/20"
-                      : "border-white/10 bg-white/10"
+                      ? "border-teal-400 bg-teal-50"
+                      : "border-slate-200 bg-white hover:bg-slate-50"
                   }`}
                 >
-                  <p className="font-semibold text-white">
+                  <p className="font-semibold text-slate-950">
                     {serviceUser.full_name}
                   </p>
-                  <p className="text-sm text-slate-400">
-                    {serviceUser.house_name}
+                  <p className="text-sm text-slate-500">
+                    {serviceUser.house_name || "No house assigned"}
                   </p>
                 </button>
               );
@@ -106,22 +116,20 @@ export default function HandoverForm({
           </div>
         </div>
 
-        <button
+        <CastodiaButton
           type="button"
+          variant="secondary"
           onClick={onGenerateSummary}
           disabled={generating}
-          className="w-full rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4 font-semibold text-cyan-200 disabled:opacity-60"
+          className="w-full"
         >
           {generating ? "Generating summary..." : "Generate Automatic Summary"}
-        </button>
+        </CastodiaButton>
 
-        <button
-          onClick={onCreateHandover}
-          className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-semibold text-white"
-        >
+        <CastodiaButton onClick={onCreateHandover} className="w-full">
           Create Handover
-        </button>
+        </CastodiaButton>
       </div>
-    </SectionCard>
+    </CastodiaCard>
   );
 }

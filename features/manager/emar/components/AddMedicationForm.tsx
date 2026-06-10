@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { roundOptions } from "../types";
+import { CastodiaButton } from "@/components/castodia";
 
 type Props = {
   selectedServiceUserName: string;
@@ -31,9 +32,14 @@ type Props = {
   onClose: () => void;
 };
 
+const inputClass =
+  "mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
+const textareaClass =
+  "mt-2 min-h-28 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
 export default function AddMedicationForm({
   selectedServiceUserName,
-
   medicationName,
   strength,
   dose,
@@ -41,109 +47,132 @@ export default function AddMedicationForm({
   medicationType,
   rounds,
   instructions,
-
   prnReasonRequired,
   prnIncidentRecommended,
-
   setMedicationName,
   setStrength,
   setDose,
   setRoute,
   setMedicationType,
   setInstructions,
-
   setPrnReasonRequired,
   setPrnIncidentRecommended,
-
   toggleRound,
-
   onSave,
   onClose,
 }: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/50">
-      <div className="h-full w-full max-w-xl overflow-y-auto border-l border-white/10 bg-slate-950 p-6 shadow-2xl">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 backdrop-blur-sm">
+      <div className="h-full w-full max-w-xl overflow-y-auto border-l border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="mb-6 flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-bold text-slate-950">
               Add Medication Profile
             </h2>
 
-            <p className="mt-1 text-sm text-slate-400">
-              {selectedServiceUserName}
+            <p className="mt-1 text-sm text-slate-500">
+              {selectedServiceUserName || "No service user selected"}
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="rounded-full bg-white/10 p-3 text-slate-300 hover:bg-white/20"
+            className="rounded-full border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="space-y-4">
-          <input
-            value={medicationName}
-            onChange={(e) => setMedicationName(e.target.value)}
-            placeholder="Medication name"
-            className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-          />
+        <div className="space-y-5">
+          <div>
+            <label className="text-sm font-medium text-slate-700">
+              Medication name
+            </label>
+            <input
+              value={medicationName}
+              onChange={(e) => setMedicationName(e.target.value)}
+              placeholder="Medication name"
+              className={inputClass}
+            />
+          </div>
 
-          <input
-            value={strength}
-            onChange={(e) => setStrength(e.target.value)}
-            placeholder="Strength (e.g. 500mg)"
-            className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium text-slate-700">
+                Strength
+              </label>
+              <input
+                value={strength}
+                onChange={(e) => setStrength(e.target.value)}
+                placeholder="e.g. 500mg"
+                className={inputClass}
+              />
+            </div>
 
-          <input
-            value={dose}
-            onChange={(e) => setDose(e.target.value)}
-            placeholder="Dose (e.g. 2 tablets)"
-            className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-          />
+            <div>
+              <label className="text-sm font-medium text-slate-700">
+                Dose
+              </label>
+              <input
+                value={dose}
+                onChange={(e) => setDose(e.target.value)}
+                placeholder="e.g. 2 tablets"
+                className={inputClass}
+              />
+            </div>
+          </div>
 
-          <input
-            value={route}
-            onChange={(e) => setRoute(e.target.value)}
-            placeholder="Route (e.g. Oral)"
-            className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-          />
+          <div>
+            <label className="text-sm font-medium text-slate-700">
+              Route
+            </label>
+            <input
+              value={route}
+              onChange={(e) => setRoute(e.target.value)}
+              placeholder="e.g. Oral"
+              className={inputClass}
+            />
+          </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {["Regular", "PRN"].map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setMedicationType(type)}
-                className={`rounded-2xl p-3 text-sm font-semibold ${
-                  medicationType === type
-                    ? "bg-cyan-500 text-white"
-                    : "bg-white/10 text-slate-300"
-                }`}
-              >
-                {type}
-              </button>
-            ))}
+          <div>
+            <p className="text-sm font-medium text-slate-700">
+              Medication type
+            </p>
+
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {["Regular", "PRN"].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setMedicationType(type)}
+                  className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                    medicationType === type
+                      ? "border-slate-950 bg-slate-950 text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
           </div>
 
           {medicationType === "Regular" && (
             <div>
-              <p className="mb-2 text-sm font-semibold text-slate-300">
-                Medication Rounds
+              <p className="text-sm font-medium text-slate-700">
+                Medication rounds
               </p>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 {roundOptions.map((round) => (
                   <button
                     key={round}
                     type="button"
                     onClick={() => toggleRound(round)}
-                    className={`rounded-2xl p-3 text-sm font-semibold ${
+                    className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
                       rounds.includes(round)
-                        ? "bg-teal-500 text-white"
-                        : "bg-white/10 text-slate-300"
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
                     {round}
@@ -154,46 +183,46 @@ export default function AddMedicationForm({
           )}
 
           {medicationType === "PRN" && (
-            <div className="space-y-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4">
-              <label className="flex items-center gap-3 text-sm text-slate-200">
+            <div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <label className="flex items-center gap-3 text-sm text-slate-700">
                 <input
                   type="checkbox"
                   checked={prnReasonRequired}
-                  onChange={(e) =>
-                    setPrnReasonRequired(e.target.checked)
-                  }
+                  onChange={(e) => setPrnReasonRequired(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300"
                 />
-
                 Require reason when administered
               </label>
 
-              <label className="flex items-center gap-3 text-sm text-slate-200">
+              <label className="flex items-center gap-3 text-sm text-slate-700">
                 <input
                   type="checkbox"
                   checked={prnIncidentRecommended}
                   onChange={(e) =>
                     setPrnIncidentRecommended(e.target.checked)
                   }
+                  className="h-4 w-4 rounded border-slate-300"
                 />
-
                 Recommend incident form when administered
               </label>
             </div>
           )}
 
-          <textarea
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            placeholder="Instructions / notes"
-            className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-          />
+          <div>
+            <label className="text-sm font-medium text-slate-700">
+              Instructions / notes
+            </label>
+            <textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              placeholder="Instructions / notes"
+              className={textareaClass}
+            />
+          </div>
 
-          <button
-            onClick={onSave}
-            className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 text-lg font-semibold text-white"
-          >
+          <CastodiaButton onClick={onSave} className="w-full">
             Save Medication Profile
-          </button>
+          </CastodiaButton>
         </div>
       </div>
     </div>

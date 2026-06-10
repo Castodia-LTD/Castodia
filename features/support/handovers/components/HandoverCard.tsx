@@ -1,4 +1,4 @@
-import { SectionCard } from "@/components/layouts";
+import { CastodiaBadge, CastodiaButton, CastodiaCard } from "@/components/castodia";
 import type { Handover } from "../types";
 
 type HandoverCardProps = {
@@ -11,43 +11,36 @@ export default function HandoverCard({
   onMarkAsRead,
 }: HandoverCardProps) {
   return (
-    <SectionCard>
+    <CastodiaCard>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             {new Date(handover.created_at).toLocaleString("en-GB")}
           </p>
 
-          <h2 className="mt-2 break-words text-xl font-bold text-white">
+          <h2 className="mt-2 break-words text-xl font-semibold text-slate-950">
             {handover.title}
           </h2>
         </div>
 
-        <span
-          className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${
-            handover.read ? "bg-green-600" : "bg-amber-500"
-          }`}
-        >
+        <CastodiaBadge variant={handover.read ? "success" : "warning"}>
           {handover.read ? "Read" : "Unread"}
-        </span>
+        </CastodiaBadge>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {handover.service_users?.map((serviceUser) => (
-          <span
-            key={serviceUser.id}
-            className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300"
-          >
+          <CastodiaBadge key={serviceUser.id} variant="neutral">
             {serviceUser.full_name}
-          </span>
+          </CastodiaBadge>
         ))}
       </div>
 
-      <p className="mt-4 whitespace-pre-line break-words text-slate-200">
+      <p className="mt-4 whitespace-pre-line break-words text-slate-700">
         {handover.content}
       </p>
 
-      <p className="mt-5 border-t border-white/10 pt-4 text-xs text-slate-400">
+      <p className="mt-5 border-t border-slate-200 pt-4 text-xs text-slate-500">
         Created by {handover.staff_name}
       </p>
 
@@ -59,25 +52,22 @@ export default function HandoverCard({
 
           <div className="flex flex-wrap gap-2">
             {handover.read_by.map((person) => (
-              <span
-                key={person}
-                className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs text-emerald-300"
-              >
+              <CastodiaBadge key={person} variant="success">
                 {person}
-              </span>
+              </CastodiaBadge>
             ))}
           </div>
         </div>
       )}
 
       {!handover.read && (
-        <button
+        <CastodiaButton
           onClick={() => onMarkAsRead(handover.id)}
-          className="mt-5 w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-semibold text-white"
+          className="mt-5 w-full"
         >
           Mark as Read
-        </button>
+        </CastodiaButton>
       )}
-    </SectionCard>
+    </CastodiaCard>
   );
 }

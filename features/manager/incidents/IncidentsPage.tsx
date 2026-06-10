@@ -3,9 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle, Clock, UserRound } from "lucide-react";
-import { PageContainer, PageHeader, SectionCard } from "@/components/layouts";
 import { supabase } from "@/lib/supabase";
 import type { Incident } from "./types";
+
+import {
+  CastodiaBadge,
+  CastodiaButton,
+  CastodiaCard,
+  CastodiaPageShell,
+} from "@/components/castodia";
 
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -75,131 +81,125 @@ export default function IncidentsPage() {
     .length;
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Behaviour Incidents"
-        subtitle="Review behaviour incidents and record management oversight."
-      />
-
+    <CastodiaPageShell
+      title="Behaviour Incidents"
+      description="Review behaviour incidents and record management oversight."
+      maxWidth="wide"
+    >
       <div className="grid gap-4 md:grid-cols-3">
-        <SectionCard>
-          <p className="text-sm text-slate-400">Awaiting review</p>
-          <p className="mt-2 text-3xl font-bold text-amber-300">
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Awaiting review</p>
+          <p className="mt-2 text-3xl font-bold text-amber-600">
             {unreviewedCount}
           </p>
-        </SectionCard>
+        </CastodiaCard>
 
-        <SectionCard>
-          <p className="text-sm text-slate-400">Reviewed</p>
-          <p className="mt-2 text-3xl font-bold text-emerald-300">
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Reviewed</p>
+          <p className="mt-2 text-3xl font-bold text-emerald-600">
             {reviewedCount}
           </p>
-        </SectionCard>
+        </CastodiaCard>
 
-        <SectionCard>
-          <p className="text-sm text-slate-400">Total behaviour incidents</p>
-          <p className="mt-2 text-3xl font-bold text-white">
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Total behaviour incidents</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
             {incidents.length}
           </p>
-        </SectionCard>
+        </CastodiaCard>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {[
           { key: "unreviewed", label: "Awaiting review" },
           { key: "reviewed", label: "Reviewed" },
           { key: "all", label: "All" },
         ].map((item) => (
-          <button
+          <CastodiaButton
             key={item.key}
+            variant={filter === item.key ? "primary" : "secondary"}
+            size="sm"
             onClick={() => setFilter(item.key as typeof filter)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold ${
-              filter === item.key
-                ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white"
-                : "bg-white/10 text-slate-300 hover:bg-white/20"
-            }`}
           >
             {item.label}
-          </button>
+          </CastodiaButton>
         ))}
       </div>
 
-      <section className="mt-6 space-y-4">
+      <section className="space-y-4">
         {loading && (
-          <SectionCard>
-            <p className="text-sm text-slate-400">
+          <CastodiaCard>
+            <p className="text-sm text-slate-500">
               Loading behaviour incidents...
             </p>
-          </SectionCard>
+          </CastodiaCard>
         )}
 
         {!loading && filteredIncidents.length === 0 && (
-          <SectionCard>
-            <p className="text-sm text-slate-400">
+          <CastodiaCard>
+            <p className="text-sm text-slate-500">
               No behaviour incidents found for this filter.
             </p>
-          </SectionCard>
+          </CastodiaCard>
         )}
 
         {!loading &&
           filteredIncidents.map((incident) => (
-            <Link
-              key={incident.id}
-              href={`/manager/incidents/${incident.id}`}
-              className="block rounded-3xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur transition hover:bg-white/15"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-                        incident.reviewed
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "bg-amber-500/20 text-amber-300"
-                      }`}
-                    >
-                      {incident.reviewed ? (
-                        <CheckCircle size={14} />
-                      ) : (
-                        <AlertTriangle size={14} />
-                      )}
+            <Link key={incident.id} href={`/manager/incidents/${incident.id}`}>
+              <CastodiaCard interactive>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CastodiaBadge
+                        variant={incident.reviewed ? "success" : "warning"}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {incident.reviewed ? (
+                            <CheckCircle size={14} />
+                          ) : (
+                            <AlertTriangle size={14} />
+                          )}
 
-                      {incident.reviewed ? "Reviewed" : "Awaiting review"}
-                    </span>
+                          {incident.reviewed
+                            ? "Reviewed"
+                            : "Awaiting review"}
+                        </span>
+                      </CastodiaBadge>
 
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300">
-                      Behaviour Incident
-                    </span>
+                      <CastodiaBadge variant="neutral">
+                        Behaviour Incident
+                      </CastodiaBadge>
+                    </div>
+
+                    <h2 className="mt-4 text-xl font-semibold text-slate-950">
+                      {incident.service_user_name}
+                    </h2>
+
+                    <p className="mt-3 line-clamp-3 whitespace-pre-line text-sm leading-6 text-slate-600">
+                      {incident.content}
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
+                      <span className="inline-flex items-center gap-1">
+                        <UserRound size={14} />
+                        {incident.staff_name}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1">
+                        <Clock size={14} />
+                        {new Date(incident.created_at).toLocaleString("en-GB")}
+                      </span>
+                    </div>
                   </div>
 
-                  <h2 className="mt-4 text-xl font-bold text-white">
-                    {incident.service_user_name}
-                  </h2>
-
-                  <p className="mt-3 line-clamp-3 whitespace-pre-line text-sm leading-6 text-slate-300">
-                    {incident.content}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-400">
-                    <span className="inline-flex items-center gap-1">
-                      <UserRound size={14} />
-                      {incident.staff_name}
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Clock size={14} />
-                      {new Date(incident.created_at).toLocaleString("en-GB")}
-                    </span>
-                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-slate-500">
+                    Review →
+                  </span>
                 </div>
-
-                <span className="shrink-0 text-sm font-semibold text-cyan-300">
-                  Review →
-                </span>
-              </div>
+              </CastodiaCard>
             </Link>
           ))}
       </section>
-    </PageContainer>
+    </CastodiaPageShell>
   );
 }

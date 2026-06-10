@@ -1,5 +1,10 @@
 import { Power, RotateCcw } from "lucide-react";
 import type { MedicationProfile } from "../types";
+import {
+  CastodiaBadge,
+  CastodiaButton,
+  CastodiaCard,
+} from "@/components/castodia";
 
 type Props = {
   medications: MedicationProfile[];
@@ -13,123 +18,140 @@ export default function MedicationProfilesTable({
   onToggleActive,
 }: Props) {
   return (
-    <div className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/10 shadow-xl backdrop-blur">
-      <div className="flex items-center justify-between border-b border-white/10 p-5">
+    <CastodiaCard padding="none">
+      <div className="flex items-center justify-between border-b border-slate-200 p-5">
         <div>
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-semibold text-slate-950">
             {selectedServiceUserName || "Medication Profiles"}
           </h2>
-          <p className="mt-1 text-sm text-slate-400">
+
+          <p className="mt-1 text-sm text-slate-500">
             Active and inactive medication profiles.
           </p>
         </div>
 
-        <div className="rounded-full bg-cyan-500/20 px-3 py-1 text-sm font-semibold text-cyan-200">
+        <CastodiaBadge variant="info">
           {medications.length} recorded
-        </div>
+        </CastodiaBadge>
       </div>
 
       {medications.length === 0 ? (
-        <div className="p-8 text-center text-slate-400">
+        <div className="p-8 text-center text-sm text-slate-500">
           No medication profiles recorded.
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[780px] text-left">
-            <thead className="border-b border-white/10 bg-slate-950/60 text-sm text-slate-400">
+            <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
-                <th className="p-4">Medication</th>
-                <th className="p-4">Dose</th>
-                <th className="p-4">Route</th>
-                <th className="p-4">Type</th>
-                <th className="p-4">Rounds</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Action</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Medication
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Dose
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Route
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Type
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Rounds
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Action
+                </th>
               </tr>
             </thead>
 
-            <tbody>
-              {medications.map((medication) => (
-                <tr
-                  key={medication.id}
-                  className="border-b border-white/10 last:border-b-0"
-                >
-                  <td className="p-4">
-                    <p className="font-semibold text-white">
-                      {medication.medication_name} {medication.strength || ""}
-                    </p>
+            <tbody className="divide-y divide-slate-100">
+              {medications.map((medication) => {
+                const rounds = medication.round
+                  .split(",")
+                  .map((round) => round.trim())
+                  .filter(Boolean);
 
-                    {medication.instructions && (
-                      <p className="mt-1 max-w-xs truncate text-sm text-slate-400">
-                        {medication.instructions}
+                return (
+                  <tr
+                    key={medication.id}
+                    className="transition hover:bg-slate-50"
+                  >
+                    <td className="px-4 py-4">
+                      <p className="font-semibold text-slate-950">
+                        {medication.medication_name}
                       </p>
-                    )}
-                  </td>
 
-                  <td className="p-4 text-slate-300">{medication.dose}</td>
-                  <td className="p-4 text-slate-300">{medication.route}</td>
-
-                  <td className="p-4">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        medication.medication_type === "PRN"
-                          ? "bg-amber-500/20 text-amber-200"
-                          : "bg-teal-500/20 text-teal-200"
-                      }`}
-                    >
-                      {medication.medication_type}
-                    </span>
-                  </td>
-
-                  <td className="p-4">
-                    {medication.medication_type === "Regular" ? (
-                      <div className="flex flex-wrap gap-1">
-                        {(medication.rounds || []).map((round) => (
-                          <span
-                            key={round}
-                            className="rounded-full bg-white/10 px-2 py-1 text-xs text-slate-300"
-                          >
-                            {round}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-400">
-                        As required
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="p-4">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        medication.active
-                          ? "bg-emerald-500/20 text-emerald-200"
-                          : "bg-slate-500/20 text-slate-300"
-                      }`}
-                    >
-                      {medication.active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => onToggleActive(medication)}
-                      className="inline-flex rounded-xl bg-white/10 p-3 text-slate-300 hover:bg-white/20"
-                    >
-                      {medication.active ? (
-                        <Power size={18} />
-                      ) : (
-                        <RotateCcw size={18} />
+                      {medication.instructions && (
+                        <p className="mt-1 max-w-xs truncate text-sm text-slate-500">
+                          {medication.instructions}
+                        </p>
                       )}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+
+                    <td className="px-4 py-4 text-sm text-slate-700">
+                      {medication.dose}
+                    </td>
+
+                    <td className="px-4 py-4 text-sm text-slate-700">
+                      {medication.route || "—"}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <CastodiaBadge
+                        variant={medication.is_prn ? "warning" : "success"}
+                      >
+                        {medication.is_prn ? "PRN" : "Regular"}
+                      </CastodiaBadge>
+                    </td>
+
+                    <td className="px-4 py-4">
+                      {!medication.is_prn ? (
+                        <div className="flex flex-wrap gap-1">
+                          {rounds.map((round) => (
+                            <CastodiaBadge key={round} variant="neutral">
+                              {round}
+                            </CastodiaBadge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500">
+                          As required
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <CastodiaBadge
+                        variant={medication.active ? "success" : "neutral"}
+                      >
+                        {medication.active ? "Active" : "Inactive"}
+                      </CastodiaBadge>
+                    </td>
+
+                    <td className="px-4 py-4 text-right">
+                      <CastodiaButton
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onToggleActive(medication)}
+                      >
+                        {medication.active ? (
+                          <Power size={16} />
+                        ) : (
+                          <RotateCcw size={16} />
+                        )}
+                      </CastodiaButton>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
-    </div>
+    </CastodiaCard>
   );
 }

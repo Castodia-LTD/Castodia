@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { PageContainer, PageHeader, SectionCard } from "@/components/layouts";
 import { supabase } from "@/lib/supabase";
+
+import {
+  CastodiaBadge,
+  CastodiaButton,
+  CastodiaCard,
+  CastodiaPageShell,
+  CastodiaSection,
+} from "@/components/castodia";
+
 import type {
   StaffMember,
   StaffSupervision,
@@ -17,6 +25,26 @@ type CurrentUserProfile = {
   full_name: string;
   role: string;
 };
+
+function getSupervisionStatus(supervision?: StaffSupervision) {
+  if (!supervision) return "not-started";
+
+  if (!supervision?.next_supervision_date) {
+  return "not-started";
+}
+
+const nextDue = new Date(supervision.next_supervision_date);
+  const today = new Date();
+
+  const daysUntilDue = Math.ceil(
+    (nextDue.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysUntilDue < 0) return "overdue";
+  if (daysUntilDue <= 30) return "due-soon";
+
+  return "up-to-date";
+}
 
 export default function SupervisionsPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -54,35 +82,34 @@ export default function SupervisionsPage() {
       return;
     }
 
-    const [{ data: staffData, error: staffError }, { data: supervisionData, error: supervisionError }] =
-      await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, full_name, role")
-          .eq("organisation_id", profile.organisation_id)
-          .order("full_name"),
+    const [staffResult, supervisionResult] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("organisation_id", profile.organisation_id)
+        .order("full_name"),
 
-        supabase
-          .from("staff_supervisions")
-          .select("*")
-          .eq("organisation_id", profile.organisation_id)
-          .order("supervision_date", { ascending: false }),
-      ]);
+      supabase
+        .from("staff_supervisions")
+        .select("*")
+        .eq("organisation_id", profile.organisation_id)
+        .order("supervision_date", { ascending: false }),
+    ]);
 
-    if (staffError) {
-      alert(staffError.message);
+    if (staffResult.error) {
+      alert(staffResult.error.message);
       setLoading(false);
       return;
     }
 
-    if (supervisionError) {
-      alert(supervisionError.message);
+    if (supervisionResult.error) {
+      alert(supervisionResult.error.message);
       setLoading(false);
       return;
     }
 
-    setStaff(staffData || []);
-    setSupervisions((supervisionData || []) as StaffSupervision[]);
+    setStaff(staffResult.data || []);
+    setSupervisions((supervisionResult.data || []) as StaffSupervision[]);
     setLoading(false);
   }
 
@@ -90,36 +117,98 @@ export default function SupervisionsPage() {
     loadPageData();
   }, []);
 
+  const latestSupervisionMap = useMemo(() => {
+    const map = new Map<string, StaffSupervision>();
+
+    supervisions.forEach((supervision) => {
+      if (!map.has(supervision.staff_id)) {
+        map.set(supervision.staff_id, supervision);
+      }
+    });
+
+    return map;
+  }, [supervisions]);
+
+  const summary = useMemo(() => {
+    let upToDate = 0;
+    let dueSoon = 0;
+    let overdue = 0;
+    let notStarted = 0;
+
+    staff.forEach((person) => {
+      const latest = latestSupervisionMap.get(person.id);
+      const status = getSupervisionStatus(latest);
+
+      if (status === "up-to-date") upToDate += 1;
+      if (status === "due-soon") dueSoon += 1;
+      if (status === "overdue") overdue += 1;
+      if (status === "not-started") notStarted += 1;
+    });
+
+    return { upToDate, dueSoon, overdue, notStarted };
+  }, [staff, latestSupervisionMap]);
+
   return (
-    <PageContainer>
-      <PageHeader
-        title="Supervisions"
-        subtitle="Track staff supervision dates, review status and follow-up needs."
-      >
-        <Link
-          href="/manager/supervisions/new"
-          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-900/30"
-        >
-          <Plus size={18} />
-          New Supervision
+    <CastodiaPageShell
+      title="Supervisions"
+      description="Track staff supervision dates, review status and follow-up needs."
+      maxWidth="wide"
+      actions={
+        <Link href="/manager/supervisions/new">
+          <CastodiaButton>
+            <Plus size={16} />
+            New Supervision
+          </CastodiaButton>
         </Link>
-      </PageHeader>
+      }
+    >
+      <div className="grid gap-4 md:grid-cols-4">
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Up to date</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.upToDate}
+          </p>
+        </CastodiaCard>
 
-      {loading && (
-        <SectionCard>
-          <p className="text-slate-400">Loading supervisions...</p>
-        </SectionCard>
-      )}
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Due soon</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.dueSoon}
+          </p>
+        </CastodiaCard>
 
-      {!loading && staff.length === 0 && (
-        <SectionCard>
-          <p className="text-slate-400">No staff members found.</p>
-        </SectionCard>
-      )}
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Overdue</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.overdue}
+          </p>
+        </CastodiaCard>
 
-      {!loading && staff.length > 0 && (
-        <SupervisionMatrix staff={staff} supervisions={supervisions} />
-      )}
-    </PageContainer>
+        <CastodiaCard padding="md">
+          <p className="text-sm text-slate-500">Not started</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {summary.notStarted}
+          </p>
+        </CastodiaCard>
+      </div>
+
+      <CastodiaSection title="Supervision Matrix">
+        {loading && (
+          <CastodiaCard>
+            <p className="text-sm text-slate-500">Loading supervisions...</p>
+          </CastodiaCard>
+        )}
+
+        {!loading && staff.length === 0 && (
+          <CastodiaCard>
+            <p className="text-sm text-slate-500">No staff members found.</p>
+          </CastodiaCard>
+        )}
+
+        {!loading && staff.length > 0 && (
+          <SupervisionMatrix staff={staff} supervisions={supervisions} />
+        )}
+      </CastodiaSection>
+    </CastodiaPageShell>
   );
 }

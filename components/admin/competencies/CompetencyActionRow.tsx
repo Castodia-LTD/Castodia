@@ -1,4 +1,5 @@
 import type { CompetencyAction } from "@/lib/admin/competencies/types";
+import { CastodiaButton } from "@/components/castodia";
 
 type Props = {
   action: CompetencyAction;
@@ -6,55 +7,57 @@ type Props = {
   onRemove: () => void;
 };
 
+const inputClass =
+  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
 export default function CompetencyActionRow({
   action,
   onChange,
   onRemove,
 }: Props) {
   return (
-    <div className="space-y-3 rounded-2xl border border-white/10 bg-slate-900 p-4">
-      <input
-        value={action.action}
-        onChange={(e) =>
-          onChange({
-            ...action,
-            action: e.target.value,
-          })
-        }
-        placeholder="Action"
-        className="w-full rounded-xl bg-slate-800 p-3 text-white outline-none"
-      />
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="grid gap-3 md:grid-cols-[1fr_1fr_180px_auto] md:items-center">
+        <input
+          value={action.action}
+          onChange={(e) =>
+            onChange({
+              ...action,
+              action: e.target.value,
+            })
+          }
+          placeholder="Action"
+          className={inputClass}
+        />
 
-      <input
-        value={action.responsible_person}
-        onChange={(e) =>
-          onChange({
-            ...action,
-            responsible_person: e.target.value,
-          })
-        }
-        placeholder="Responsible person"
-        className="w-full rounded-xl bg-slate-800 p-3 text-white outline-none"
-      />
+        <input
+          value={action.responsible_person}
+          onChange={(e) =>
+            onChange({
+              ...action,
+              responsible_person: e.target.value,
+            })
+          }
+          placeholder="Responsible person"
+          className={inputClass}
+        />
 
-      <input
-        type="date"
-        value={action.due_date}
-        onChange={(e) =>
-          onChange({
-            ...action,
-            due_date: e.target.value,
-          })
-        }
-        className="w-full rounded-xl bg-slate-800 p-3 text-white outline-none"
-      />
+        <input
+          type="date"
+          value={action.due_date}
+          onChange={(e) =>
+            onChange({
+              ...action,
+              due_date: e.target.value,
+            })
+          }
+          className={inputClass}
+        />
 
-      <button
-        onClick={onRemove}
-        className="rounded-xl bg-red-500/20 px-4 py-2 text-sm text-red-200"
-      >
-        Remove
-      </button>
+        <CastodiaButton variant="danger" size="sm" onClick={onRemove}>
+          Remove
+        </CastodiaButton>
+      </div>
     </div>
   );
 }

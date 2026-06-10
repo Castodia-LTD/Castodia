@@ -1,436 +1,422 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  PageContainer,
-  PageHeader,
-  SectionCard,
-} from "@/components/layouts";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import HandoverCard from "./components/HandoverCard";
-import HandoverForm from "./components/HandoverForm";
-import type { Handover, ServiceUser } from "./types";
 
-type HandoverLink = {
-  handover_id: string;
+import {
+  CastodiaButton,
+  CastodiaCard,
+} from "@/components/castodia";
+
+type MedicationProfile = {
+  id: string;
   service_user_id: string;
+  medication_name: string;
+  dose: string;
+  route: string | null;
+  round: string;
+  instructions: string | null;
+  is_prn: boolean;
+  active: boolean;
+  locked: boolean;
 };
 
-export default function HandoversPage() {
-  const [handovers, setHandovers] = useState<Handover[]>([]);
-  const [serviceUsers, setServiceUsers] = useState<ServiceUser[]>([]);
-  const [userId, setUserId] = useState("");
+type MedicationOutcome = {
+  selected: boolean;
+  status: string;
+  reason: string;
+};
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [selectedServiceUsers, setSelectedServiceUsers] = useState<string[]>(
-    []
-  );
+type Props = {
+  serviceUserId: string | null;
+  onSaved?: () => void;
+  onCreateTimelineEntry?: (summary: string) => Promise<void>;
+};
 
-  const [generating, setGenerating] = useState(false);
-  const [handoverPeriod, setHandoverPeriod] = useState("24");
-  const [formOpen, setFormOpen] = useState(false);
+const STATUSES = ["Administered", "Refused", "Not given", "Unavailable", "Withheld"];
+
+const REASONS = [
+  "Service user declined",
+  "Medication unavailable",
+  "Health concern",
+  "As directed by clinician",
+  "Asleep",
+  "Away from service",
+  "Other",
+];
+
+const inputClass =
+  "mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
+export default function MedicationAdministrationForm({
+  serviceUserId,
+  onSaved,
+  onCreateTimelineEntry,
+}: Props) {
+  const [profiles, setProfiles] = useState<MedicationProfile[]>([]);
+  const [selectedRound, setSelectedRound] = useState("");
+  const [outcomes, setOutcomes] = useState<Record<string, MedicationOutcome>>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  async function loadData() {
-    setLoading(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    setUserId(user.id);
-
-    const { data: profile } = await supabase
-  .from("profiles")
-  .select("role")
-  .eq("id", user.id)
-  .single();
-
-let visibleServiceUsers: ServiceUser[] = [];
-
-if (profile?.role === "manager") {
-  const { data } = await supabase
-    .from("service_users")
-    .select("id, full_name, house_name")
-    .eq("is_active", true)
-    .order("full_name");
-
-  visibleServiceUsers = data || [];
-} else {
-  const { data: accessRows } = await supabase
-    .from("staff_service_user_access")
-    .select(`
-      service_users (
-        id,
-        full_name,
-        house_name
-      )
-    `)
-    .eq("staff_id", user.id);
-
-  visibleServiceUsers =
-    accessRows
-      ?.map((row: any) => row.service_users)
-      .filter(Boolean) || [];
-}
-
-setServiceUsers(visibleServiceUsers);
-
-    const visibleServiceUserIds = visibleServiceUsers.map(
-      (serviceUser: ServiceUser) => serviceUser.id
-    );
-
-    if (visibleServiceUserIds.length === 0) {
-      setHandovers([]);
-      setLoading(false);
-      return;
-    }
-
-    const { data: handoverLinks } = await supabase
-      .from("handover_service_users")
-      .select("handover_id, service_user_id")
-      .in("service_user_id", visibleServiceUserIds);
-
-    const handoverIds = [
-      ...new Set(handoverLinks?.map((link) => link.handover_id) || []),
-    ];
-
-    if (handoverIds.length === 0) {
-      setHandovers([]);
-      setLoading(false);
-      return;
-    }
-
-    const { data: handoverData, error } = await supabase
-      .from("handovers")
-      .select("*")
-      .eq("active", true)
-      .in("id", handoverIds)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
-
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name");
-
-    const { data: reads } = await supabase
-      .from("handover_reads")
-      .select("handover_id, staff_id");
-
-    const enrichedHandovers =
-      handoverData?.map((handover) => {
-        const staff = profiles?.find(
-          (profile) => profile.id === handover.created_by
-        );
-
-        const hasRead = reads?.some(
-          (read) =>
-            read.handover_id === handover.id && read.staff_id === user.id
-        );
-
-        const readNames =
-          reads
-            ?.filter((read) => read.handover_id === handover.id)
-            .map((read) => {
-              const profile = profiles?.find(
-                (person) => person.id === read.staff_id
-              );
-
-              return profile?.full_name;
-            })
-            .filter(Boolean) || [];
-
-        const linkedServiceUsers =
-          handoverLinks
-            ?.filter(
-              (link: HandoverLink) => link.handover_id === handover.id
-            )
-            .map((link: HandoverLink) =>
-              visibleServiceUsers.find(
-                (serviceUser: ServiceUser) =>
-                  serviceUser.id === link.service_user_id
-              )
-            )
-            .filter(Boolean) || [];
-
-        return {
-          ...handover,
-          staff_name: staff?.full_name || "Unknown",
-          read: hasRead || false,
-          read_by: readNames as string[],
-          service_users: linkedServiceUsers,
-        };
-      }) || [];
-
-    setHandovers(enrichedHandovers);
-    setLoading(false);
-  }
-
-  function toggleServiceUser(id: string) {
-    setSelectedServiceUsers((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id]
+  if (!serviceUserId) {
+    return (
+      <CastodiaCard>
+        <p className="text-sm text-red-600">Missing service user ID.</p>
+      </CastodiaCard>
     );
   }
 
-  function daysSince(dateString?: string) {
-    if (!dateString) return "No record";
+  const roundOptions = useMemo(() => {
+    return Array.from(new Set(profiles.map((profile) => profile.round))).sort();
+  }, [profiles]);
 
-    const then = new Date(dateString);
-    const now = new Date();
+  const selectedMedications = useMemo(() => {
+    return profiles.filter((profile) => profile.round === selectedRound);
+  }, [profiles, selectedRound]);
 
-    const diff = Math.floor(
-      (now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (diff === 0) return "Today";
-    if (diff === 1) return "Yesterday";
-
-    return `${diff} days ago`;
-  }
-
-  async function generateAutomaticSummary() {
-    if (selectedServiceUsers.length === 0) {
-      alert("Select at least one service user.");
-      return;
-    }
-
-    setGenerating(true);
-
-    try {
-      const lines: string[] = [];
-      const since = new Date();
-
-      since.setHours(since.getHours() - Number(handoverPeriod));
-
-      for (const serviceUserId of selectedServiceUsers) {
-        const serviceUser = serviceUsers.find(
-          (person) => person.id === serviceUserId
-        );
-
-        if (!serviceUser) continue;
-
-        lines.push(`${serviceUser.full_name}`);
-
-        const { data: recentTimeline } = await supabase
-          .from("timeline_entries")
-          .select("entry_type, created_at")
-          .eq("service_user_id", serviceUserId)
-          .gte("created_at", since.toISOString())
-          .order("created_at", { ascending: false });
-
-        const sleepEntries =
-          recentTimeline?.filter((entry) => entry.entry_type === "Sleep") ||
-          [];
-
-        if (sleepEntries.length > 0) {
-          lines.push("");
-          lines.push("Sleep:");
-          lines.push(`• ${sleepEntries.length} sleep observations recorded`);
-        }
-
-        const { data: toileting } = await supabase
-          .from("toileting_records")
-          .select("toileting_outcome")
-          .eq("service_user_id", serviceUserId)
-          .gte("created_at", since.toISOString())
-          .order("created_at", { ascending: false });
-
-        const bowelMovements =
-          toileting?.filter((record) =>
-            ["Bowel movement", "Both"].includes(record.toileting_outcome)
-          ).length || 0;
-
-        lines.push("");
-        lines.push("Continence:");
-        lines.push(`• ${bowelMovements} bowel movements recorded`);
-
-        const { data: personalCare } = await supabase
-          .from("personal_care_records")
-          .select("care_type, occurred_at")
-          .eq("service_user_id", serviceUserId)
-          .order("occurred_at", { ascending: false });
-
-        const lastWash = personalCare?.find((row) =>
-          ["Shower", "Bath", "Strip wash"].includes(row.care_type)
-        );
-
-        const lastClothing = personalCare?.find(
-          (row) => row.care_type === "Clothing changed"
-        );
-
-        lines.push("");
-        lines.push("Personal Care:");
-        lines.push(`• Last washed: ${daysSince(lastWash?.occurred_at)}`);
-        lines.push(
-          `• Last clothing change: ${daysSince(lastClothing?.occurred_at)}`
-        );
-
-        const incidentCount =
-          recentTimeline?.filter((entry) => entry.entry_type === "Incident")
-            .length || 0;
-
-        if (incidentCount > 0) {
-          lines.push("");
-          lines.push("Incidents:");
-          lines.push(`• ${incidentCount} incidents recorded`);
-        }
-
-        lines.push("");
-      }
-
-      setContent(lines.join("\n"));
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  async function createHandover() {
-    if (!title.trim() || !content.trim()) {
-      alert("Please enter a title and handover details.");
-      return;
-    }
-
-    if (selectedServiceUsers.length === 0) {
-      alert("Please select at least one service user.");
-      return;
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      alert("You must be logged in.");
-      return;
-    }
-
-    const { data: handover, error } = await supabase
-      .from("handovers")
-      .insert({
-        title: title.trim(),
-        content: content.trim(),
-        created_by: user.id,
-        active: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    const links = selectedServiceUsers.map((serviceUserId) => ({
-      handover_id: handover.id,
-      service_user_id: serviceUserId,
-    }));
-
-    const { error: linkError } = await supabase
-      .from("handover_service_users")
-      .insert(links);
-
-    if (linkError) {
-      alert(linkError.message);
-      return;
-    }
-
-    setTitle("");
-    setContent("");
-    setSelectedServiceUsers([]);
-    setFormOpen(false);
-
-    await loadData();
-  }
-
-  async function markAsRead(handoverId: string) {
-    if (!userId) return;
-
-    const { error } = await supabase.from("handover_reads").insert({
-      handover_id: handoverId,
-      staff_id: userId,
-    });
-
-    if (error && !error.message.includes("duplicate")) {
-      alert(error.message);
-      return;
-    }
-
-    await loadData();
-  }
+  const isPrnRound =
+    selectedMedications.length > 0 &&
+    selectedMedications.every((med) => med.is_prn);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    async function loadMedicationProfiles() {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("medication_profiles")
+        .select(
+          "id, service_user_id, medication_name, dose, route, round, instructions, is_prn, active, locked"
+        )
+        .eq("service_user_id", serviceUserId)
+        .eq("active", true)
+        .order("round", { ascending: true });
+
+      if (error) {
+        console.error("Medication profile load error:", error);
+        alert(error.message);
+        setLoading(false);
+        return;
+      }
+
+      setProfiles((data ?? []) as MedicationProfile[]);
+      setLoading(false);
+    }
+
+    loadMedicationProfiles();
+  }, [serviceUserId]);
+
+  useEffect(() => {
+    const initial: Record<string, MedicationOutcome> = {};
+
+    selectedMedications.forEach((med) => {
+      initial[med.id] = {
+        selected: !isPrnRound,
+        status: "",
+        reason: "",
+      };
+    });
+
+    setOutcomes(initial);
+  }, [selectedRound, selectedMedications, isPrnRound]);
+
+  function updateOutcome(
+    medicationId: string,
+    field: keyof MedicationOutcome,
+    value: string | boolean
+  ) {
+    setOutcomes((current) => ({
+      ...current,
+      [medicationId]: {
+        ...current[medicationId],
+        [field]: value,
+      },
+    }));
+  }
+
+  async function handleSave() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("You must be signed in to record medication.");
+      return;
+    }
+
+    const selectedRecords = selectedMedications.filter(
+      (med) => outcomes[med.id]?.selected
+    );
+
+    if (selectedRecords.length === 0) {
+      alert("Please select at least one medication.");
+      return;
+    }
+
+    const incomplete = selectedRecords.some((med) => {
+      const outcome = outcomes[med.id];
+
+      if (!outcome?.status) return true;
+
+      if (outcome.status !== "Administered" && !outcome.reason) {
+        return true;
+      }
+
+      return false;
+    });
+
+    if (incomplete) {
+      alert(
+        "Please complete status for all medication. A reason is only required if it was not administered."
+      );
+      return;
+    }
+
+    const now = new Date();
+
+    const recordsToSave = selectedRecords.map((med) => ({
+      service_user_id: serviceUserId,
+      medication_profile_id: med.id,
+      administered_by: user.id,
+      round: med.round,
+      status: outcomes[med.id].status,
+      reason:
+        outcomes[med.id].status === "Administered"
+          ? null
+          : outcomes[med.id].reason || null,
+      administered_at: now.toISOString(),
+      administration_date: now.toISOString().split("T")[0],
+    }));
+
+    setSaving(true);
+
+    const { error } = await supabase
+      .from("medication_administrations")
+      .insert(recordsToSave);
+
+    if (error) {
+      console.error("Medication administration save error:", error);
+      alert(error.message);
+      setSaving(false);
+      return;
+    }
+
+    const summaryLines = selectedRecords.map((med) => {
+      const status = outcomes[med.id].status;
+      const reason = outcomes[med.id].reason;
+
+      if (status === "Administered") {
+        return `${med.medication_name} ${med.dose} — administered.`;
+      }
+
+      return `${med.medication_name} ${med.dose} — ${status.toLowerCase()}${
+        reason ? `: ${reason}` : ""
+      }.`;
+    });
+
+    const summary = [
+      `${selectedRound} medication round completed.`,
+      "",
+      ...summaryLines,
+      "",
+      "Recorded via eMAR.",
+    ].join("\n");
+
+    if (onCreateTimelineEntry) {
+      await onCreateTimelineEntry(summary);
+    }
+
+    setSaving(false);
+    onSaved?.();
+  }
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Handovers"
-        subtitle="Create and review handovers for your assigned service users."
-      >
-        <button
-          onClick={() => setFormOpen(true)}
-          className="rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-900/30"
-        >
-          + New
-        </button>
-      </PageHeader>
+    <CastodiaCard>
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold text-slate-950">
+          Medication Administration
+        </h2>
 
-      {formOpen && (
-        <div className="mb-8">
-          <HandoverForm
-            title={title}
-            content={content}
-            handoverPeriod={handoverPeriod}
-            serviceUsers={serviceUsers}
-            selectedServiceUsers={selectedServiceUsers}
-            generating={generating}
-            onTitleChange={setTitle}
-            onContentChange={setContent}
-            onHandoverPeriodChange={setHandoverPeriod}
-            onToggleServiceUser={toggleServiceUser}
-            onGenerateSummary={generateAutomaticSummary}
-            onCreateHandover={createHandover}
-            onClose={() => setFormOpen(false)}
-          />
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {loading && (
-          <SectionCard>
-            <p className="text-sm text-slate-400">Loading handovers...</p>
-          </SectionCard>
-        )}
-
-        {!loading && handovers.length === 0 && (
-          <SectionCard>
-            <p className="text-sm text-slate-400">No active handovers.</p>
-          </SectionCard>
-        )}
-
-        {!loading &&
-          handovers.map((handover) => (
-            <HandoverCard
-              key={handover.id}
-              handover={handover}
-              onMarkAsRead={markAsRead}
-            />
-          ))}
+        <p className="mt-1 text-sm text-slate-500">
+          Select a round and record each medication outcome.
+        </p>
       </div>
-    </PageContainer>
+
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading medication...</p>
+      ) : (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">
+              Select round
+            </label>
+
+            <select
+              value={selectedRound}
+              onChange={(event) => setSelectedRound(event.target.value)}
+              className={inputClass}
+            >
+              <option value="">Choose a round</option>
+
+              {roundOptions.map((round) => (
+                <option key={round} value={round}>
+                  {round}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedRound && (
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3">
+                <p className="text-sm font-semibold text-teal-800">
+                  {selectedRound} round
+                </p>
+
+                <p className="mt-1 text-xs text-teal-700">
+                  {isPrnRound
+                    ? "Select only the PRN medication being given."
+                    : "Complete an outcome for every medication in this round."}
+                </p>
+              </div>
+
+              {selectedMedications.map((med) => {
+                const outcome = outcomes[med.id];
+
+                if (isPrnRound && !outcome?.selected) {
+                  return (
+                    <label
+                      key={med.id}
+                      className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:bg-slate-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={outcome?.selected ?? false}
+                        onChange={(event) =>
+                          updateOutcome(med.id, "selected", event.target.checked)
+                        }
+                        className="h-4 w-4"
+                      />
+
+                      <div>
+                        <p className="text-sm font-semibold text-slate-950">
+                          {med.medication_name}
+                        </p>
+                        <p className="text-xs text-slate-500">{med.dose}</p>
+                      </div>
+                    </label>
+                  );
+                }
+
+                return (
+                  <div
+                    key={med.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    {isPrnRound && (
+                      <label className="mb-4 flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={outcome?.selected ?? false}
+                          onChange={(event) =>
+                            updateOutcome(
+                              med.id,
+                              "selected",
+                              event.target.checked
+                            )
+                          }
+                          className="h-4 w-4"
+                        />
+
+                        <span className="text-xs font-medium text-slate-600">
+                          Giving this PRN
+                        </span>
+                      </label>
+                    )}
+
+                    <div>
+                      <p className="text-base font-semibold text-slate-950">
+                        {med.medication_name}
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-500">{med.dose}</p>
+
+                      {med.route && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          Route: {med.route}
+                        </p>
+                      )}
+
+                      {med.instructions && (
+                        <p className="mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+                          {med.instructions}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700">
+                          Status
+                        </label>
+
+                        <select
+                          value={outcome?.status ?? ""}
+                          onChange={(event) =>
+                            updateOutcome(med.id, "status", event.target.value)
+                          }
+                          className={inputClass}
+                        >
+                          <option value="">Select status</option>
+
+                          {STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {outcome?.status && outcome.status !== "Administered" && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700">
+                            Reason
+                          </label>
+
+                          <select
+                            value={outcome?.reason ?? ""}
+                            onChange={(event) =>
+                              updateOutcome(med.id, "reason", event.target.value)
+                            }
+                            className={inputClass}
+                          >
+                            <option value="">Select reason</option>
+
+                            {REASONS.map((reason) => (
+                              <option key={reason} value={reason}>
+                                {reason}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              <CastodiaButton
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full"
+              >
+                {saving ? "Saving..." : "Save medication round"}
+              </CastodiaButton>
+            </div>
+          )}
+        </>
+      )}
+    </CastodiaCard>
   );
 }

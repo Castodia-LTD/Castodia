@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import CreateServiceUserForm from "@/components/admin/service-users/CreateServiceUserForm";
 import EditServiceUserModal from "@/components/admin/service-users/EditServiceUserModal";
-import ServiceUserCard from "@/components/admin/service-users/ServiceUserCard";
 import { supabase } from "@/lib/supabase";
 import type { ServiceUser } from "@/lib/admin/service-users/types";
+
+import {
+  CastodiaPageShell,
+  CastodiaCard,
+  CastodiaButton,
+  CastodiaBadge,
+  CastodiaSection,
+} from "@/components/castodia";
 
 export default function AdminServiceUsersPage() {
   const [serviceUsers, setServiceUsers] = useState<ServiceUser[]>([]);
@@ -167,46 +173,121 @@ export default function AdminServiceUsersPage() {
   }, []);
 
   return (
-      <main className="min-h-screen p-6 text-white">
-        <div className="mx-auto max-w-5xl">
-          <h1 className="text-3xl font-bold">Service Users</h1>
-
-          <p className="mt-2 text-slate-400">
-            Create and manage service user profiles.
-          </p>
-
-          <CreateServiceUserForm
-            firstName={firstName}
-            setFirstName={setFirstName}
-            surname={surname}
-            setSurname={setSurname}
-            
-            houseName={houseName}
-            setHouseName={setHouseName}
-            onCreate={createServiceUser}
-          />
-
-          <div className="mt-8 space-y-4">
-            {serviceUsers.length === 0 && (
-              <p className="text-slate-400">No service users found.</p>
-            )}
-
-            {serviceUsers.map((serviceUser) => (
-              <ServiceUserCard
-                key={serviceUser.id}
-                serviceUser={serviceUser}
-                onEdit={() => setEditing(serviceUser)}
-                onDeactivate={() => deactivateServiceUser(serviceUser.id)}
+    <CastodiaPageShell
+      title="Service Users"
+      description="Create and manage service user profiles."
+      maxWidth="wide"
+    >
+      <CastodiaSection title="Create Service User">
+        <CastodiaCard>
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+            <div>
+              <label className="text-sm font-medium text-slate-700">
+                First name
+              </label>
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                placeholder="First name"
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-700">
+                Surname
+              </label>
+              <input
+                value={surname}
+                onChange={(e) => setSurname(e.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                placeholder="Surname"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-700">
+                House
+              </label>
+              <input
+                value={houseName}
+                onChange={(e) => setHouseName(e.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                placeholder="House name"
+              />
+            </div>
+
+            <CastodiaButton onClick={createServiceUser}>
+              Create
+            </CastodiaButton>
+          </div>
+        </CastodiaCard>
+      </CastodiaSection>
+
+      <CastodiaSection
+        title="Profiles"
+        description={`${serviceUsers.length} service user${
+          serviceUsers.length === 1 ? "" : "s"
+        } found`}
+      >
+        {serviceUsers.length === 0 ? (
+          <CastodiaCard>
+            <p className="text-sm text-slate-500">No service users found.</p>
+          </CastodiaCard>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {serviceUsers.map((serviceUser) => (
+              <CastodiaCard key={serviceUser.id} padding="md">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-950">
+                      {serviceUser.first_name} {serviceUser.surname}
+                    </h2>
+
+                    {serviceUser.house_name && (
+                      <p className="mt-1 text-sm text-slate-500">
+                        {serviceUser.house_name}
+                      </p>
+                    )}
+                  </div>
+
+                  <CastodiaBadge
+                    variant={serviceUser.is_active ? "success" : "neutral"}
+                  >
+                    {serviceUser.is_active ? "Active" : "Inactive"}
+                  </CastodiaBadge>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <CastodiaButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setEditing(serviceUser)}
+                  >
+                    Edit
+                  </CastodiaButton>
+
+                  {serviceUser.is_active && (
+                    <CastodiaButton
+                      variant="danger"
+                      size="sm"
+                      onClick={() => deactivateServiceUser(serviceUser.id)}
+                    >
+                      Deactivate
+                    </CastodiaButton>
+                  )}
+                </div>
+              </CastodiaCard>
             ))}
           </div>
-        </div>
+        )}
+      </CastodiaSection>
 
-        <EditServiceUserModal
-          editing={editing}
-          setEditing={setEditing}
-          onSave={saveProfile}
-        />
-      </main>
+      <EditServiceUserModal
+        editing={editing}
+        setEditing={setEditing}
+        onSave={saveProfile}
+      />
+    </CastodiaPageShell>
   );
 }

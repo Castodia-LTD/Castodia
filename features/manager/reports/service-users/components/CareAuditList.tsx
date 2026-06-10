@@ -1,26 +1,36 @@
 import CareAuditCard from "@/components/admin/reports/CareAuditCard";
 import type { CareAudit } from "@/lib/admin/reports/service-user/types";
 
+import {
+  CastodiaCard,
+  CastodiaSection,
+} from "@/components/castodia";
+
 type Props = {
   careAudits: CareAudit[];
 };
 
 export default function CareAuditList({ careAudits }: Props) {
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-semibold text-white">Care Audit</h2>
-
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        {careAudits.length === 0 && (
-          <div className="rounded-3xl border border-white/10 bg-white/10 p-6 text-slate-400">
+    <CastodiaSection
+      title="Care Audit"
+      description={`${careAudits.length} care audit record${
+        careAudits.length === 1 ? "" : "s"
+      } found`}
+    >
+      {careAudits.length === 0 ? (
+        <CastodiaCard>
+          <p className="text-sm text-slate-500">
             No care audit records found.
-          </div>
-        )}
-
-        {careAudits.map((audit) => (
-          <CareAuditCard key={audit.id} audit={audit} />
-        ))}
-      </div>
-    </section>
+          </p>
+        </CastodiaCard>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {careAudits.map((audit) => (
+            <CareAuditCard key={audit.id} audit={audit} />
+          ))}
+        </div>
+      )}
+    </CastodiaSection>
   );
 }

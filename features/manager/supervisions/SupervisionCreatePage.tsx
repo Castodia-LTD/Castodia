@@ -4,8 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import SupervisionForm from "@/components/admin/supervisions/SupervisionForm";
-import { PageContainer, PageHeader } from "@/components/layouts";
 import { supabase } from "@/lib/supabase";
+
+import {
+  CastodiaButton,
+  CastodiaCard,
+  CastodiaPageShell,
+} from "@/components/castodia";
+
 import type {
   StaffMember,
   SupervisionAction,
@@ -121,21 +127,22 @@ export default function SupervisionCreatePage() {
   }, []);
 
   return (
-    <PageContainer>
-      <Link
-        href="/manager/supervisions"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white"
-      >
-        <ArrowLeft size={16} />
-        Back to supervisions
-      </Link>
-
-      <PageHeader
-        title="New Supervision"
-        subtitle="Record a staff supervision, agreed actions and follow-up date."
-      />
-
-      <SupervisionForm staff={staff} onCreate={createSupervision} />
-    </PageContainer>
+    <CastodiaPageShell
+      title="New Supervision"
+      description="Record a staff supervision, agreed actions and follow-up date."
+      maxWidth="wide"
+      actions={
+        <Link href="/manager/supervisions">
+          <CastodiaButton variant="secondary">
+            <ArrowLeft size={16} />
+            Back
+          </CastodiaButton>
+        </Link>
+      }
+    >
+      <CastodiaCard>
+        <SupervisionForm staff={staff} onCreate={createSupervision} />
+      </CastodiaCard>
+    </CastodiaPageShell>
   );
 }

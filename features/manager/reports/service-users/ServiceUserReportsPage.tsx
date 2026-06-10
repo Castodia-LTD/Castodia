@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import ReportFilters from "@/components/admin/reports/ReportFilters";
-import { PageContainer, PageHeader, SectionCard } from "@/components/layouts";
 import { supabase } from "@/lib/supabase";
 import type { CareAudit } from "@/lib/admin/reports/service-user/types";
 import { daysSince } from "@/lib/admin/reports/service-user/date";
@@ -14,6 +13,12 @@ import { loadReportEntries } from "@/lib/admin/reports/service-user/queries";
 import ReportStatsGrid from "./components/ReportStatsGrid";
 import CareAuditList from "./components/CareAuditList";
 import ReportEntriesPanel from "./components/ReportEntriesPanel";
+
+import {
+  CastodiaCard,
+  CastodiaPageShell,
+  CastodiaSection,
+} from "@/components/castodia";
 
 type ServiceUserOption = {
   id: string;
@@ -247,16 +252,15 @@ export default function ServiceUserReportsPage() {
   }, []);
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Reports & Auditing"
-        subtitle="View monthly service data, care audits and export filtered records."
-      />
-
+    <CastodiaPageShell
+      title="Reports & Auditing"
+      description="View monthly service data, care audits and export filtered records."
+      maxWidth="wide"
+    >
       {loading ? (
-        <SectionCard>
-          <p className="text-slate-400">Loading reports...</p>
-        </SectionCard>
+        <CastodiaCard>
+          <p className="text-sm text-slate-500">Loading reports...</p>
+        </CastodiaCard>
       ) : (
         <>
           <ReportStatsGrid
@@ -269,12 +273,8 @@ export default function ServiceUserReportsPage() {
             personalCareCount={personalCareCount}
           />
 
-          <section className="mt-10">
-            <h2 className="text-xl font-semibold text-white">
-              Filtered Report
-            </h2>
-
-            <div className="mt-4">
+          <CastodiaSection title="Filtered Report">
+            <CastodiaCard>
               <ReportFilters
                 serviceUsers={serviceUsers.map((serviceUser) => ({
                   id: serviceUser.id,
@@ -290,18 +290,18 @@ export default function ServiceUserReportsPage() {
                 setDateTo={setDateTo}
                 onApply={runReport}
               />
-            </div>
+            </CastodiaCard>
 
             <ReportEntriesPanel
               reportEntries={reportEntries}
               onExport={exportCurrentReport}
               onPrint={printReport}
             />
-          </section>
+          </CastodiaSection>
 
           <CareAuditList careAudits={careAudits} />
         </>
       )}
-    </PageContainer>
+    </CastodiaPageShell>
   );
 }

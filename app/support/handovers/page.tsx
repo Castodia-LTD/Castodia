@@ -1,5 +1,5 @@
 import HandoversPage from "@/features/support/handovers/HandoversPage";
 
 export default function Page() {
-  return <HandoversPage />;
+  return <HandoversPage serviceUserId={null} />;
 }

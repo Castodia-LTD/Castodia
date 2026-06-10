@@ -1,32 +1,44 @@
 "use client";
 
 import { useParams } from "next/navigation";
+
 import {
-  PageContainer,
-  PageHeader,
-  SectionCard,
-} from "@/components/layouts";
+  CastodiaPageShell,
+  CastodiaCard,
+} from "@/components/castodia";
 
 export default function ServiceUserHubPage() {
   const params = useParams();
 
-  return (
-    <PageContainer>
-      <PageHeader
-        title="Service User Hub"
-        subtitle={`ID: ${params.id}`}
-      />
+  const sections = [
+    "Care Plans",
+    "Risk Assessments",
+    "MCA",
+    "DoLS",
+    "Documents",
+    "Medication",
+    "Behaviour Incidents",
+    "Timeline",
+  ];
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SectionCard>Care Plans</SectionCard>
-        <SectionCard>Risk Assessments</SectionCard>
-        <SectionCard>MCA</SectionCard>
-        <SectionCard>DoLS</SectionCard>
-        <SectionCard>Documents</SectionCard>
-        <SectionCard>Medication</SectionCard>
-        <SectionCard>Behaviour Incidents</SectionCard>
-        <SectionCard>Timeline</SectionCard>
+  return (
+    <CastodiaPageShell
+      title="Service User Hub"
+      description={`ID: ${params.id}`}
+      maxWidth="wide"
+    >
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {sections.map((section) => (
+          <CastodiaCard
+            key={section}
+            className="cursor-pointer transition hover:scale-[1.01]"
+          >
+            <h3 className="text-lg font-semibold">
+              {section}
+            </h3>
+          </CastodiaCard>
+        ))}
       </div>
-    </PageContainer>
+    </CastodiaPageShell>
   );
 }

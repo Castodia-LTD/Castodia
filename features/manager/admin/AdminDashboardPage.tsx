@@ -1,25 +1,28 @@
-import AdminMenuCard from "@/components/admin/AdminMenuCard";
+import Link from "next/link";
 import { adminMenuItems } from "@/lib/admin/constants";
-import { PageContainer, PageHeader } from "@/components/layouts";
+import { CastodiaPageShell, CastodiaCard } from "@/components/castodia";
 
 export default function AdminDashboardPage() {
   return (
-    <PageContainer>
-      <PageHeader
-        title="Admin"
-        subtitle="Manage staff, service users, permissions and organisation setup."
-      />
-
-      <div className="grid gap-4">
+    <CastodiaPageShell
+      title="Admin"
+      description="Manage staff, service users, permissions and organisation setup."
+    >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {adminMenuItems.map((item) => (
-          <AdminMenuCard
-            key={item.href}
-            href={item.href}
-            title={item.title}
-            description={item.description}
-          />
+          <Link key={item.href} href={item.href}>
+            <CastodiaCard interactive className="h-full">
+              <h2 className="text-lg font-semibold text-slate-950">
+                {item.title}
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {item.description}
+              </p>
+            </CastodiaCard>
+          </Link>
         ))}
       </div>
-    </PageContainer>
+    </CastodiaPageShell>
   );
 }

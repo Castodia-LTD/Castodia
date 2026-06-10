@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import CompetencyActionRow from "./CompetencyActionRow";
 
 import {
@@ -13,9 +12,10 @@ import type {
   StaffMember,
 } from "@/lib/admin/competencies/types";
 
+import { CastodiaButton } from "@/components/castodia";
+
 type Props = {
   staff: StaffMember[];
-
   onCreate: (values: {
     staffId: string;
     assessmentDate: string;
@@ -29,38 +29,27 @@ type Props = {
   }) => Promise<void>;
 };
 
-export default function CompetencyForm({
-  staff,
-  onCreate,
-}: Props) {
+const inputClass =
+  "mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
+const textareaClass =
+  "mt-2 min-h-24 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
+export default function CompetencyForm({ staff, onCreate }: Props) {
   const [staffId, setStaffId] = useState("");
-
   const [saving, setSaving] = useState(false);
-
-  const [assessmentDate, setAssessmentDate] =
-    useState("");
-
-  const [reviewDate, setReviewDate] =
-    useState("");
-
-  const [outcome, setOutcome] =
-    useState("Competent");
-
-  const [strengths, setStrengths] =
-    useState("");
-
-  const [developmentAreas, setDevelopmentAreas] =
-    useState("");
-
-  const [actions, setActions] = useState<
-    CompetencyAction[]
-  >([]);
-
-  const [knowledgeResults, setKnowledgeResults] =
-    useState<Record<string, boolean>>({});
-
-  const [practicalResults, setPracticalResults] =
-    useState<Record<string, boolean>>({});
+  const [assessmentDate, setAssessmentDate] = useState("");
+  const [reviewDate, setReviewDate] = useState("");
+  const [outcome, setOutcome] = useState("Competent");
+  const [strengths, setStrengths] = useState("");
+  const [developmentAreas, setDevelopmentAreas] = useState("");
+  const [actions, setActions] = useState<CompetencyAction[]>([]);
+  const [knowledgeResults, setKnowledgeResults] = useState<
+    Record<string, boolean>
+  >({});
+  const [practicalResults, setPracticalResults] = useState<
+    Record<string, boolean>
+  >({});
 
   function addAction() {
     setActions([
@@ -74,200 +63,7 @@ export default function CompetencyForm({
     ]);
   }
 
-  return (
-    <div className="space-y-6 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur">
-      <h2 className="text-xl font-bold">
-        Medication Competency Assessment
-      </h2>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <select
-          value={staffId}
-          onChange={(e) =>
-            setStaffId(e.target.value)
-          }
-          className="rounded-2xl bg-slate-900 p-4"
-        >
-          <option value="">
-            Select Staff Member
-          </option>
-
-          {staff.map((person) => (
-            <option
-              key={person.id}
-              value={person.id}
-            >
-              {person.full_name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={outcome}
-          onChange={(e) =>
-            setOutcome(e.target.value)
-          }
-          className="rounded-2xl bg-slate-900 p-4"
-        >
-          {competencyOutcomes.map((value) => (
-            <option
-              key={value}
-              value={value}
-            >
-              {value}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          value={assessmentDate}
-          onChange={(e) =>
-            setAssessmentDate(e.target.value)
-          }
-          className="rounded-2xl bg-slate-900 p-4"
-        />
-
-        <input
-          type="date"
-          value={reviewDate}
-          onChange={(e) => {
-  const selectedDate = e.target.value;
-  setAssessmentDate(selectedDate);
-
-  if (selectedDate) {
-    const review = new Date(selectedDate);
-    review.setFullYear(review.getFullYear() + 1);
-    setReviewDate(review.toISOString().slice(0, 10));
-  }
-}}
-          className="rounded-2xl bg-slate-900 p-4"
-        />
-      </div>
-
-      <div>
-        <h3 className="font-semibold">
-          Knowledge Assessment
-        </h3>
-
-        <div className="mt-3 space-y-3">
-          {knowledgeChecks.map((check) => (
-            <label
-              key={check}
-              className="flex items-center gap-3"
-            >
-              <input
-                type="checkbox"
-                checked={
-                  knowledgeResults[check] ||
-                  false
-                }
-                onChange={(e) =>
-                  setKnowledgeResults({
-                    ...knowledgeResults,
-                    [check]:
-                      e.target.checked,
-                  })
-                }
-              />
-
-              {check}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-semibold">
-          Practical Observation
-        </h3>
-
-        <div className="mt-3 space-y-3">
-          {practicalChecks.map((check) => (
-            <label
-              key={check}
-              className="flex items-center gap-3"
-            >
-              <input
-                type="checkbox"
-                checked={
-                  practicalResults[check] ||
-                  false
-                }
-                onChange={(e) =>
-                  setPracticalResults({
-                    ...practicalResults,
-                    [check]:
-                      e.target.checked,
-                  })
-                }
-              />
-
-              {check}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <textarea
-        value={strengths}
-        onChange={(e) =>
-          setStrengths(e.target.value)
-        }
-        placeholder="Strengths observed"
-        className="min-h-24 w-full rounded-2xl bg-slate-900 p-4"
-      />
-
-      <textarea
-        value={developmentAreas}
-        onChange={(e) =>
-          setDevelopmentAreas(e.target.value)
-        }
-        placeholder="Areas for development"
-        className="min-h-24 w-full rounded-2xl bg-slate-900 p-4"
-      />
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">
-            Action Plan
-          </h3>
-
-          <button
-            onClick={addAction}
-            className="rounded-xl bg-cyan-500/20 px-4 py-2 text-cyan-200"
-          >
-            Add Action
-          </button>
-        </div>
-
-        {actions.map((action, index) => (
-          <CompetencyActionRow
-            key={index}
-            action={action}
-            onChange={(updatedAction) =>
-              setActions(
-                actions.map((existing, i) =>
-                  i === index
-                    ? updatedAction
-                    : existing
-                )
-              )
-            }
-            onRemove={() =>
-              setActions(
-                actions.filter(
-                  (_, i) => i !== index
-                )
-              )
-            }
-          />
-        ))}
-      </div>
-
-      <button
-  disabled={saving}
-  onClick={async () => {
+  async function handleSave() {
     if (saving) return;
 
     setSaving(true);
@@ -299,11 +95,216 @@ export default function CompetencyForm({
     } finally {
       setSaving(false);
     }
-  }}
-  className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 font-semibold disabled:opacity-50"
->
-  {saving ? "Saving..." : "Save Competency"}
-</button>
+  }
+
+  function handleAssessmentDateChange(value: string) {
+    setAssessmentDate(value);
+
+    if (value) {
+      const review = new Date(value);
+      review.setFullYear(review.getFullYear() + 1);
+      setReviewDate(review.toISOString().slice(0, 10));
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-xl font-semibold text-slate-950">
+          Medication Competency Assessment
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Record knowledge checks, practical observations and any follow-up
+          actions.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Staff member
+          </label>
+          <select
+            value={staffId}
+            onChange={(e) => setStaffId(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Select staff member</option>
+            {staff.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.full_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Outcome
+          </label>
+          <select
+            value={outcome}
+            onChange={(e) => setOutcome(e.target.value)}
+            className={inputClass}
+          >
+            {competencyOutcomes.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Assessment date
+          </label>
+          <input
+            type="date"
+            value={assessmentDate}
+            onChange={(e) => handleAssessmentDateChange(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Review date
+          </label>
+          <input
+            type="date"
+            value={reviewDate}
+            onChange={(e) => setReviewDate(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <h3 className="text-sm font-semibold text-slate-950">
+            Knowledge Assessment
+          </h3>
+
+          <div className="mt-4 space-y-3">
+            {knowledgeChecks.map((check) => (
+              <label
+                key={check}
+                className="flex items-center gap-3 text-sm text-slate-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={knowledgeResults[check] || false}
+                  onChange={(e) =>
+                    setKnowledgeResults({
+                      ...knowledgeResults,
+                      [check]: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 rounded border-slate-300 text-slate-950"
+                />
+                {check}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <h3 className="text-sm font-semibold text-slate-950">
+            Practical Observation
+          </h3>
+
+          <div className="mt-4 space-y-3">
+            {practicalChecks.map((check) => (
+              <label
+                key={check}
+                className="flex items-center gap-3 text-sm text-slate-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={practicalResults[check] || false}
+                  onChange={(e) =>
+                    setPracticalResults({
+                      ...practicalResults,
+                      [check]: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 rounded border-slate-300 text-slate-950"
+                />
+                {check}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Strengths observed
+          </label>
+          <textarea
+            value={strengths}
+            onChange={(e) => setStrengths(e.target.value)}
+            placeholder="Strengths observed"
+            className={textareaClass}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Areas for development
+          </label>
+          <textarea
+            value={developmentAreas}
+            onChange={(e) => setDevelopmentAreas(e.target.value)}
+            placeholder="Areas for development"
+            className={textareaClass}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">
+              Action Plan
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Add follow-up actions where further development is required.
+            </p>
+          </div>
+
+          <CastodiaButton variant="secondary" size="sm" onClick={addAction}>
+            Add Action
+          </CastodiaButton>
+        </div>
+
+        {actions.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {actions.map((action, index) => (
+              <CompetencyActionRow
+                key={index}
+                action={action}
+                onChange={(updatedAction) =>
+                  setActions(
+                    actions.map((existing, i) =>
+                      i === index ? updatedAction : existing
+                    )
+                  )
+                }
+                onRemove={() =>
+                  setActions(actions.filter((_, i) => i !== index))
+                }
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <CastodiaButton disabled={saving} onClick={handleSave}>
+        {saving ? "Saving..." : "Save Competency"}
+      </CastodiaButton>
     </div>
   );
 }

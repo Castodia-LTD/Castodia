@@ -4,9 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle, Clock, UserRound } from "lucide-react";
-import { PageContainer, PageHeader, SectionCard } from "@/components/layouts";
 import { supabase } from "@/lib/supabase";
 import type { Incident } from "./types";
+
+import {
+  CastodiaBadge,
+  CastodiaButton,
+  CastodiaCard,
+  CastodiaPageShell,
+} from "@/components/castodia";
 
 export default function IncidentReviewPage() {
   const params = useParams();
@@ -115,74 +121,75 @@ export default function IncidentReviewPage() {
 
   if (loading) {
     return (
-      <PageContainer>
-        <SectionCard>
-          <p className="text-sm text-slate-400">Loading incident...</p>
-        </SectionCard>
-      </PageContainer>
+      <CastodiaPageShell
+        title="Incident Review"
+        description="Review incident details, staff recording and management actions."
+      >
+        <CastodiaCard>
+          <p className="text-sm text-slate-500">Loading incident...</p>
+        </CastodiaCard>
+      </CastodiaPageShell>
     );
   }
 
   if (!incident) {
     return (
-      <PageContainer>
-        <SectionCard>
-          <p className="text-sm text-slate-400">Incident not found.</p>
-        </SectionCard>
-      </PageContainer>
+      <CastodiaPageShell
+        title="Incident Review"
+        description="Review incident details, staff recording and management actions."
+      >
+        <CastodiaCard>
+          <p className="text-sm text-slate-500">Incident not found.</p>
+        </CastodiaCard>
+      </CastodiaPageShell>
     );
   }
 
   return (
-    <PageContainer>
-      <Link
-        href="/manager/incidents"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white"
-      >
-        <ArrowLeft size={16} />
-        Back to incidents
-      </Link>
+    <CastodiaPageShell
+      title="Incident Review"
+      description="Review incident details, staff recording and management actions."
+      maxWidth="wide"
+      actions={
+        <div className="flex items-center gap-3">
+          <CastodiaBadge variant={incident.reviewed ? "success" : "warning"}>
+            {incident.reviewed ? "Reviewed" : "Awaiting review"}
+          </CastodiaBadge>
 
-      <PageHeader
-        title="Incident Review"
-        subtitle="Review incident details, staff recording and management actions."
-      >
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-semibold ${
-            incident.reviewed
-              ? "bg-emerald-500/20 text-emerald-300"
-              : "bg-amber-500/20 text-amber-300"
-          }`}
-        >
-          {incident.reviewed ? "Reviewed" : "Awaiting review"}
-        </span>
-      </PageHeader>
-
+          <Link href="/manager/incidents">
+            <CastodiaButton variant="secondary">
+              <ArrowLeft size={16} />
+              Back
+            </CastodiaButton>
+          </Link>
+        </div>
+      }
+    >
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <SectionCard>
+        <CastodiaCard>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-500">
                 {new Date(incident.created_at).toLocaleString("en-GB")}
               </p>
 
-              <h2 className="mt-2 text-2xl font-bold text-white">
+              <h2 className="mt-2 text-2xl font-bold text-slate-950">
                 Incident Details
               </h2>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-slate-500">
                 {incident.service_user_name}
               </p>
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
-            <p className="whitespace-pre-line text-base leading-7 text-slate-100">
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <p className="whitespace-pre-line text-base leading-7 text-slate-800">
               {incident.content}
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3 border-t border-white/10 pt-5 text-sm text-slate-400">
+          <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-200 pt-5 text-sm text-slate-500">
             <span className="inline-flex items-center gap-2">
               <UserRound size={16} />
               Recorded by {incident.staff_name}
@@ -193,49 +200,49 @@ export default function IncidentReviewPage() {
               {new Date(incident.created_at).toLocaleString("en-GB")}
             </span>
           </div>
-        </SectionCard>
+        </CastodiaCard>
 
         <div className="space-y-4">
           {incident.reviewed ? (
-            <SectionCard>
+            <CastodiaCard>
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-emerald-500/20 p-3 text-emerald-300">
+                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
                   <CheckCircle size={22} />
                 </div>
 
                 <div>
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-xl font-bold text-slate-950">
                     Manager Review
                   </h2>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-slate-500">
                     Reviewed by {incident.reviewer_name || "Unknown manager"}
                   </p>
                 </div>
               </div>
 
               {incident.reviewed_at && (
-                <p className="mt-4 text-sm text-slate-400">
+                <p className="mt-4 text-sm text-slate-500">
                   {new Date(incident.reviewed_at).toLocaleString("en-GB")}
                 </p>
               )}
 
               {incident.review_comment ? (
-                <p className="mt-4 whitespace-pre-line rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-slate-100">
+                <p className="mt-4 whitespace-pre-line rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-800">
                   {incident.review_comment}
                 </p>
               ) : (
-                <p className="mt-4 text-sm text-slate-400">
+                <p className="mt-4 text-sm text-slate-500">
                   No review comment recorded.
                 </p>
               )}
-            </SectionCard>
+            </CastodiaCard>
           ) : role === "manager" ? (
-            <SectionCard>
-              <h2 className="text-xl font-bold text-white">
+            <CastodiaCard>
+              <h2 className="text-xl font-bold text-slate-950">
                 Complete Review
               </h2>
 
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-slate-500">
                 Add management comments before marking this incident as
                 reviewed.
               </p>
@@ -244,25 +251,26 @@ export default function IncidentReviewPage() {
                 value={reviewComment}
                 onChange={(event) => setReviewComment(event.target.value)}
                 placeholder="Manager review comments..."
-                className="mt-5 min-h-32 w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-white outline-none placeholder:text-slate-500"
+                className="mt-5 min-h-32 w-full rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
               />
 
-              <button
+              <CastodiaButton
                 onClick={reviewIncident}
-                className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 p-4 font-semibold text-white"
+                variant="success"
+                className="mt-4 w-full"
               >
                 Mark as Reviewed
-              </button>
-            </SectionCard>
+              </CastodiaButton>
+            </CastodiaCard>
           ) : (
-            <SectionCard>
-              <p className="text-sm text-slate-400">
+            <CastodiaCard>
+              <p className="text-sm text-slate-500">
                 This incident is awaiting manager review.
               </p>
-            </SectionCard>
+            </CastodiaCard>
           )}
         </div>
       </div>
-    </PageContainer>
+    </CastodiaPageShell>
   );
 }

@@ -223,9 +223,9 @@ export default function MedicationAdministrationForm({
   }
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
+    <div className="rounded-3xl border border-white/10 bg-white/70 p-5 shadow-xl shadow-black/20">
       <div className="mb-5">
-        <h2 className="text-lg font-bold text-white">
+        <h2 className="text-lg font-bold text-slate-950">
           Medication Administration
         </h2>
         <p className="mt-1 text-sm text-slate-400">
@@ -245,7 +245,7 @@ export default function MedicationAdministrationForm({
             <select
               value={selectedRound}
               onChange={(event) => setSelectedRound(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-400"
+              className="mt-2 w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-cyan-400"
             >
               <option value="">Choose a round</option>
 
@@ -282,7 +282,7 @@ export default function MedicationAdministrationForm({
                   return (
                     <label
                       key={med.id}
-                      className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/70 p-4 transition hover:border-cyan-400/40"
+                      className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/70 p-4 transition hover:border-cyan-400/40"
                     >
                       <input
                         type="checkbox"
@@ -294,7 +294,7 @@ export default function MedicationAdministrationForm({
                       />
 
                       <div>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-semibold text-slate-950">
                           {med.medication_name}
                         </p>
                         <p className="text-xs text-slate-400">{med.dose}</p>
@@ -306,7 +306,7 @@ export default function MedicationAdministrationForm({
                 return (
                   <div
                     key={med.id}
-                    className="rounded-2xl border border-white/10 bg-slate-950/70 p-4"
+                    className="rounded-2xl border border-white/10 bg-white/70 p-4"
                   >
                     {isPrnRound && (
                       <label className="mb-4 flex cursor-pointer items-center gap-3 rounded-xl bg-white/5 px-3 py-2">
@@ -329,7 +329,7 @@ export default function MedicationAdministrationForm({
                     )}
 
                     <div>
-                      <p className="text-base font-semibold text-white">
+                      <p className="text-base font-semibold text-slate-950">
                         {med.medication_name}
                       </p>
 
@@ -359,7 +359,7 @@ export default function MedicationAdministrationForm({
                           onChange={(event) =>
                             updateOutcome(med.id, "status", event.target.value)
                           }
-                          className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white outline-none focus:border-cyan-400"
+                          className="mt-2 w-full rounded-xl border border-white/10 bg-white px-3 py-3 text-sm text-slate-950 outline-none focus:border-cyan-400"
                         >
                           <option value="">Select status</option>
 
@@ -382,7 +382,7 @@ export default function MedicationAdministrationForm({
                             onChange={(event) =>
                               updateOutcome(med.id, "reason", event.target.value)
                             }
-                            className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white outline-none focus:border-cyan-400"
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-white px-3 py-3 text-sm text-slate-950 outline-none focus:border-cyan-400"
                           >
                             <option value="">Select reason</option>
 
@@ -403,7 +403,7 @@ export default function MedicationAdministrationForm({
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 px-4 py-4 text-sm font-bold text-white shadow-lg shadow-blue-950/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 px-4 py-4 text-sm font-bold text-slate-950 shadow-lg shadow-blue-950/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save medication round"}
               </button>

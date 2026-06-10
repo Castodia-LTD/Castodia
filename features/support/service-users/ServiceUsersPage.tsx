@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  PageContainer,
-  PageHeader,
-  SectionCard,
-} from "@/components/layouts";
 import { supabase } from "@/lib/supabase";
+import {
+  CastodiaCard,
+  CastodiaPageShell,
+} from "@/components/castodia";
+
 import ServiceUserCard from "./components/ServiceUserCard";
 import type { ServiceUser } from "./types";
 
@@ -98,22 +98,21 @@ export default function ServiceUsersPage() {
   }, []);
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Service Users"
-        subtitle="View profiles, care information and important notes."
-      />
-
+    <CastodiaPageShell
+      title="Service Users"
+      description="View profiles, care information and important notes."
+      maxWidth="wide"
+    >
       {loading && (
-        <SectionCard>
-          <p className="text-sm text-slate-400">Loading service users...</p>
-        </SectionCard>
+        <CastodiaCard>
+          <p className="text-sm text-slate-500">Loading service users...</p>
+        </CastodiaCard>
       )}
 
       {!loading && serviceUsers.length === 0 && (
-        <SectionCard>
-          <p className="text-sm text-slate-400">No service users assigned.</p>
-        </SectionCard>
+        <CastodiaCard>
+          <p className="text-sm text-slate-500">No service users assigned.</p>
+        </CastodiaCard>
       )}
 
       {!loading && serviceUsers.length > 0 && (
@@ -126,6 +125,6 @@ export default function ServiceUsersPage() {
           ))}
         </div>
       )}
-    </PageContainer>
+    </CastodiaPageShell>
   );
 }

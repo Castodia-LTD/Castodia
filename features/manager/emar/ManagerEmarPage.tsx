@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  PageContainer,
-  PageHeader,
-  SectionCard,
-} from "@/components/layouts";
 import { supabase } from "@/lib/supabase";
 import AddMedicationForm from "./components/AddMedicationForm";
 import MedicationProfilesTable from "./components/MedicationProfilesTable";
 import type { MedicationProfile, ServiceUser } from "./types";
+
+import {
+  CastodiaPageShell,
+  CastodiaCard,
+  CastodiaButton,
+  CastodiaSection,
+} from "@/components/castodia";
 
 export default function ManagerEmarPage() {
   const [serviceUsers, setServiceUsers] = useState<ServiceUser[]>([]);
@@ -122,7 +124,12 @@ export default function ManagerEmarPage() {
       return;
     }
 
-    if (!medicationName.trim() || !strength.trim() || !dose.trim() || !route.trim()) {
+    if (
+      !medicationName.trim() ||
+      !strength.trim() ||
+      !dose.trim() ||
+      !route.trim()
+    ) {
       alert("Please complete medication name, strength, dose and route.");
       return;
     }
@@ -183,52 +190,55 @@ export default function ManagerEmarPage() {
   }, [selectedServiceUserId]);
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="eMAR Management"
-        subtitle="Create and manage medication profiles for service users."
-      >
-        <button
+    <CastodiaPageShell
+      title="eMAR Management"
+      description="Create and manage medication profiles for service users."
+      maxWidth="wide"
+      actions={
+        <CastodiaButton
           onClick={() => setPanelOpen(true)}
           disabled={!selectedServiceUserId}
-          className="rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-900/30 disabled:cursor-not-allowed disabled:opacity-50"
         >
           + Add Medication
-        </button>
-      </PageHeader>
+        </CastodiaButton>
+      }
+    >
+      <CastodiaSection title="Service User">
+        <CastodiaCard>
+          <label className="text-sm font-medium text-slate-700">
+            Select service user
+          </label>
 
-      <SectionCard>
-        <label className="text-sm font-semibold text-slate-300">
-          Select service user
-        </label>
+          <select
+            value={selectedServiceUserId}
+            onChange={(event) => setSelectedServiceUserId(event.target.value)}
+            className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+          >
+            <option value="">Select service user</option>
 
-        <select
-          value={selectedServiceUserId}
-          onChange={(event) => setSelectedServiceUserId(event.target.value)}
-          className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-white outline-none"
-        >
-          <option value="">Select service user</option>
+            {serviceUsers.map((serviceUser) => {
+              const name =
+                `${serviceUser.first_name ?? ""} ${
+                  serviceUser.surname ?? ""
+                }`.trim() || "Unnamed service user";
 
-          {serviceUsers.map((serviceUser) => {
-            const name =
-              `${serviceUser.first_name ?? ""} ${
-                serviceUser.surname ?? ""
-              }`.trim() || "Unnamed service user";
+              return (
+                <option key={serviceUser.id} value={serviceUser.id}>
+                  {name}
+                </option>
+              );
+            })}
+          </select>
+        </CastodiaCard>
+      </CastodiaSection>
 
-            return (
-              <option key={serviceUser.id} value={serviceUser.id}>
-                {name}
-              </option>
-            );
-          })}
-        </select>
-      </SectionCard>
-
-      <MedicationProfilesTable
-        medications={medications}
-        selectedServiceUserName={selectedServiceUserName}
-        onToggleActive={toggleMedicationActive}
-      />
+      <CastodiaSection title="Medication Profiles">
+        <MedicationProfilesTable
+          medications={medications}
+          selectedServiceUserName={selectedServiceUserName}
+          onToggleActive={toggleMedicationActive}
+        />
+      </CastodiaSection>
 
       {panelOpen && (
         <AddMedicationForm
@@ -258,6 +268,6 @@ export default function ManagerEmarPage() {
           }}
         />
       )}
-    </PageContainer>
+    </CastodiaPageShell>
   );
 }
