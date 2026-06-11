@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import TimelineHeader from "@/components/timelines/TimelineHeader";
 import TimelineEntryCard from "@/components/timelines/TimelineEntryCard";
 import EntryCategoryTiles from "@/components/timelines/EntryCategoryTiles";
-
+import { CastodiaPageShell } from "@/components/castodia";
 import { filters } from "@/lib/timelines/constants";
 import { formRegistry } from "@/lib/timelines/formRegistry";
 import { saveRegistry } from "@/lib/timelines/saveRegistry";
@@ -412,7 +412,10 @@ ${consequence.trim()}`
   }, [selectedCategoryId, entryType]);
 
   return (
-    <main className="min-h-screen pb-24 text-white">
+    <CastodiaPageShell
+    title=""
+    maxWidth="wide"
+  >
       <TimelineHeader
         serviceUserName={serviceUserName}
         selectedDate={selectedDate}
@@ -430,8 +433,8 @@ ${consequence.trim()}`
         </div>
       )}
 
-      <div className="relative px-4 pb-4 pt-4">
-        <div className="absolute bottom-0 left-8 top-4 w-px bg-white/10" />
+      <div className="relative px-4 pb-4 pt-0">
+        <div className="absolute bottom-0 left-8 top-0 w-px bg-white/10" />
 
         <div className="space-y-5">
           {filteredEntries.length === 0 && (
@@ -694,6 +697,6 @@ onCreateTimelineEntry={async (summary: string) => {
           )}
         </div>
       )}
-    </main>
+    </CastodiaPageShell>
   );
 }

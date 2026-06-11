@@ -26,33 +26,33 @@ export default function TimelineHeader({
   }
 
   return (
-    <div className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur">
-      <div className="grid grid-cols-3 items-center">
-        <Link href="/dashboard" className="text-sm text-slate-400">
-          ← Dashboard
-        </Link>
+    <section className="overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-r bg-gradient-to-r
+from-slate-700
+via-cyan-500
+to-slate-700">
+      <div className="relative">
 
-        <h1 className="text-center text-lg font-semibold text-white">
-          {serviceUserName}
-        </h1>
+  <button
+    onClick={onFilterClick}
+    className="absolute right-0 top-0 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20"
+  >
+    Filter
+  </button>
 
-        <button
-          onClick={onFilterClick}
-          className="justify-self-end rounded-xl bg-white/10 px-3 py-2 text-sm text-slate-200"
-        >
-          Filter
-        </button>
-      </div>
+  <div className="text-center">
+    <h1 className="text-4xl font-bold text-white">
+      {serviceUserName}
+    </h1>
 
-      <div className="mt-3 flex items-center justify-between">
-        <button
-          onClick={goPreviousDay}
-          className="rounded-full bg-white/10 px-4 py-2"
-        >
+  </div>
+</div>
+
+      <div className="mt-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
+        <button onClick={goPreviousDay} className="rounded-xl bg-white/10 px-4 py-2 text-white hover:bg-white/20">
           ←
         </button>
 
-        <p className="text-center text-sm font-semibold text-slate-200">
+        <p className="text-center text-sm font-semibold text-white md:text-base">
           {selectedDate.toLocaleDateString("en-GB", {
             weekday: "long",
             day: "numeric",
@@ -61,13 +61,10 @@ export default function TimelineHeader({
           })}
         </p>
 
-        <button
-          onClick={goNextDay}
-          className="rounded-full bg-white/10 px-4 py-2"
-        >
+        <button onClick={goNextDay} className="rounded-xl bg-white/10 px-4 py-2 text-white hover:bg-white/20">
           →
         </button>
       </div>
-    </div>
+    </section>
   );
 }
