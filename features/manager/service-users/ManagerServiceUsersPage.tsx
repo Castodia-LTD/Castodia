@@ -30,6 +30,8 @@ export default function ManagerServiceUsersPage() {
       .select(`
         id,
         full_name,
+        first_name,
+        surname,
         photo_url,
         house_name
       `)

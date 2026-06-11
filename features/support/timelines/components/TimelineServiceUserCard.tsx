@@ -14,8 +14,8 @@ export default function TimelineServiceUserCard({
       className="group rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur transition hover:bg-white/15"
     >
       <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950/60 text-xl font-bold text-blue-300">
-          {serviceUser.full_name.charAt(0)}
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950/60 text-xl font-bold text-white">
+          {`${serviceUser.first_name?.[0] ?? ""}${serviceUser.surname?.[0] ?? ""}`.toUpperCase()}
         </div>
 
         <div className="min-w-0">

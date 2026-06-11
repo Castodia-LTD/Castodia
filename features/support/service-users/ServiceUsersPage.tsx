@@ -45,6 +45,8 @@ export default function ServiceUsersPage() {
           `
           id,
           full_name,
+          first_name,
+          surname,
           house_name,
           photo_url,
           allergies

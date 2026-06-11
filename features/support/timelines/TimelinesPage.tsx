@@ -41,7 +41,7 @@ export default function TimelinesPage() {
     if (profile.role === "manager") {
       const { data, error } = await supabase
         .from("service_users")
-        .select("id, full_name, house_name")
+        .select("id, full_name, first_name, surname, house_name")
         .eq("organisation_id", profile.organisation_id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
@@ -63,6 +63,8 @@ export default function TimelinesPage() {
         service_users (
           id,
           full_name,
+          first_name,
+          surname,
           house_name
         )
       `)

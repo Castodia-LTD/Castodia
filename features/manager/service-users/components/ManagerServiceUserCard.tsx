@@ -23,7 +23,7 @@ export default function ManagerServiceUserCard({
             />
           ) : (
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 text-3xl font-bold text-slate-700">
-              {serviceUser.full_name.charAt(0)}
+              {`${serviceUser.first_name?.[0] ?? ""}${serviceUser.surname?.[0] ?? ""}`.toUpperCase()}
             </div>
           )}
 

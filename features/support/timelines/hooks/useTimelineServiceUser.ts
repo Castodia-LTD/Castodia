@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 type ServiceUser = {
   id: string;
   full_name: string;
+  first_name: string | null;
+  surname: string | null;
   house_name: string | null;
 };
 
@@ -17,10 +19,10 @@ export function useTimelineServiceUser(serviceUserId: string) {
     setLoadingServiceUser(true);
 
     const { data, error } = await supabase
-      .from("service_users")
-      .select("id, full_name, house_name")
-      .eq("id", serviceUserId)
-      .single();
+  .from("service_users")
+  .select("id, full_name, first_name, surname, house_name")
+  .eq("id", serviceUserId)
+  .single();
 
     if (error) {
       console.error(error);
