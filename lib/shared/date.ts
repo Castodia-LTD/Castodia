@@ -16,6 +16,15 @@ export function combineDateAndTime(date: Date, time: string) {
 
   return combined.toISOString();
 }
+export function getDayRange(date: Date) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  return { startOfDay, endOfDay };
+}
 
 export function formatAuditDate(value: string) {
   return new Date(value).toLocaleString("en-GB", {

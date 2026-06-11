@@ -17,6 +17,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: Pill,
         accent: "from-blue-500 to-cyan-400",
+        rail: "bg-blue-600",
         border: "border-blue-400/30",
         text: "text-blue-200",
       };
@@ -25,6 +26,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: Soup,
         accent: "from-pink-500 to-rose-400",
+        rail: "bg-pink-500",
         border: "border-pink-400/30",
         text: "text-pink-200",
       };
@@ -33,6 +35,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: Utensils,
         accent: "from-emerald-500 to-teal-400",
+        rail: "bg-emerald-500",
         border: "border-emerald-400/30",
         text: "text-emerald-200",
       };
@@ -41,6 +44,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: Toilet,
         accent: "from-sky-500 to-blue-400",
+        rail: "bg-sky-500",
         border: "border-sky-400/30",
         text: "text-sky-200",
       };
@@ -49,6 +53,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: UserRound,
         accent: "from-purple-500 to-fuchsia-400",
+        rail: "bg-purple-500",
         border: "border-purple-400/30",
         text: "text-purple-200",
       };
@@ -57,6 +62,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: AlertTriangle,
         accent: "from-red-500 to-orange-400",
+        rail: "bg-red-500",
         border: "border-red-400/30",
         text: "text-red-200",
       };
@@ -65,6 +71,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: Moon,
         accent: "from-indigo-500 to-violet-400",
+        rail: "bg-indigo-500",
         border: "border-indigo-400/30",
         text: "text-indigo-200",
       };
@@ -73,6 +80,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: ClipboardList,
         accent: "from-amber-500 to-yellow-400",
+        rail: "bg-amber-500",
         border: "border-amber-400/30",
         text: "text-amber-200",
       };
@@ -81,6 +89,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: HeartPulse,
         accent: "from-emerald-500 to-green-400",
+        rail: "bg-emerald-500",
         border: "border-emerald-400/30",
         text: "text-emerald-200",
       };
@@ -89,6 +98,7 @@ export function getEntryStyle(type: string) {
       return {
         icon: Activity,
         accent: "from-teal-500 to-blue-400",
+        rail: "bg-teal-500",
         border: "border-teal-400/30",
         text: "text-teal-200",
       };

@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-function getTimeNow() {
-  return new Date().toTimeString().slice(0, 5);
-}
+import { getTimeNow } from "@/lib/shared/date";
 
 export function useTimelineForm() {
   const [content, setContent] = useState("");
@@ -15,11 +12,7 @@ export function useTimelineForm() {
   );
 
   const [entryPanelOpen, setEntryPanelOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [entryTime, setEntryTime] = useState(getTimeNow());
-
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState("All");
 
   const [antecedent, setAntecedent] = useState("");
   const [behaviour, setBehaviour] = useState("");
@@ -142,6 +135,20 @@ export function useTimelineForm() {
     setBehaviourIncidentNotes("");
   }
 
+  function openPanel() {
+    resetEntryPanel();
+    setEntryPanelOpen(true);
+  }
+
+  function closePanel() {
+    setEntryPanelOpen(false);
+  }
+
+  function closeAndReset() {
+    setEntryPanelOpen(false);
+    resetEntryPanel();
+  }
+
   return {
     content,
     setContent,
@@ -153,15 +160,8 @@ export function useTimelineForm() {
 
     entryPanelOpen,
     setEntryPanelOpen,
-    selectedDate,
-    setSelectedDate,
     entryTime,
     setEntryTime,
-
-    filterOpen,
-    setFilterOpen,
-    activeFilter,
-    setActiveFilter,
 
     antecedent,
     setAntecedent,
@@ -257,5 +257,8 @@ export function useTimelineForm() {
     prnOptions,
 
     resetEntryPanel,
+    openPanel,
+    closePanel,
+    closeAndReset,
   };
 }

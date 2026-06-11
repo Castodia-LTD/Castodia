@@ -1,48 +1,31 @@
-import { CastodiaBadge, CastodiaCard } from "@/components/castodia";
-import type { TimelineEntry } from "../hooks/useTimelineEntries";
+import TimelineEntryCard from "@/components/timelines/TimelineEntryCard";
+import type { TimelineEntry } from "@/lib/timelines/types";
 
 type Props = {
   entries: TimelineEntry[];
+  serviceUserGender?: string | null;
 };
 
-export default function TimelineEntryList({ entries }: Props) {
-  if (entries.length === 0) {
-    return (
-      <CastodiaCard>
-        <p className="text-sm text-slate-500">
-          No timeline entries recorded yet.
-        </p>
-      </CastodiaCard>
-    );
-  }
-
+export default function TimelineEntryList({ entries, serviceUserGender }: Props) {
   return (
-    <div className="space-y-4">
-      {entries.map((entry) => (
-        <CastodiaCard key={entry.id}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CastodiaBadge variant="neutral">
-                {entry.entry_type}
-              </CastodiaBadge>
+    <div className="relative px-4 pb-4 pt-0">
+      <div className="absolute bottom-0 left-8 top-0 w-px bg-white/10" />
 
-              <p className="mt-3 text-sm text-slate-500">
-                {new Date(entry.event_time).toLocaleString("en-GB")}
-              </p>
-            </div>
-
-            {entry.reviewed && (
-              <CastodiaBadge variant="success">
-                Reviewed
-              </CastodiaBadge>
-            )}
+      <div className="space-y-5">
+        {entries.length === 0 && (
+          <div className="ml-10 rounded-3xl border border-white/10 bg-white/10 p-6 text-center text-slate-300 backdrop-blur">
+            No entries for this filter/day.
           </div>
+        )}
 
-          <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-700">
-            {entry.content}
-          </p>
-        </CastodiaCard>
-      ))}
+        {entries.map((entry) => (
+          <TimelineEntryCard
+            key={entry.id}
+            entry={entry}
+            serviceUserGender={serviceUserGender}
+          />
+        ))}
+      </div>
     </div>
   );
 }

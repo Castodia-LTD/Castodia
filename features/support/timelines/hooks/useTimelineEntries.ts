@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { isSameDay, getDayRange } from "@/lib/shared/date";
+import type { TimelineEntry } from "@/lib/timelines/types";
 
-export type TimelineEntry = {
-  id: string;
-  service_user_id: string;
-  entry_type: string;
-  content: string;
-  event_time: string;
-  created_at: string;
-  created_by: string | null;
-  reviewed?: boolean | null;
+type UseTimelineEntriesArgs = {
+  serviceUserId: string;
 };
 
-export function useTimelineEntries(serviceUserId: string) {
+export function useTimelineEntries({ serviceUserId }: UseTimelineEntriesArgs) {
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const viewingToday = isSameDay(selectedDate, new Date());
 
   async function loadEntries() {
     if (!serviceUserId) {
@@ -27,13 +27,9 @@ export function useTimelineEntries(serviceUserId: string) {
 
     setLoadingEntries(true);
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const { startOfDay, endOfDay } = getDayRange(selectedDate);
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const { data: entriesData, error } = await supabase
+    const { data, error } = await supabase
       .from("timeline_entries")
       .select(`
         id,
@@ -57,17 +53,31 @@ export function useTimelineEntries(serviceUserId: string) {
       return;
     }
 
-    setEntries((entriesData || []) as TimelineEntry[]);
+    setEntries((data || []) as TimelineEntry[]);
     setLoadingEntries(false);
   }
 
   useEffect(() => {
     loadEntries();
-  }, [serviceUserId]);
+  }, [serviceUserId, selectedDate]);
+
+  const filteredEntries = useMemo(() => {
+    if (activeFilter === "All") return entries;
+    return entries.filter((entry) => entry.entry_type === activeFilter);
+  }, [entries, activeFilter]);
 
   return {
     entries,
+    filteredEntries,
     loadingEntries,
+    selectedDate,
+    setSelectedDate,
+    activeFilter,
+    setActiveFilter,
+    filterOpen,
+    setFilterOpen,
+    viewingToday,
+    loadEntries,
     reloadEntries: loadEntries,
   };
 }

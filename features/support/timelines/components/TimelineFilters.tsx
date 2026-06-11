@@ -1,70 +1,50 @@
-import { CastodiaButton, CastodiaCard } from "@/components/castodia";
+import { filters } from "@/lib/timelines/constants";
 
 type Props = {
-  selectedType: string;
-  setSelectedType: (value: string) => void;
-  onClear: () => void;
+  open: boolean;
+  activeFilter: string;
+  setActiveFilter: (value: string) => void;
+  onClose: () => void;
 };
 
-const timelineTypes = [
-  "All",
-  "Activity",
-  "Community Access",
-  "Social Interaction",
-  "Contact/Visit",
-  "Shopping",
-  "Household Tasks",
-  "Health Observation",
-  "Symptoms",
-  "Health Professional",
-  "Clinical Care",
-  "eMAR",
-  "Wellbeing Observation",
-  "Behaviour Observation",
-  "Sleep Check",
-  "Personal Care",
-  "Toileting",
-  "Continence Care",
-  "Nutrition & Hydration",
-  "Environment Check",
-  "Accident/Injury",
-  "Fall",
-  "Behaviour Incident",
-  "Safeguarding Concern",
-  "Medication Error",
-  "Near Miss",
-];
-
 export default function TimelineFilters({
-  selectedType,
-  setSelectedType,
-  onClear,
+  open,
+  activeFilter,
+  setActiveFilter,
+  onClose,
 }: Props) {
-  return (
-    <CastodiaCard>
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="w-full md:max-w-sm">
-          <label className="text-sm font-medium text-slate-700">
-            Entry type
-          </label>
+  if (!open) return null;
 
-          <select
-            value={selectedType}
-            onChange={(event) => setSelectedType(event.target.value)}
-            className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-          >
-            {timelineTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/50">
+      <div className="w-full rounded-t-3xl bg-slate-950 p-6 md:ml-72">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Filter entries</h2>
+
+          <button onClick={onClose} className="text-sm text-slate-400">
+            Close
+          </button>
         </div>
 
-        <CastodiaButton variant="secondary" onClick={onClear}>
-          Clear Filters
-        </CastodiaButton>
+        <div className="space-y-2">
+          {filters.map((filter) => (
+            <button
+              key={filter}
+              onClick={() => {
+                setActiveFilter(filter);
+                onClose();
+              }}
+              className={`w-full rounded-xl p-3 text-left ${
+                activeFilter === filter
+                  ? "bg-blue-500 text-white"
+                  : "bg-white/10 text-slate-300"
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
       </div>
-    </CastodiaCard>
+    </div>
   );
 }

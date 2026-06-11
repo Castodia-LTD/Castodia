@@ -1,191 +1,284 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-import {
-  CastodiaButton,
-  CastodiaCard,
-} from "@/components/castodia";
-
-import { useTimelineForm } from "../hooks/useTimelineForm";
+import EntryCategoryTiles from "@/components/timelines/EntryCategoryTiles";
+import { formRegistry } from "@/lib/timelines/formRegistry";
+import { saveRegistry } from "@/lib/timelines/saveRegistry";
+import { combineDateAndTime } from "@/lib/shared/date";
 
 type Props = {
   serviceUserId: string;
-  onSaved: () => void;
+  organisationId: string;
+  serviceUserName: string;
+  serviceUserGender?: string | null;
+  viewingToday: boolean;
+  form: any;
+  onSaved: () => Promise<void>;
 };
-
-const entryTypes = [
-  "Activity",
-  "Community Access",
-  "Social Interaction",
-  "Contact/Visit",
-  "Shopping",
-  "Household Tasks",
-  "Health Observation",
-  "Symptoms",
-  "Health Professional",
-  "Clinical Care",
-  "eMAR",
-  "Wellbeing Observation",
-  "Behaviour Observation",
-  "Sleep Check",
-  "Personal Care",
-  "Toileting",
-  "Continence Care",
-  "Nutrition & Hydration",
-  "Environment Check",
-  "Accident/Injury",
-  "Fall",
-  "Behaviour Incident",
-  "Safeguarding Concern",
-  "Medication Error",
-  "Near Miss",
-];
-
-const inputClass =
-  "mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
-
-const textareaClass =
-  "mt-2 min-h-32 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
 
 export default function TimelineEntryPanel({
   serviceUserId,
+  organisationId,
+  serviceUserName,
+  serviceUserGender,
+  viewingToday,
+  form,
   onSaved,
 }: Props) {
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const entryPanelRef = useRef<HTMLDivElement | null>(null);
 
-  const form = useTimelineForm();
+  const SelectedForm = formRegistry[form.entryType];
 
-  async function saveEntry() {
-    if (!form.content.trim()) {
-      alert("Please enter timeline details.");
-      return;
-    }
+  useEffect(() => {
+    if (!entryPanelRef.current) return;
 
+    entryPanelRef.current.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [form.selectedCategoryId, form.entryType]);
+
+  async function createMedicationTimelineEntry(summary: string) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("You must be logged in.");
+      alert("You must be logged in to create an entry.");
       return;
     }
 
-    setSaving(true);
-
-    const now = new Date().toISOString();
+    const eventTime = combineDateAndTime(new Date(), form.entryTime);
 
     const { error } = await supabase.from("timeline_entries").insert({
       service_user_id: serviceUserId,
-      entry_type: form.entryType || "Activity",
-      content: form.content.trim(),
-      event_time: now,
       created_by: user.id,
+      entry_type: "Medication",
+      content: summary,
+      event_time: eventTime,
     });
 
     if (error) {
       alert(error.message);
-      setSaving(false);
       return;
     }
 
-    form.resetEntryPanel();
-    form.setEntryType("Activity");
-    setPanelOpen(false);
-    setSaving(false);
-    onSaved();
+    form.closeAndReset();
+    await onSaved();
   }
 
+  async function addEntry() {
+    if (!viewingToday) {
+      return alert("Entries can only be added to today’s record.");
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return alert("You must be logged in to create an entry.");
+    }
+
+    if (!form.entryType) {
+      return alert("Please select what you would like to record.");
+    }
+
+    const eventTime = combineDateAndTime(new Date(), form.entryTime);
+    const saveHandler = saveRegistry[form.entryType];
+
+    if (saveHandler) {
+      await saveHandler({
+        supabase,
+        organisationId,
+        serviceUserId,
+        userId: user.id,
+        eventTime,
+        resetEntryPanel: form.resetEntryPanel,
+        setEntryPanelOpen: form.setEntryPanelOpen,
+        loadEntries: onSaved,
+
+        activityTitle: form.activityTitle,
+        activityLocation: form.activityLocation,
+        activityPeople: form.activityPeople,
+        activityParticipation: form.activityParticipation,
+        activityOutcome: form.activityOutcome,
+        activityNotes: form.activityNotes,
+
+        communityDestination: form.communityDestination,
+        communityTransport: form.communityTransport,
+        communitySupportProvided: form.communitySupportProvided,
+
+        behaviourObserved: form.behaviourObserved,
+        behaviourFrequency: form.behaviourFrequency,
+        behaviourSupportProvided: form.behaviourSupportProvided,
+        behaviourOutcome: form.behaviourOutcome,
+        behaviourNotes: form.behaviourNotes,
+
+        bodyMapMarkers: form.bodyMapMarkers,
+        bodyMapNotes: form.bodyMapNotes,
+
+        behaviourIncidentTrigger: form.behaviourIncidentTrigger,
+        behaviourIncidentTypes: form.behaviourIncidentTypes,
+        behaviourIncidentDescription: form.behaviourIncidentDescription,
+        behaviourIncidentSupport: form.behaviourIncidentSupport,
+        linkedPrnAdministrationId: form.linkedPrnAdministrationId,
+        behaviourIncidentOutcomes: form.behaviourIncidentOutcomes,
+        behaviourIncidentNotes: form.behaviourIncidentNotes,
+      });
+
+      return;
+    }
+
+    if (form.entryType === "Sleep") {
+      if (!form.sleepStatus) return alert("Please select sleep status.");
+
+      const summary = form.sleepNotes.trim()
+        ? `${form.sleepStatus} — ${form.sleepNotes.trim()}`
+        : form.sleepStatus;
+
+      const { error } = await supabase.from("timeline_entries").insert({
+        service_user_id: serviceUserId,
+        created_by: user.id,
+        entry_type: "Sleep",
+        content: summary,
+        event_time: eventTime,
+      });
+
+      if (error) return alert(error.message);
+
+      form.closeAndReset();
+      await onSaved();
+      return;
+    }
+
+    const isIncident = form.entryType === "Incident";
+
+    const finalContent = isIncident
+      ? `Antecedent:
+${form.antecedent.trim()}
+
+Behaviour:
+${form.behaviour.trim()}
+
+Consequence / Outcome:
+${form.consequence.trim()}`
+      : form.content.trim();
+
+    if (
+      isIncident &&
+      (!form.antecedent.trim() ||
+        !form.behaviour.trim() ||
+        !form.consequence.trim())
+    ) {
+      return alert(
+        "Please complete antecedent, behaviour and consequence/outcome."
+      );
+    }
+
+    if (!finalContent.trim()) return;
+
+    const { error } = await supabase.from("timeline_entries").insert({
+      service_user_id: serviceUserId,
+      created_by: user.id,
+      entry_type: form.entryType,
+      content: finalContent,
+      event_time: eventTime,
+    });
+
+    if (error) return alert(error.message);
+
+    form.closeAndReset();
+    await onSaved();
+  }
+
+  if (!viewingToday || !form.entryPanelOpen) return null;
+
   return (
-    <>
-      <div className="fixed bottom-6 right-6 z-40">
-        <CastodiaButton
-          type="button"
-          onClick={() => {
-            form.setEntryType(form.entryType || "Activity");
-            setPanelOpen(true);
-          }}
-          className="h-14 w-14 rounded-full p-0 shadow-xl"
+    <div
+      ref={entryPanelRef}
+      className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl space-y-4 overflow-y-auto border-l border-white/10 bg-slate-950/95 p-6 shadow-2xl backdrop-blur"
+    >
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Add Entry</h2>
+
+        <button
+          onClick={form.closeAndReset}
+          className="rounded-full bg-white/10 px-4 py-2 text-sm"
         >
-          <Plus size={24} />
-        </CastodiaButton>
+          Close
+        </button>
       </div>
 
-      {panelOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
-          <div className="h-full w-full max-w-xl overflow-y-auto bg-slate-50 p-6 shadow-2xl">
-            <CastodiaCard>
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">
-                    Add Timeline Entry
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Record a new timeline note for this service user.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    form.resetEntryPanel();
-                    setPanelOpen(false);
-                  }}
-                  className="rounded-full border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-700">
-                    Entry type
-                  </label>
-
-                  <select
-                    value={form.entryType || "Activity"}
-                    onChange={(event) => form.setEntryType(event.target.value)}
-                    className={inputClass}
-                  >
-                    {entryTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-slate-700">
-                    Details
-                  </label>
-
-                  <textarea
-                    value={form.content}
-                    onChange={(event) => form.setContent(event.target.value)}
-                    placeholder="Write timeline details..."
-                    className={textareaClass}
-                  />
-                </div>
-
-                <CastodiaButton
-                  type="button"
-                  onClick={saveEntry}
-                  disabled={saving}
-                  className="w-full"
-                >
-                  {saving ? "Saving..." : "Save Entry"}
-                </CastodiaButton>
-              </div>
-            </CastodiaCard>
-          </div>
-        </div>
+      {!form.entryType && (
+        <EntryCategoryTiles
+          selectedCategoryId={form.selectedCategoryId}
+          setSelectedCategoryId={form.setSelectedCategoryId}
+          setEntryType={form.setEntryType}
+        />
       )}
-    </>
+
+      {form.entryType && (
+        <>
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 p-3">
+            <div>
+              <p className="text-xs text-slate-400">Recording</p>
+              <p className="font-semibold text-white">{form.entryType}</p>
+            </div>
+
+            <button
+              onClick={() => {
+                form.setEntryType("");
+                form.setSelectedCategoryId(null);
+              }}
+              className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-slate-300"
+            >
+              Change
+            </button>
+          </div>
+
+          <input
+            type="time"
+            value={form.entryTime}
+            onChange={(event) => form.setEntryTime(event.target.value)}
+            className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+          />
+
+          {SelectedForm ? (
+            <SelectedForm
+              serviceUserId={serviceUserId}
+              serviceUserName={serviceUserName}
+              serviceUserGender={serviceUserGender}
+              onSaved={async () => {
+                form.closeAndReset();
+                await onSaved();
+              }}
+              onCreateTimelineEntry={createMedicationTimelineEntry}
+              {...form}
+            />
+          ) : (
+            <input
+              value={form.content}
+              onChange={(event) => form.setContent(event.target.value)}
+              placeholder="Write entry..."
+              className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+            />
+          )}
+
+          {form.entryType !== "Wellbeing" &&
+            form.entryType !== "Medication" && (
+              <button
+                onClick={addEntry}
+                className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 text-xl font-semibold"
+              >
+                Save Entry
+              </button>
+            )}
+        </>
+      )}
+    </div>
   );
 }
