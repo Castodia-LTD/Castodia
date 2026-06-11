@@ -71,8 +71,8 @@ export default function ManagerShell({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white">
-      <header className="flex items-center justify-between border-b border-white/10 bg-slate-950/90 px-4 py-3 backdrop-blur md:hidden">
+        <main className="min-h-screen bg-slate-100 text-slate-950">
+        <header className="flex items-center justify-between border-b border-white/10 bg-slate-950/90 px-4 py-3 backdrop-blur md:hidden">
         <Image
           src="/logo.png"
           alt="Castodia"
@@ -121,8 +121,8 @@ export default function ManagerShell({
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                       active
-                        ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white"
-                        : "text-slate-300 hover:bg-white/10"
+  ? "bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-sm"
+  : "text-slate-300 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <Icon size={18} />
@@ -151,8 +151,8 @@ export default function ManagerShell({
       )}
 
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 border-r border-white/10 bg-slate-950/80 p-5 backdrop-blur md:flex md:flex-col">
-          <Image
+          <aside className="hidden w-72 border-r border-slate-600 bg-slate-700 p-5 md:flex md:flex-col">          
+            <Image
             src="/logo.png"
             alt="Castodia"
             width={190}
@@ -160,11 +160,11 @@ export default function ManagerShell({
             priority
           />
 
-          <div className="mt-8 rounded-3xl border border-white/10 bg-white/10 p-4">
-            <p className="text-sm text-slate-400">Hello</p>
-            <p className="text-xl font-bold">{fullName}!</p>
-            <p className="mt-2 text-sm text-cyan-300">{time}</p>
-          </div>
+          <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-4">
+  <p className="text-sm text-slate-300">Hello</p>
+  <p className="text-xl font-bold text-white">{fullName}!</p>
+  <p className="mt-2 text-sm font-medium text-cyan-300">{time}</p>
+</div>
 
           <nav className="mt-8 flex-1 space-y-2">
             {managerMenuItems.map((item) => {
@@ -177,8 +177,8 @@ export default function ManagerShell({
                   href={item.href}
                   className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                     active
-                      ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white"
-                      : "text-slate-300 hover:bg-white/10"
+  ? "bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-sm"
+  : "text-slate-300 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <Icon size={18} />
@@ -190,8 +190,7 @@ export default function ManagerShell({
 
           <Link
             href="/support/dashboard"
-            className="mt-6 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-slate-200 hover:bg-white/20"
-          >
+className="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white"          >
             Switch to Support Portal
           </Link>
 

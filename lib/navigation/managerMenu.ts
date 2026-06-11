@@ -1,10 +1,9 @@
 import {
   BarChart3,
-  ClipboardCheck,
-  FileText,
   HeartPulse,
   Home,
   Pill,
+  Settings,
   ShieldAlert,
   Users,
 } from "lucide-react";
@@ -16,38 +15,33 @@ export const managerMenuItems = [
     icon: Home,
   },
   {
-    href: "/manager/reports",
-    label: "Reports",
-    icon: BarChart3,
-  },
-  {
     href: "/manager/service-users",
     label: "Service Users",
-    icon: FileText,
+    icon: Users,
   },
   {
-    href: "/manager/emar",
-    label: "Medication Profiles",
-    icon: Pill,
-  },
-  {
-    href: "/manager/supervisions",
-    label: "Supervisions",
-    icon: ClipboardCheck,
-  },
-  {
-    href: "/manager/competencies",
-    label: "Competencies",
+    href: "/manager/staff",
+    label: "Staff",
     icon: ShieldAlert,
   },
   {
-  href: "/manager/incidents",
-  label: "Behaviour Incidents",
-  icon: HeartPulse,
-},
-{
-  href: "/manager/admin",
-  label: "Admin",
-  icon: Users,
-}
+    href: "/manager/medication",
+    label: "Medication",
+    icon: Pill,
+  },
+  {
+    href: "/manager/safeguarding",
+    label: "Safeguarding",
+    icon: HeartPulse,
+  },
+  {
+    href: "/manager/compliance",
+    label: "Compliance",
+    icon: BarChart3,
+  },
+  {
+    href: "/manager/admin",
+    label: "Administration",
+    icon: Settings,
+  },
 ];
