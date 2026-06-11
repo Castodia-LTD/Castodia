@@ -194,7 +194,7 @@ export default function SupportShell({
       )}
 
       <div className="flex min-h-screen">
-          <aside className="hidden w-72 border-r border-slate-600 bg-slate-700 p-5 md:flex md:flex-col">          
+          <aside className="hidden h-screen w-72 shrink-0 border-r border-slate-600 bg-slate-700 p-5 md:sticky md:top-0 md:flex md:flex-col">          
             <Image
             src="/logo.png"
             alt="Castodia"
