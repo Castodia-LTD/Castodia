@@ -1,18 +1,44 @@
-import { entryCategories } from "@/lib/timelines/entryCategories";
+"use client";
+
+import { useEffect, useState } from "react";
+import { getOrganisationTimelineConfiguration } from "@/lib/timelines/getOrganisationTimelineConfiguration";
+import {
+  availableTimelineCategories,
+  AvailableTimelineCategory,
+} from "@/lib/timelines/availableTimelineCategories";
 
 type Props = {
+  organisationId: string;
   selectedCategoryId: string | null;
   setSelectedCategoryId: (value: string | null) => void;
   setEntryType: (value: string) => void;
 };
 
 export default function EntryCategoryTiles({
+  organisationId,
   selectedCategoryId,
   setSelectedCategoryId,
   setEntryType,
 }: Props) {
-  const selectedCategory = entryCategories.find(
-    (category) => category.id === selectedCategoryId
+  const [categories, setCategories] = useState<AvailableTimelineCategory[]>(
+    availableTimelineCategories
+  );
+
+  useEffect(() => {
+    async function loadCategories() {
+      const configuredCategories =
+        await getOrganisationTimelineConfiguration(organisationId);
+
+      setCategories(configuredCategories);
+    }
+
+    if (organisationId) {
+      loadCategories();
+    }
+  }, [organisationId]);
+
+  const selectedCategory = categories.find(
+    (category) => category.key === selectedCategoryId
   );
 
   if (selectedCategory) {
@@ -49,9 +75,7 @@ export default function EntryCategoryTiles({
               className={`min-h-32 rounded-3xl p-5 text-left shadow-xl transition hover:scale-[1.02] ${selectedCategory.colour}`}
             >
               <p className="text-lg font-bold">{option.label}</p>
-              <p className="mt-2 text-sm opacity-80">
-                {option.description}
-              </p>
+              <p className="mt-2 text-sm opacity-80">{option.description}</p>
             </button>
           ))}
         </div>
@@ -72,14 +96,14 @@ export default function EntryCategoryTiles({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {entryCategories.map((category) => {
-          const isIncident = category.id === "incident";
+        {categories.map((category) => {
+          const isIncident = category.key === "incident";
 
           return (
             <button
-              key={category.id}
+              key={category.key}
               type="button"
-              onClick={() => setSelectedCategoryId(category.id)}
+              onClick={() => setSelectedCategoryId(category.key)}
               className={`rounded-3xl p-5 text-left shadow-xl transition hover:scale-[1.02] ${
                 isIncident ? "col-span-2 min-h-28" : "min-h-36"
               } ${category.colour}`}

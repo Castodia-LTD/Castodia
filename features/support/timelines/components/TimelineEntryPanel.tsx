@@ -215,10 +215,11 @@ ${form.consequence.trim()}`
 
       {!form.entryType && (
         <EntryCategoryTiles
-          selectedCategoryId={form.selectedCategoryId}
-          setSelectedCategoryId={form.setSelectedCategoryId}
-          setEntryType={form.setEntryType}
-        />
+  organisationId={organisationId}
+  selectedCategoryId={form.selectedCategoryId}
+  setSelectedCategoryId={form.setSelectedCategoryId}
+  setEntryType={form.setEntryType}
+/>
       )}
 
       {form.entryType && (

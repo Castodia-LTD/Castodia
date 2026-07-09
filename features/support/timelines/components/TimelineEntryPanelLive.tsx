@@ -13,6 +13,7 @@ type Props = {
   entryPanelRef: RefObject<HTMLDivElement | null>;
 
   serviceUserId: string;
+  organisationId: string;
   serviceUserName: string;
   serviceUserGender?: string | null;
 
@@ -132,6 +133,7 @@ export default function TimelineEntryPanelLive({
   entryPanelRef,
 
   serviceUserId,
+  organisationId,
   serviceUserName,
   serviceUserGender,
 
@@ -281,10 +283,11 @@ export default function TimelineEntryPanelLive({
 
           {!entryType && (
             <EntryCategoryTiles
-              selectedCategoryId={selectedCategoryId}
-              setSelectedCategoryId={setSelectedCategoryId}
-              setEntryType={setEntryType}
-            />
+  organisationId={organisationId}
+  selectedCategoryId={selectedCategoryId}
+  setSelectedCategoryId={setSelectedCategoryId}
+  setEntryType={setEntryType}
+/>
           )}
 
           {entryType && (

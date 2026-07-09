@@ -11,18 +11,70 @@ export default function Home() {
   const [password, setPassword] = useState("");
 
   async function handleLogin() {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    router.push("/dashboard");
+  if (error) {
+    alert(error.message);
+    return;
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    alert("Unable to load user.");
+    return;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile?.role) {
+    alert("Unable to load user profile.");
+    return;
+  }
+
+  if (profile.role === "castodia_owner" || profile.role === "castodia_admin") {
+    router.push("/platform/dashboard");
+    return;
+  }
+
+  if (profile.role === "manager") {
+    router.push("/manager/dashboard");
+    return;
+  }
+
+  if (profile.role === "support") {
+    router.push("/support/dashboard");
+    return;
+  }
+
+  alert("No valid role found for this user.");
+}
+async function handleForgotPassword() {
+  if (!email) {
+    alert("Please enter your email address first.");
+    return;
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "http://localhost:3000/reset-password",
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("Password reset email sent.");
+}
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white flex items-center justify-center p-6">
@@ -73,9 +125,17 @@ export default function Home() {
 >
   Log in
 </button>
+
+        <button
+  type="button"
+  onClick={handleForgotPassword}
+  className="w-full text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+>
+  Forgotten your password?
+</button>
           </form>
         </div>
-
+        
         <p className="mt-6 text-center text-lg font-semibold text-slate-300">
           © 2026 Castodia LTD
         </p>
