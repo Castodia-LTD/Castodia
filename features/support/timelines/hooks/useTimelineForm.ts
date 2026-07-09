@@ -79,7 +79,8 @@ export function useTimelineForm() {
   >([]);
   const [behaviourIncidentNotes, setBehaviourIncidentNotes] = useState("");
   const [prnOptions] = useState<{ id: string; label: string }[]>([]);
-
+  const [nutritionHydrationData, setNutritionHydrationData] = useState<any>(null);
+  
   function resetEntryPanel() {
     setContent("");
     setEntryType("");
@@ -125,6 +126,8 @@ export function useTimelineForm() {
 
     setBodyMapMarkers([]);
     setBodyMapNotes("");
+
+    setNutritionHydrationData(null);
 
     setBehaviourIncidentTrigger("");
     setBehaviourIncidentTypes([]);
@@ -255,6 +258,9 @@ export function useTimelineForm() {
     behaviourIncidentNotes,
     setBehaviourIncidentNotes,
     prnOptions,
+
+    nutritionHydrationData,
+    setNutritionHydrationData,
 
     resetEntryPanel,
     openPanel,

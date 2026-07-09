@@ -26,7 +26,7 @@ type SaveContext = {
   bodyMapMarkers: any[];
   bodyMapNotes: string;
   organisationId: string;
-
+  nutritionHydrationData?: any;
   behaviourIncidentTrigger: string;
   behaviourIncidentTypes: string[];
   behaviourIncidentDescription: string;
@@ -319,7 +319,9 @@ ${ctx.activityNotes || "Not recorded"}`;
     await ctx.loadEntries();
 
     return true;
+    
   },
+  
 
   "Behaviour Observation": async (ctx) => {
     if (!ctx.behaviourObserved || ctx.behaviourObserved.length === 0) {
@@ -377,6 +379,129 @@ ${ctx.behaviourNotes?.trim() || "Not recorded"}`;
 
     return true;
   },
+
+  "Nutrition & Hydration": async (ctx) => {
+  const data = ctx.nutritionHydrationData;
+
+  if (!data?.type) {
+    alert("Please choose Food or Drink.");
+    return false;
+  }
+
+  const concerns = data.concerns?.length ? data.concerns : ["no_concerns"];
+  const hasConcern = concerns.some((c: string) => c !== "no_concerns");
+
+  if (hasConcern && !data.notes?.trim()) {
+    alert("Please add notes when a concern is recorded.");
+    return false;
+  }
+
+  if (data.type === "food") {
+    if (!data.meal) {
+      alert("Please select a meal.");
+      return false;
+    }
+
+    if (!data.foodDescription?.trim()) {
+      alert("Please enter what was eaten.");
+      return false;
+    }
+
+    if (!data.preparedBy) {
+      alert("Please select who prepared it.");
+      return false;
+    }
+
+    if (!data.amountEaten) {
+      alert("Please select how much was eaten.");
+      return false;
+    }
+  }
+
+  if (data.type === "drink") {
+    if (!data.drinkType) {
+      alert("Please select a drink.");
+      return false;
+    }
+
+    if (!data.amountMl) {
+      alert("Please enter the amount in ml.");
+      return false;
+    }
+
+    if (!data.assistance) {
+      alert("Please select assistance level.");
+      return false;
+    }
+  }
+
+  const finalContent =
+    data.type === "food"
+      ? `Nutrition & Hydration
+
+Type:
+Food
+
+Meal:
+${data.meal}
+
+Food:
+${data.foodDescription}
+
+Prepared By:
+${data.preparedBy}
+
+Amount Eaten:
+${data.amountEaten}
+
+Dietary Requirements:
+${data.dietaryRequirements?.length ? data.dietaryRequirements.join(", ") : "Not recorded"}
+
+Concerns:
+${concerns.join(", ")}
+
+Notes:
+${data.notes?.trim() || "Not recorded"}`
+      : `Nutrition & Hydration
+
+Type:
+Drink
+
+Drink:
+${data.drinkType}
+
+Amount:
+${data.amountMl}ml
+
+Assistance:
+${data.assistance}
+
+Concerns:
+${concerns.join(", ")}
+
+Notes:
+${data.notes?.trim() || "Not recorded"}`;
+
+  const { error } = await ctx.supabase.from("timeline_entries").insert({
+    service_user_id: ctx.serviceUserId,
+    created_by: ctx.userId,
+    entry_type: "Nutrition & Hydration",
+    content: finalContent,
+    event_time: ctx.eventTime,
+  });
+
+  if (error) {
+    alert(error.message);
+    return false;
+  }
+
+  ctx.resetEntryPanel();
+  ctx.setEntryPanelOpen(false);
+  await ctx.loadEntries();
+
+  return true;
+},
+
 "Body Map": async (ctx) => {
   if (!ctx.bodyMapMarkers || ctx.bodyMapMarkers.length === 0) {
     alert("Please place at least one marker on the body map.");
@@ -519,6 +644,7 @@ ${ctx.linkedPrnAdministrationId || "Not linked"}
 
 Additional Notes:
 ${ctx.behaviourIncidentNotes.trim() || "Not recorded"}`;
+
 
   const { error } = await ctx.supabase.from("timeline_entries").insert({
     service_user_id: ctx.serviceUserId,

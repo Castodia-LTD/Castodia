@@ -12,6 +12,7 @@ import HouseholdTasksForm from "@/components/timelines/forms/activities/Househol
 import BehaviourObservationForm from "@/components/timelines/forms/wellbeing/BehaviourObservationForm";
 import BodyMapForm from "@/components/timelines/forms/incidents/BodyMapForm";
 import BehaviourIncidentForm from "@/components/timelines/forms/incidents/BehaviourIncidentForm";
+import NutritionHydrationForm from "@/components/timelines/forms/care/NutritionHydrationForm";
 
 export const formRegistry: Record<string, any> = {
   Activity: (props: any) => (
@@ -221,6 +222,11 @@ Medication: (props: any) => (
     setImmediateOutcomes={props.setBehaviourIncidentOutcomes}
     notes={props.behaviourIncidentNotes}
     setNotes={props.setBehaviourIncidentNotes}
+  />
+),
+"Nutrition & Hydration": (props: any) => (
+  <NutritionHydrationForm
+    onChange={props.setNutritionHydrationData}
   />
 ),
 };

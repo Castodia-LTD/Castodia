@@ -120,6 +120,8 @@ export default function TimelineEntryPanel({
 
         bodyMapMarkers: form.bodyMapMarkers,
         bodyMapNotes: form.bodyMapNotes,
+        
+        nutritionHydrationData: form.nutritionHydrationData,
 
         behaviourIncidentTrigger: form.behaviourIncidentTrigger,
         behaviourIncidentTypes: form.behaviourIncidentTypes,
