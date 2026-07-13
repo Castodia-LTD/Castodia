@@ -122,7 +122,9 @@ export default function TimelineEntryPanel({
         bodyMapNotes: form.bodyMapNotes,
         
         nutritionHydrationData: form.nutritionHydrationData,
-
+        
+        healthObservationData: form.healthObservationData,
+        
         behaviourIncidentTrigger: form.behaviourIncidentTrigger,
         behaviourIncidentTypes: form.behaviourIncidentTypes,
         behaviourIncidentDescription: form.behaviourIncidentDescription,
@@ -130,6 +132,7 @@ export default function TimelineEntryPanel({
         linkedPrnAdministrationId: form.linkedPrnAdministrationId,
         behaviourIncidentOutcomes: form.behaviourIncidentOutcomes,
         behaviourIncidentNotes: form.behaviourIncidentNotes,
+        symptomsData: form.symptomsData,
       });
 
       return;

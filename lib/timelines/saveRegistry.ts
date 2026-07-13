@@ -27,6 +27,8 @@ type SaveContext = {
   bodyMapNotes: string;
   organisationId: string;
   nutritionHydrationData?: any;
+  healthObservationData?: any;
+  symptomsData?: any;
   behaviourIncidentTrigger: string;
   behaviourIncidentTypes: string[];
   behaviourIncidentDescription: string;
@@ -596,6 +598,250 @@ ${additionalNotes}`
 
   return true;
 },
+"Health Observation": async (ctx) => {
+  const data = ctx.healthObservationData;
+
+  if (!data?.sections || data.sections.length === 0) {
+    alert("Please select what you are recording.");
+    return false;
+  }
+
+  const actionsTaken = data.actionsTaken?.length
+    ? data.actionsTaken
+    : ["No Action Required"];
+
+  const actionTaken = actionsTaken.some(
+    (action: string) => action !== "No Action Required"
+  );
+
+  if (actionTaken && !data.notes?.trim()) {
+    alert("Please add notes when action has been taken.");
+    return false;
+  }
+
+  const sections: string[] = [];
+
+  if (data.sections.includes("vital_signs")) {
+    const vital = data.vitalSigns || {};
+
+    const vitalLines = [
+      vital.temperature ? `Temperature: ${vital.temperature}°C` : null,
+      vital.bloodPressure
+        ? `Blood Pressure: ${vital.bloodPressure.systolic || "?"} / ${
+            vital.bloodPressure.diastolic || "?"
+          } mmHg`
+        : null,
+      vital.pulse ? `Pulse: ${vital.pulse} bpm` : null,
+      vital.respiratoryRate
+        ? `Respiratory Rate: ${vital.respiratoryRate} breaths/min`
+        : null,
+      vital.oxygenSaturation
+        ? `Oxygen Saturation: ${vital.oxygenSaturation}%`
+        : null,
+      vital.painScore !== null && vital.painScore !== undefined
+        ? `Pain Score: ${vital.painScore}/10`
+        : null,
+    ].filter(Boolean);
+
+    if (vitalLines.length === 0) {
+      alert("Please enter at least one vital sign.");
+      return false;
+    }
+
+    sections.push(`Vital Signs\n${vitalLines.join("\n")}`);
+  }
+
+  if (data.sections.includes("general_observation")) {
+    const general = data.generalObservation || {};
+
+    const generalLines = [
+      general.appearance ? `Appearance: ${general.appearance}` : null,
+      general.mood ? `Mood: ${general.mood}` : null,
+      general.skinColour ? `Skin Colour: ${general.skinColour}` : null,
+      general.breathing ? `Breathing: ${general.breathing}` : null,
+      general.alertness ? `Alertness: ${general.alertness}` : null,
+    ].filter(Boolean);
+
+    if (generalLines.length === 0) {
+      alert("Please complete at least one general observation.");
+      return false;
+    }
+
+    sections.push(`General Observation\n${generalLines.join("\n")}`);
+  }
+
+  if (data.sections.includes("weight")) {
+    if (!data.weight?.kg) {
+      alert("Please enter the weight.");
+      return false;
+    }
+
+    sections.push(`Weight\nWeight: ${data.weight.kg}kg`);
+  }
+
+  if (data.sections.includes("blood_glucose")) {
+    if (!data.bloodGlucose?.value) {
+      alert("Please enter the blood glucose reading.");
+      return false;
+    }
+
+    sections.push(`Blood Glucose\nReading: ${data.bloodGlucose.value} mmol/L
+Timing: ${data.bloodGlucose.timing || "Not recorded"}`);
+  }
+
+  if (data.sections.includes("other")) {
+    if (!data.other?.observation?.trim()) {
+      alert("Please describe the other observation.");
+      return false;
+    }
+
+    sections.push(`Other Observation
+Observation: ${data.other.observation}
+Value: ${data.other.value || "Not recorded"}`);
+  }
+
+  const finalContent = `Health Observation
+
+${sections.join("\n\n")}
+
+Action Taken:
+${actionsTaken.join(", ")}
+
+Notes:
+${data.notes?.trim() || "Not recorded"}`;
+
+  const { error } = await ctx.supabase.from("timeline_entries").insert({
+    service_user_id: ctx.serviceUserId,
+    created_by: ctx.userId,
+    entry_type: "Health Observation",
+    content: finalContent,
+    event_time: ctx.eventTime,
+  });
+
+  if (error) {
+    alert(error.message);
+    return false;
+  }
+
+  ctx.resetEntryPanel();
+  ctx.setEntryPanelOpen(false);
+  await ctx.loadEntries();
+
+  return true;
+},
+
+Symptoms: async (ctx) => {
+  const data = ctx.symptomsData;
+
+  if (!data?.selectedSymptoms || data.selectedSymptoms.length === 0) {
+    alert("Please select at least one symptom.");
+    return false;
+  }
+
+  if (!data.duration) {
+    alert("Please select symptom duration.");
+    return false;
+  }
+
+  const actionsTaken = data.actionsTaken?.length
+    ? data.actionsTaken
+    : ["No Action Required"];
+
+  const actionTaken = actionsTaken.some(
+    (action: string) => action !== "No Action Required"
+  );
+
+  const severeSymptom =
+    data.details?.painSeverity === "Severe" ||
+    data.details?.breathlessnessSeverity === "Severe";
+
+  const otherSymptom = data.selectedSymptoms.includes("other");
+
+  if ((actionTaken || severeSymptom || otherSymptom) && !data.notes?.trim()) {
+    alert("Please add notes for actions taken, severe symptoms, or other symptoms.");
+    return false;
+  }
+
+  const lines: string[] = [];
+
+  lines.push("Symptoms");
+  lines.push("");
+  lines.push("Symptoms Present:");
+
+  data.selectedSymptoms.forEach((symptom: string) => {
+    lines.push(`• ${formatSymptom(symptom)}`);
+  });
+
+  if (data.details?.temperatureType) {
+    lines.push("");
+    lines.push(`Temperature: ${data.details.temperatureType}`);
+  }
+
+  if (data.details?.coughType) {
+    lines.push(`Cough: ${data.details.coughType}`);
+  }
+
+  if (data.details?.vomitingOccurrences) {
+    lines.push(`Vomiting Occurrences: ${data.details.vomitingOccurrences}`);
+  }
+
+  if (data.details?.diarrhoeaOccurrences) {
+    lines.push(`Diarrhoea Occurrences: ${data.details.diarrhoeaOccurrences}`);
+  }
+
+  if (data.details?.painLocation || data.details?.painSeverity) {
+    lines.push(
+      `Pain: ${data.details.painSeverity || "Not recorded"}`
+    );
+    lines.push(
+      `Pain Location: ${data.details.painLocation || "Not recorded"}`
+    );
+  }
+
+  if (data.details?.breathlessnessSeverity) {
+    lines.push(
+      `Shortness of Breath: ${data.details.breathlessnessSeverity}`
+    );
+  }
+
+  if (data.details?.otherSymptom) {
+    lines.push(`Other Symptom: ${data.details.otherSymptom}`);
+  }
+
+  lines.push("");
+  lines.push("Duration:");
+  lines.push(data.duration || "Not recorded");
+
+  lines.push("");
+  lines.push("Action Taken:");
+  lines.push(actionsTaken.join(", "));
+
+  lines.push("");
+  lines.push("Notes:");
+  lines.push(data.notes?.trim() || "Not recorded");
+
+  const finalContent = lines.join("\n");
+
+  const { error } = await ctx.supabase.from("timeline_entries").insert({
+    service_user_id: ctx.serviceUserId,
+    created_by: ctx.userId,
+    entry_type: "Symptoms",
+    content: finalContent,
+    event_time: ctx.eventTime,
+  });
+
+  if (error) {
+    alert(error.message);
+    return false;
+  }
+
+  ctx.resetEntryPanel();
+  ctx.setEntryPanelOpen(false);
+  await ctx.loadEntries();
+
+  return true;
+},
+
 "Behaviour Incident": async (ctx) => {
   if (!ctx.behaviourIncidentTrigger.trim()) {
     alert("Please record what happened before.");
@@ -665,4 +911,9 @@ ${ctx.behaviourIncidentNotes.trim() || "Not recorded"}`;
 
   return true;
 },
+}
+function formatSymptom(value: string) {
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }

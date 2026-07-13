@@ -13,6 +13,9 @@ import BehaviourObservationForm from "@/components/timelines/forms/wellbeing/Beh
 import BodyMapForm from "@/components/timelines/forms/incidents/BodyMapForm";
 import BehaviourIncidentForm from "@/components/timelines/forms/incidents/BehaviourIncidentForm";
 import NutritionHydrationForm from "@/components/timelines/forms/care/NutritionHydrationForm";
+import HealthObservationForm from "@/components/timelines/forms/health/HealthObservationForm";
+import SymptomsForm from "@/components/timelines/forms/health/SymptomsForm";
+
 
 export const formRegistry: Record<string, any> = {
   Activity: (props: any) => (
@@ -228,5 +231,13 @@ Medication: (props: any) => (
   <NutritionHydrationForm
     onChange={props.setNutritionHydrationData}
   />
+),
+"Health Observation": (props: any) => (
+  <HealthObservationForm
+    onChange={props.setHealthObservationData}
+  />
+),
+Symptoms: (props: any) => (
+  <SymptomsForm onChange={props.setSymptomsData} />
 ),
 };
