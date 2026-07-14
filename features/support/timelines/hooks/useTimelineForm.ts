@@ -79,10 +79,27 @@ export function useTimelineForm() {
   >([]);
   const [behaviourIncidentNotes, setBehaviourIncidentNotes] = useState("");
   const [prnOptions] = useState<{ id: string; label: string }[]>([]);
-  const [nutritionHydrationData, setNutritionHydrationData] = useState<any>(null);
-  const [healthObservationData, setHealthObservationData] = useState<any>(null);
-  const [symptomsData, setSymptomsData] = useState<any>(null);
-  
+  const [nutritionHydrationData, setNutritionHydrationData] =
+  useState<any>(null);
+
+const [healthObservationData, setHealthObservationData] =
+  useState<any>(null);
+
+const [symptomsData, setSymptomsData] =
+  useState<any>(null);
+
+const [healthProfessionalData, setHealthProfessionalData] =
+  useState<any>(null);
+
+const [communityAccessData, setCommunityAccessData] =
+  useState<any>(null);
+
+  const [medicationErrorData, setMedicationErrorData] =
+  useState<any>(null);
+
+  const [nearMissData, setNearMissData] =
+  useState<any>(null);
+
   function resetEntryPanel() {
     setContent("");
     setEntryType("");
@@ -131,8 +148,9 @@ export function useTimelineForm() {
 
     setNutritionHydrationData(null);
     setHealthObservationData(null);
-
     setSymptomsData(null);
+    setHealthProfessionalData(null);
+    setCommunityAccessData(null);
 
     setBehaviourIncidentTrigger("");
     setBehaviourIncidentTypes([]);
@@ -141,6 +159,10 @@ export function useTimelineForm() {
     setLinkedPrnAdministrationId("");
     setBehaviourIncidentOutcomes([]);
     setBehaviourIncidentNotes("");
+
+    setMedicationErrorData(null);
+
+    setNearMissData(null);
   }
 
   function openPanel() {
@@ -265,17 +287,29 @@ export function useTimelineForm() {
     prnOptions,
 
     nutritionHydrationData,
-    setNutritionHydrationData,
+setNutritionHydrationData,
 
-    healthObservationData,
-    setHealthObservationData,
+healthObservationData,
+setHealthObservationData,
 
-    symptomsData,
-    setSymptomsData,
+symptomsData,
+setSymptomsData,
 
-    resetEntryPanel,
-    openPanel,
-    closePanel,
-    closeAndReset,
+healthProfessionalData,
+setHealthProfessionalData,
+
+communityAccessData,
+setCommunityAccessData,
+
+medicationErrorData,
+setMedicationErrorData,
+
+nearMissData,
+setNearMissData,
+
+resetEntryPanel,
+openPanel,
+closePanel,
+closeAndReset,
   };
 }

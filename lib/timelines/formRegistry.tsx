@@ -15,7 +15,11 @@ import BehaviourIncidentForm from "@/components/timelines/forms/incidents/Behavi
 import NutritionHydrationForm from "@/components/timelines/forms/care/NutritionHydrationForm";
 import HealthObservationForm from "@/components/timelines/forms/health/HealthObservationForm";
 import SymptomsForm from "@/components/timelines/forms/health/SymptomsForm";
-
+import HealthProfessionalForm from "@/components/timelines/forms/health/HealthProfessionalForm";
+import EnvironmentCheckForm from "@/components/timelines/forms/care/EnvironmentCheckForm";
+import AccidentFallInjuryForm from "@/components/timelines/forms/incidents/AccidentFallInjuryForm";
+import MedicationErrorForm from "@/components/timelines/forms/incidents/MedicationErrorForm";
+import NearMissForm from "@/components/timelines/forms/incidents/NearMissform";
 
 export const formRegistry: Record<string, any> = {
   Activity: (props: any) => (
@@ -36,21 +40,10 @@ export const formRegistry: Record<string, any> = {
   ),
 
   "Community Access": (props: any) => (
-    <CommunityAccessForm
-      destination={props.communityDestination}
-      setDestination={props.setCommunityDestination}
-      transport={props.communityTransport}
-      setTransport={props.setCommunityTransport}
-      supportProvided={props.communitySupportProvided}
-      setSupportProvided={props.setCommunitySupportProvided}
-      participationLevel={props.activityParticipation}
-      setParticipationLevel={props.setActivityParticipation}
-      outcome={props.activityOutcome}
-      setOutcome={props.setActivityOutcome}
-      notes={props.activityNotes}
-      setNotes={props.setActivityNotes}
-    />
-  ),
+  <CommunityAccessForm
+    onChange={props.setCommunityAccessData}
+  />
+),
 
 "Social Interaction": (props: any) => (
   <SocialInteractionForm
@@ -239,5 +232,30 @@ Medication: (props: any) => (
 ),
 Symptoms: (props: any) => (
   <SymptomsForm onChange={props.setSymptomsData} />
+),
+"Health Professional": (props: any) => (
+  <HealthProfessionalForm
+    onChange={props.setHealthProfessionalData}
+  />
+),
+"Environment Check": (props: any) => (
+  <EnvironmentCheckForm
+    onChange={props.setEnvironmentCheckData}
+    />
+),
+"Accident / Fall / Injury": (props: any) => (
+  <AccidentFallInjuryForm
+    onChange={props.setAccidentFallInjuryData}
+    />
+),
+"Medication Error": (props: any) => (
+  <MedicationErrorForm
+  onChange={props.setMedicationErrorData}
+  />
+),
+"Near Miss": (props: any) => (
+  <NearMissForm
+  onChange={props.setNearMissData}
+  />
 ),
 };

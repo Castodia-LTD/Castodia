@@ -1,7 +1,9 @@
 import type { SaveContext } from "../types";
 import { saveTimelineEntry } from "../saveTimelineEntry";
 
-export async function saveActivity(ctx: SaveContext): Promise<boolean> {
+export async function saveActivity(
+  ctx: SaveContext
+): Promise<boolean> {
   if (!ctx.activityTitle.trim()) {
     alert("Please enter what activity took place.");
     return false;

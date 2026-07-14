@@ -18,10 +18,9 @@ export type TimelineOptionKey =
   | "continence_care"
   | "nutrition_hydration"
   | "environment_check"
-  | "accident_injury"
+  | "accident_fall_injury"
   | "body_map"
   | "behaviour_incident"
-  | "safeguarding_concern"
   | "medication_error"
   | "near_miss";
 
@@ -114,12 +113,6 @@ export const availableTimelineCategories: AvailableTimelineCategory[] = [
         description: "Record contact with a health professional.",
       },
       {
-        key: "clinical_care",
-        label: "Clinical Care",
-        entryType: "Clinical Care",
-        description: "Record clinical care or health-related support.",
-      },
-      {
         key: "emar",
         label: "eMAR",
         entryType: "Medication",
@@ -173,7 +166,7 @@ export const availableTimelineCategories: AvailableTimelineCategory[] = [
       {
         key: "continence_care",
         label: "Continence Care",
-        entryType: "Toileting",
+        entryType: "Continence Care",
         description: "Record continence care or pad changes.",
       },
       {
@@ -195,12 +188,12 @@ export const availableTimelineCategories: AvailableTimelineCategory[] = [
     title: "Incident",
     colour: "bg-rose-200 text-rose-950",
     options: [
-      {
-        key: "accident_injury",
-        label: "Accident / Injury",
-        entryType: "Incident",
-        description: "Record an accident or injury using incident format.",
-      },
+{
+  key: "accident_fall_injury",
+  label: "Accident / Fall / Injury",
+  entryType: "Accident / Fall / Injury",
+  description: "Record an accident, fall or injury.",
+},
       {
         key: "body_map",
         label: "Body Map",
@@ -215,21 +208,15 @@ export const availableTimelineCategories: AvailableTimelineCategory[] = [
         description: "Record a behaviour incident requiring incident review.",
       },
       {
-        key: "safeguarding_concern",
-        label: "Safeguarding Concern",
-        entryType: "Incident",
-        description: "Record a safeguarding concern.",
-      },
-      {
         key: "medication_error",
         label: "Medication Error",
-        entryType: "Incident",
+        entryType: "Medication Error",
         description: "Record a medication error.",
       },
       {
         key: "near_miss",
         label: "Near Miss",
-        entryType: "Incident",
+        entryType: "Near Miss",
         description: "Record a near miss or avoided incident.",
       },
     ],

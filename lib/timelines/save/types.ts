@@ -16,9 +16,8 @@ export type SaveContext = {
   activityOutcome: string;
   activityNotes: string;
 
-  communityDestination: string;
-  communityTransport: string;
-  communitySupportProvided: string;
+  communityAccessData?: any;
+  environmentCheckData?: any;
 
   behaviourObserved: string[];
   behaviourFrequency: string;
@@ -32,6 +31,9 @@ export type SaveContext = {
   nutritionHydrationData?: any;
   healthObservationData?: any;
   symptomsData?: any;
+  healthProfessionalData?: any;
+  accidentFallInjuryData?: any;
+  MedicationErrorData?: any;
 
   behaviourIncidentTrigger: string;
   behaviourIncidentTypes: string[];

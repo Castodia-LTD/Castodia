@@ -140,11 +140,12 @@ export const entryCategories: EntryCategory[] = [
     title: "Incident",
     colour: "bg-rose-200 text-rose-950",
     options: [
+
       {
-        label: "Accident / Injury",
-        entryType: "Incident",
-        description: "Record an accident or injury using incident format.",
-      },
+  label: "Accident / Fall / Injury",
+  entryType: "Accident / Fall / Injury",
+  description: "Record an accident, fall or injury.",
+},
       {
         label: "Body Map",
         entryType: "Body Map",
@@ -154,11 +155,6 @@ export const entryCategories: EntryCategory[] = [
         label: "Behaviour Incident",
         entryType: "Behaviour Incident",
         description: "Record a behaviour incident requiring incident review.",
-      },
-      {
-        label: "Safeguarding Concern",
-        entryType: "Incident",
-        description: "Record a safeguarding concern.",
       },
       {
         label: "Medication Error",

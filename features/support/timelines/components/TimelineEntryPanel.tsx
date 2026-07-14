@@ -108,10 +108,6 @@ export default function TimelineEntryPanel({
         activityOutcome: form.activityOutcome,
         activityNotes: form.activityNotes,
 
-        communityDestination: form.communityDestination,
-        communityTransport: form.communityTransport,
-        communitySupportProvided: form.communitySupportProvided,
-
         behaviourObserved: form.behaviourObserved,
         behaviourFrequency: form.behaviourFrequency,
         behaviourSupportProvided: form.behaviourSupportProvided,
@@ -124,7 +120,17 @@ export default function TimelineEntryPanel({
         nutritionHydrationData: form.nutritionHydrationData,
         
         healthObservationData: form.healthObservationData,
+
+        symptomsData: form.symptomsData,
+
+        healthProfessionalData: form.healthProfessionalData,
         
+        communityAccessData: form.communityAccessData,
+
+        environmentCheckData: form.environmentCheckData,
+
+        medicationErrorData: form.medicationErrorData,
+
         behaviourIncidentTrigger: form.behaviourIncidentTrigger,
         behaviourIncidentTypes: form.behaviourIncidentTypes,
         behaviourIncidentDescription: form.behaviourIncidentDescription,
@@ -132,7 +138,7 @@ export default function TimelineEntryPanel({
         linkedPrnAdministrationId: form.linkedPrnAdministrationId,
         behaviourIncidentOutcomes: form.behaviourIncidentOutcomes,
         behaviourIncidentNotes: form.behaviourIncidentNotes,
-        symptomsData: form.symptomsData,
+       
       });
 
       return;

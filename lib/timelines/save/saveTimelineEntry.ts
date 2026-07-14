@@ -3,6 +3,7 @@ import type { SaveContext } from "./types";
 type TimelineEntryPayload = {
   entryType: string;
   content: string;
+  metadata?: any;
 };
 
 export async function saveTimelineEntry(
@@ -10,12 +11,13 @@ export async function saveTimelineEntry(
   entry: TimelineEntryPayload
 ): Promise<boolean> {
   const { error } = await ctx.supabase.from("timeline_entries").insert({
-    service_user_id: ctx.serviceUserId,
-    created_by: ctx.userId,
-    entry_type: entry.entryType,
-    content: entry.content,
-    event_time: ctx.eventTime,
-  });
+  service_user_id: ctx.serviceUserId,
+  created_by: ctx.userId,
+  entry_type: entry.entryType,
+  content: entry.content,
+  metadata: entry.metadata ?? null,
+  event_time: ctx.eventTime,
+});
 
   if (error) {
     alert(error.message);
