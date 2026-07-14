@@ -33,7 +33,8 @@ export type SaveContext = {
   symptomsData?: any;
   healthProfessionalData?: any;
   accidentFallInjuryData?: any;
-  MedicationErrorData?: any;
+  medicationErrorData?: any;
+  nearMissData?: any;
 
   behaviourIncidentTrigger: string;
   behaviourIncidentTypes: string[];
