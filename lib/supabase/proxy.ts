@@ -76,6 +76,12 @@ export async function updateSession(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
+console.log("Middleware profile result:", {
+  userId: user.id,
+  profile,
+  profileError,
+});
+
   if (profileError || !profile) {
     await supabase.auth.signOut();
 
