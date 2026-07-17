@@ -3,12 +3,15 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Home() {
   const router = useRouter();
+  const supabase = createClient();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
 
   async function handleLogin() {
   const { error } = await supabase.auth.signInWithPassword({

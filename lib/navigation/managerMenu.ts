@@ -6,6 +6,7 @@ import {
   Settings,
   ShieldAlert,
   Users,
+  CalendarDays,
 } from "lucide-react";
 
 export const managerMenuItems = [
@@ -44,4 +45,9 @@ export const managerMenuItems = [
     label: "Administration",
     icon: Settings,
   },
-];
+  {
+    href: "/manager/calendar",
+    label: "Calendar",
+    icon: CalendarDays,
+  },
+]
