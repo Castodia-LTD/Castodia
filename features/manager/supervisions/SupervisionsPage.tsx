@@ -154,7 +154,7 @@ export default function SupervisionsPage() {
       description="Track staff supervision dates, review status and follow-up needs."
       maxWidth="wide"
       actions={
-        <Link href="/manager/supervisions/new">
+        <Link href="/manager/staff/supervisions/new">
           <CastodiaButton>
             <Plus size={16} />
             New Supervision

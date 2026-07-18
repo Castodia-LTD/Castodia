@@ -150,8 +150,8 @@ export default function ManagerShell({
         </div>
       )}
 
-      <div className="flex min-h-screen">
-          <aside className="hidden h-screen w-72 shrink-0 border-r border-slate-600 bg-slate-700 p-5 md:sticky md:top-0 md:flex md:flex-col">          
+      <div className="flex min-h-screen items-stretch">
+  <aside className="hidden w-72 shrink-0 border-r border-slate-600 bg-slate-700 p-5 md:flex md:flex-col">          
             <Image
             src="/logo.png"
             alt="Castodia"
@@ -166,7 +166,7 @@ export default function ManagerShell({
   <p className="mt-2 text-sm font-medium text-cyan-300">{time}</p>
 </div>
 
-          <nav className="mt-8 flex-1 space-y-2">
+          <nav className="mt-8 min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
             {managerMenuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);

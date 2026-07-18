@@ -20,13 +20,12 @@ type Props = {
 };
 
 const tabs = [
-  { label: "Timeline", path: "timeline" },
   { label: "Medication", path: "medication" },
   { label: "Care Plans", path: "care-plans" },
   { label: "Risk Assessments", path: "risk-assessments" },
   { label: "Body Maps", path: "body-maps" },
   { label: "Documents", path: "documents" },
-  { label: "Reviews", path: "reviews" },
+  { label: "Incident Review", path: "reviews" },
 ];
 
 export default function ServiceUserHubHeader({
@@ -58,7 +57,9 @@ export default function ServiceUserHubHeader({
 
             <select
               value={id}
-              onChange={(event) => onServiceUserChange?.(event.target.value)}
+              onChange={(event) =>
+                onServiceUserChange?.(event.target.value)
+              }
               className="w-full rounded-xl border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
             >
               {serviceUsers.map((serviceUser) => (
@@ -108,11 +109,9 @@ export default function ServiceUserHubHeader({
           <nav className="flex flex-wrap justify-center gap-3">
             {tabs.map((tab) => {
               const href = `/manager/service-users/${id}/${tab.path}`;
+
               const isActive =
-                pathname === href ||
-                pathname.startsWith(`${href}/`) ||
-                (pathname === "/manager/service-users" &&
-                  tab.path === "timeline");
+                pathname === href || pathname.startsWith(`${href}/`);
 
               return (
                 <Link

@@ -12,8 +12,13 @@ import {
 export const managerMenuItems = [
   {
     href: "/manager/dashboard",
-    label: "Dashboard",
+    label: "Insights",
     icon: Home,
+  },
+  {
+    href: "/manager/calendar",
+    label: "Calendar",
+    icon: CalendarDays,
   },
   {
     href: "/manager/service-users",
@@ -26,8 +31,8 @@ export const managerMenuItems = [
     icon: ShieldAlert,
   },
   {
-    href: "/manager/medication",
-    label: "Medication",
+    href: "/manager/emar",
+    label: "eMAR",
     icon: Pill,
   },
   {
@@ -45,9 +50,5 @@ export const managerMenuItems = [
     label: "Administration",
     icon: Settings,
   },
-  {
-    href: "/manager/calendar",
-    label: "Calendar",
-    icon: CalendarDays,
-  },
+  
 ]

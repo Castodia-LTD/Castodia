@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-
+import Link from "next/link";
 import {
   CastodiaBadge,
   CastodiaButton,
@@ -188,11 +188,13 @@ export default function CompetenciesPage() {
       description="Track staff competency status across required training and assessment areas."
       maxWidth="wide"
       actions={
-        <CastodiaButton onClick={() => alert("Add competency form coming next.")}>
-          <Plus size={16} />
-          Add Competency
-        </CastodiaButton>
-      }
+  <Link href="/manager/staff/competencies/new">
+    <CastodiaButton>
+      <Plus size={16} />
+      Add Competency
+    </CastodiaButton>
+  </Link>
+}
     >
       <div className="grid gap-4 md:grid-cols-5">
         <CastodiaCard padding="md">
