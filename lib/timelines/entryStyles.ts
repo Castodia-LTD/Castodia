@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity,
+  Footprints,
   AlertTriangle,
   Apple,
   Bed,
@@ -39,7 +39,7 @@ const defaultStyle: EntryStyle = {
 
 const entryStyles: Record<string, EntryStyle> = {
   Activity: {
-    icon: Activity,
+    icon: Footprints,
     accent: "from-green-500 to-emerald-400",
     rail: "bg-green-500",
     border: "border-green-400/30",
