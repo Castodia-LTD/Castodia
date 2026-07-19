@@ -1,5 +1,5 @@
-import ServiceUsersPage from "@/features/support/service-users/ServiceUsersPage";
+import ServiceUserPage from "@/features/shared/service-users/ServiceUserPage";
 
 export default function Page() {
-  return <ServiceUsersPage />;
+  return <ServiceUserPage portal="support" />;
 }

@@ -21,6 +21,9 @@ type AboutMeViewProps = {
   };
 
   initialData: ServiceUserAboutMe | null;
+
+  portal?: "manager" | "support";
+  canEdit?: boolean;
 };
 
 function formatUpdatedAt(value?: string | null) {
@@ -73,6 +76,8 @@ export default function AboutMeView({
   serviceUserId,
   serviceUser,
   initialData,
+  portal = "manager",
+  canEdit = true,
 }: AboutMeViewProps) {
   const [record, setRecord] =
     useState<ServiceUserAboutMe | null>(initialData);
@@ -121,22 +126,24 @@ export default function AboutMeView({
             </div>
 
             <div className="justify-self-center sm:justify-self-end">
-              <div className="flex flex-col items-center gap-2 sm:items-end">
-                {lastUpdated && (
-                  <p className="text-xs text-slate-500">
-                    Last updated {lastUpdated}
-                  </p>
-                )}
+  <div className="flex flex-col items-center gap-2 sm:items-end">
+    {lastUpdated && (
+      <p className="text-xs text-slate-500">
+        Last updated {lastUpdated}
+      </p>
+    )}
 
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
-                >
-                  {record ? "Edit About Me" : "Create About Me"}
-                </button>
-              </div>
-            </div>
+    {canEdit && (
+      <button
+        type="button"
+        onClick={() => setIsEditing(true)}
+        className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
+      >
+        {record ? "Edit About Me" : "Create About Me"}
+      </button>
+    )}
+  </div>
+</div>
           </div>
 
           {!record ? (
@@ -150,13 +157,15 @@ export default function AboutMeView({
                 communication needs and important information.
               </p>
 
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="mt-5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
-              >
-                Add About Me information
-              </button>
+              {canEdit && (
+  <button
+    type="button"
+    onClick={() => setIsEditing(true)}
+    className="mt-5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
+  >
+    Add About Me information
+  </button>
+)}
             </div>
           ) : (
             <>
