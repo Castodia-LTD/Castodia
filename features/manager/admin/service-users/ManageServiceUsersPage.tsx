@@ -77,25 +77,29 @@ export default function AdminServiceUsersPage() {
   }
 
   async function createServiceUser() {
-    if (!firstName.trim() || !surname.trim()) {
-      alert("First name and surname are required.");
-      return;
-    }
+  const cleanFirstName = firstName.trim();
+  const cleanSurname = surname.trim();
 
-    const organisationId = await getCurrentOrganisationId();
+  if (!cleanFirstName || !cleanSurname) {
+    alert("First name and surname are required.");
+    return;
+  }
 
-    if (!organisationId) return;
+  const organisationId = await getCurrentOrganisationId();
 
-    const { error } = await supabase.from("service_users").insert({
-      first_name: firstName.trim(),
-      surname: surname.trim(),
-      house_name: houseName.trim() || null,
-      organisation_id: organisationId,
-      is_active: true,
-      continence_care_enabled: false,
-      track_pad_changes: false,
-      track_bristol_stool_chart: false,
-    });
+  if (!organisationId) return;
+
+      const { error } = await supabase.from("service_users").insert({
+    first_name: cleanFirstName,
+    surname: cleanSurname,
+    full_name: `${cleanFirstName} ${cleanSurname}`,
+    house_name: houseName.trim() || null,
+    organisation_id: organisationId,
+    is_active: true,
+    continence_care_enabled: false,
+    track_pad_changes: false,
+    track_bristol_stool_chart: false,
+  });
 
     if (error) {
       alert(error.message);
