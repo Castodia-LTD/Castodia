@@ -1,4 +1,3 @@
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createClient } from "@supabase/supabase-js";
 
 export async function getCurrentProfile(accessToken: string) {
@@ -16,15 +15,23 @@ export async function getCurrentProfile(accessToken: string) {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+    error: userError,
+  } = await supabase.auth.getUser(accessToken);
 
-  if (!user) return null;
+  if (userError || !user) {
+    return null;
+  }
 
-  const { data: profile } = await supabaseAdmin
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single();
+
+  if (profileError) {
+    console.error("Failed to retrieve current profile:", profileError);
+    return null;
+  }
 
   return profile;
 }
