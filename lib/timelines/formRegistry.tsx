@@ -150,10 +150,14 @@ Medication: (props: any) => (
     />
   ),
 
-  "Personal Care": () => (
+  "Personal Care": (props: any) => (
   <PersonalCareForm
-    personalCareData={personalCareData}
-    setPersonalCareData={setPersonalCareData}
+    careType={props.careType}
+    setCareType={props.setCareType}
+    assistanceLevel={props.assistanceLevel}
+    setAssistanceLevel={props.setAssistanceLevel}
+    personalCareNotes={props.personalCareNotes}
+    setPersonalCareNotes={props.setPersonalCareNotes}
   />
 ),
 
