@@ -11,6 +11,7 @@ import { saveHouseholdTasks } from "./save/activities/saveHouseholdTasks";
 // Care
 import { saveNutritionHydration } from "./save/care/saveNutritionHydration";
 import { saveEnvironmentCheck} from "./save/care/saveEnvironmentCheck";
+import { savePersonalCare } from "./save/care/savePersonalCare";
 
 // Health
 import { saveHealthObservation } from "./save/health/saveHealthObservation";
@@ -38,6 +39,7 @@ export const saveRegistry: Record<string, SaveHandler> = {
   // Care
   "Nutrition & Hydration": saveNutritionHydration,
   "Environment Check": saveEnvironmentCheck,
+  "Personal Care": savePersonalCare,
 
   // Health
   "Health Observation": saveHealthObservation,

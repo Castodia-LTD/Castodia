@@ -118,6 +118,11 @@ export default function TimelineEntryPanel({
         bodyMapNotes: form.bodyMapNotes,
         
         nutritionHydrationData: form.nutritionHydrationData,
+        personalCareData: {
+  careType: form.careType,
+  assistanceLevel: form.assistanceLevel,
+  notes: form.personalCareNotes,
+},
         
         healthObservationData: form.healthObservationData,
 

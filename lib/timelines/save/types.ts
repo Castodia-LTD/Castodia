@@ -1,3 +1,9 @@
+export type PersonalCareData = {
+  careType: string;
+  assistanceLevel: string;
+  notes: string;
+};
+
 export type SaveContext = {
   supabase: any;
   serviceUserId: string;
@@ -18,6 +24,8 @@ export type SaveContext = {
 
   communityAccessData?: any;
   environmentCheckData?: any;
+  nutritionHydrationData?: any;
+  personalCareData?: PersonalCareData;
 
   behaviourObserved: string[];
   behaviourFrequency: string;
@@ -28,7 +36,6 @@ export type SaveContext = {
   bodyMapMarkers: any[];
   bodyMapNotes: string;
 
-  nutritionHydrationData?: any;
   healthObservationData?: any;
   symptomsData?: any;
   healthProfessionalData?: any;
@@ -45,4 +52,6 @@ export type SaveContext = {
   behaviourIncidentNotes: string;
 };
 
-export type SaveHandler = (ctx: SaveContext) => Promise<boolean>;
+export type SaveHandler = (
+  ctx: SaveContext
+) => Promise<boolean>;

@@ -2,13 +2,87 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  FormAlert,
+  FormCheckbox,
+  FormCheckboxGroup,
+  FormInput,
+  FormLabel,
+  FormOptionCard,
+  FormSection,
+  FormTextarea,
+} from "@/components/timelines/forms/shared";
+
 type EntryType = "food" | "drink";
 
-type Props = {
-  onChange: (data: any) => void;
+type NutritionHydrationData = {
+  type: EntryType | "";
+  meal: string;
+  foodDescription: string;
+  preparedBy: string;
+  amountEaten: string;
+  dietaryRequirements: string[];
+  drinkType: string;
+  amountMl: number | null;
+  assistance: string;
+  concerns: string[];
+  notes: string;
 };
 
-const concerns = [
+type Props = {
+  onChange: (data: NutritionHydrationData) => void;
+};
+
+const mealOptions = [
+  "Breakfast",
+  "Lunch",
+  "Evening Meal",
+  "Snack",
+  "Dessert",
+  "Other",
+];
+
+const preparedByOptions = [
+  "Independent",
+  "Prompted",
+  "Supported",
+  "Staff Prepared",
+];
+
+const amountEatenOptions = [
+  "🍽🍽🍽🍽 All",
+  "🍽🍽🍽◻ Most",
+  "🍽🍽◻◻ About Half",
+  "🍽◻◻◻ Small Amount",
+  "◻◻◻◻ Refused",
+];
+
+const dietaryRequirementOptions = [
+  "Care plan followed",
+  "Texture modified",
+  "Thickened diet",
+  "Allergies considered",
+];
+
+const drinkOptions = [
+  "Water",
+  "Tea",
+  "Coffee",
+  "Juice",
+  "Milk",
+  "Other",
+];
+
+const assistanceOptions = [
+  "Independent",
+  "Prompted",
+  "Supported",
+  "Full Assistance",
+];
+
+const drinkAmountOptions = ["50", "100", "200", "250", "300", "500"];
+
+const concernOptions = [
   { value: "no_concerns", label: "No concerns" },
   { value: "poor_appetite", label: "Poor appetite" },
   { value: "refused", label: "Refused" },
@@ -34,14 +108,16 @@ export default function NutritionHydrationForm({ onChange }: Props) {
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([
     "no_concerns",
   ]);
+
   const [notes, setNotes] = useState("");
 
-  const notesRequired = useMemo(() => {
-    return selectedConcerns.some((c) => c !== "no_concerns");
-  }, [selectedConcerns]);
+  const notesRequired = useMemo(
+    () => selectedConcerns.some((concern) => concern !== "no_concerns"),
+    [selectedConcerns]
+  );
 
-  function update(payload?: any) {
-    const data = {
+  function update(overrides: Partial<NutritionHydrationData> = {}) {
+    const data: NutritionHydrationData = {
       type,
       meal,
       foodDescription,
@@ -53,7 +129,7 @@ export default function NutritionHydrationForm({ onChange }: Props) {
       assistance,
       concerns: selectedConcerns,
       notes,
-      ...payload,
+      ...overrides,
     };
 
     onChange(data);
@@ -79,17 +155,18 @@ export default function NutritionHydrationForm({ onChange }: Props) {
     if (value === "no_concerns") {
       next = ["no_concerns"];
     } else {
-      next = selectedConcerns
-        .filter((item) => item !== "no_concerns")
-        .includes(value)
-        ? selectedConcerns.filter((item) => item !== value)
-        : [
-            ...selectedConcerns.filter((item) => item !== "no_concerns"),
-            value,
-          ];
+      const concernsWithoutDefault = selectedConcerns.filter(
+        (item) => item !== "no_concerns"
+      );
+
+      next = concernsWithoutDefault.includes(value)
+        ? concernsWithoutDefault.filter((item) => item !== value)
+        : [...concernsWithoutDefault, value];
     }
 
-    if (next.length === 0) next = ["no_concerns"];
+    if (next.length === 0) {
+      next = ["no_concerns"];
+    }
 
     setSelectedConcerns(next);
     update({ concerns: next });
@@ -99,325 +176,264 @@ export default function NutritionHydrationForm({ onChange }: Props) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-slate-900">
-          Nutrition & Hydration
+          Nutrition &amp; Hydration
         </h3>
-        <p className="text-sm text-slate-500">
+
+        <p className="mt-1 text-sm text-slate-500">
           Record food or fluid intake.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FormOptionCard
+          selected={type === "food"}
+          title={
+            <span className="flex flex-col gap-2">
+              <span className="text-3xl" aria-hidden="true">
+                🍽
+              </span>
+              <span>Food</span>
+            </span>
+          }
+          description="Record a meal, snack or food intake."
           onClick={() => selectType("food")}
-          className={`rounded-2xl border p-5 text-left transition ${
-            type === "food"
-              ? "border-cyan-500 bg-cyan-50"
-              : "border-slate-200 bg-white"
-          }`}
-        >
-          <div className="text-3xl">🍽</div>
-          <div className="mt-2 font-semibold text-slate-900">Food</div>
-        </button>
+        />
 
-        <button
-          type="button"
+        <FormOptionCard
+          selected={type === "drink"}
+          title={
+            <span className="flex flex-col gap-2">
+              <span className="text-3xl" aria-hidden="true">
+                🥤
+              </span>
+              <span>Drink</span>
+            </span>
+          }
+          description="Record fluid intake."
           onClick={() => selectType("drink")}
-          className={`rounded-2xl border p-5 text-left transition ${
-            type === "drink"
-              ? "border-cyan-500 bg-cyan-50"
-              : "border-slate-200 bg-white"
-          }`}
-        >
-          <div className="text-3xl">🥤</div>
-          <div className="mt-2 font-semibold text-slate-900">Drink</div>
-        </button>
+        />
       </div>
 
       {type === "food" && (
-        <div className="space-y-5">
-          <SelectBlock
+        <FormSection
+          title="Food"
+          description="Record what was offered and how much was eaten."
+        >
+          <OptionGrid
             label="Meal"
             value={meal}
+            options={mealOptions}
             onChange={(value) => {
               setMeal(value);
               update({ meal: value });
             }}
-            options={[
-              "Breakfast",
-              "Lunch",
-              "Evening Meal",
-              "Snack",
-              "Dessert",
-              "Other",
-            ]}
           />
 
-          <TextInput
-            label="Food description"
-            placeholder="Chicken curry, beans on toast, soup..."
-            value={foodDescription}
-            onChange={(value) => {
-              setFoodDescription(value);
-              update({ foodDescription: value });
-            }}
-          />
+          <div>
+            <FormLabel htmlFor="food-description">
+              Food description
+            </FormLabel>
 
-          <SelectBlock
+            <FormInput
+              id="food-description"
+              value={foodDescription}
+              placeholder="Chicken curry, beans on toast, soup..."
+              onChange={(event) => {
+                const value = event.target.value;
+                setFoodDescription(value);
+                update({ foodDescription: value });
+              }}
+            />
+          </div>
+
+          <OptionGrid
             label="Prepared by"
             value={preparedBy}
+            options={preparedByOptions}
             onChange={(value) => {
               setPreparedBy(value);
               update({ preparedBy: value });
             }}
-            options={[
-              "Independent",
-              "Prompted",
-              "Supported",
-              "Staff Prepared",
-            ]}
           />
 
-          <SelectBlock
+          <OptionGrid
             label="Amount eaten"
             value={amountEaten}
+            options={amountEatenOptions}
             onChange={(value) => {
               setAmountEaten(value);
               update({ amountEaten: value });
             }}
-            options={[
-              "🍽🍽🍽🍽 All",
-              "🍽🍽🍽◻ Most",
-              "🍽🍽◻◻ About Half",
-              "🍽◻◻◻ Small Amount",
-              "◻◻◻◻ Refused",
-            ]}
           />
 
-          <CheckboxGroup
-            label="Dietary requirements"
-            values={dietaryRequirements}
-            options={[
-              "Care plan followed",
-              "Texture modified",
-              "Thickened diet",
-              "Allergies considered",
-            ]}
-            onToggle={toggleDietaryRequirement}
-          />
-        </div>
+          <FormCheckboxGroup
+            title="Dietary requirements"
+            description="Select all that apply."
+          >
+            {dietaryRequirementOptions.map((option) => (
+              <FormCheckbox
+                key={option}
+                label={option}
+                checked={dietaryRequirements.includes(option)}
+                onChange={() => toggleDietaryRequirement(option)}
+              />
+            ))}
+          </FormCheckboxGroup>
+        </FormSection>
       )}
 
       {type === "drink" && (
-        <div className="space-y-5">
-          <SelectBlock
+        <FormSection
+          title="Drink"
+          description="Record the drink, amount and support provided."
+        >
+          <OptionGrid
             label="Drink"
             value={drinkType}
+            options={drinkOptions}
             onChange={(value) => {
               setDrinkType(value);
               update({ drinkType: value });
             }}
-            options={["Water", "Tea", "Coffee", "Juice", "Milk", "Other"]}
           />
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Amount
-            </label>
+            <FormLabel htmlFor="custom-drink-amount">Amount</FormLabel>
+
             <div className="flex flex-wrap gap-2">
-              {["50", "100", "200", "250", "300", "500"].map((amount) => (
+              {drinkAmountOptions.map((amount) => (
                 <button
                   key={amount}
                   type="button"
+                  aria-pressed={amountMl === amount}
                   onClick={() => {
                     setAmountMl(amount);
                     update({ amountMl: Number(amount) });
                   }}
-                  className={`rounded-full border px-4 py-2 text-sm ${
+                  className={
                     amountMl === amount
-                      ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                      : "border-slate-200 bg-white text-slate-700"
-                  }`}
+                      ? "rounded-full border border-cyan-500 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 transition focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                      : "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                  }
                 >
-                  {amount}ml
+                  {amount} ml
                 </button>
               ))}
             </div>
 
-            <input
+            <FormInput
+              id="custom-drink-amount"
               type="number"
-              placeholder="Custom ml"
+              min="0"
+              inputMode="numeric"
+              placeholder="Custom amount in ml"
               value={amountMl}
-              onChange={(e) => {
-                setAmountMl(e.target.value);
+              className="mt-3"
+              onChange={(event) => {
+                const value = event.target.value;
+
+                setAmountMl(value);
+
                 update({
-                  amountMl: e.target.value ? Number(e.target.value) : null,
+                  amountMl: value ? Number(value) : null,
                 });
               }}
-              className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
             />
           </div>
 
-          <SelectBlock
+          <OptionGrid
             label="Assistance"
             value={assistance}
+            options={assistanceOptions}
             onChange={(value) => {
               setAssistance(value);
               update({ assistance: value });
             }}
-            options={[
-              "Independent",
-              "Prompted",
-              "Supported",
-              "Full Assistance",
-            ]}
           />
-        </div>
+        </FormSection>
       )}
 
       {type && (
-        <div className="space-y-5">
-          <CheckboxGroup
-            label="Concerns"
-            values={selectedConcerns}
-            options={concerns.map((c) => c.label)}
-            onToggle={(label) => {
-              const found = concerns.find((c) => c.label === label);
-              if (found) toggleConcern(found.value);
-            }}
-          />
+        <FormSection
+          title="Concerns and notes"
+          description="Record any concerns associated with this entry."
+        >
+          <FormCheckboxGroup
+            title="Concerns"
+            description="Select all that apply."
+          >
+            {concernOptions.map((concern) => (
+              <FormCheckbox
+                key={concern.value}
+                label={concern.label}
+                checked={selectedConcerns.includes(concern.value)}
+                onChange={() => toggleConcern(concern.value)}
+              />
+            ))}
+          </FormCheckboxGroup>
 
           {notesRequired && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <FormAlert variant="warning">
               Please add notes when a concern is recorded.
-            </div>
+            </FormAlert>
           )}
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <FormLabel
+              htmlFor="nutrition-hydration-notes"
+              required={notesRequired}
+            >
               {notesRequired ? "Tell us more" : "Notes"}
-            </label>
-            <textarea
+            </FormLabel>
+
+            <FormTextarea
+              id="nutrition-hydration-notes"
               value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value);
-                update({ notes: e.target.value });
-              }}
               rows={3}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+              required={notesRequired}
               placeholder={
                 notesRequired
                   ? "Describe the concern..."
                   : "Optional notes..."
               }
-              required={notesRequired}
+              onChange={(event) => {
+                const value = event.target.value;
+                setNotes(value);
+                update({ notes: value });
+              }}
             />
           </div>
-        </div>
+        </FormSection>
       )}
     </div>
   );
 }
 
-function SelectBlock({
-  label,
-  value,
-  options,
-  onChange,
-}: {
+type OptionGridProps = {
   label: string;
   value: string;
   options: string[];
   onChange: (value: string) => void;
-}) {
+};
+
+function OptionGrid({
+  label,
+  value,
+  options,
+  onChange,
+}: OptionGridProps) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <div className="grid grid-cols-2 gap-2">
+      <FormLabel>{label}</FormLabel>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {options.map((option) => (
-          <button
+          <FormOptionCard
             key={option}
-            type="button"
+            selected={value === option}
+            title={option}
             onClick={() => onChange(option)}
-            className={`rounded-xl border px-3 py-3 text-left text-sm ${
-              value === option
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TextInput({
-  label,
-  value,
-  placeholder,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  placeholder?: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <input
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function CheckboxGroup({
-  label,
-  values,
-  options,
-  onToggle,
-}: {
-  label: string;
-  values: string[];
-  options: string[];
-  onToggle: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <div className="space-y-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onToggle(option)}
-            className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm ${
-              values.includes(option) ||
-              values.includes(option.toLowerCase().replaceAll(" ", "_"))
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            <span>{option}</span>
-            <span>
-              {values.includes(option) ||
-              values.includes(option.toLowerCase().replaceAll(" ", "_"))
-                ? "✓"
-                : ""}
-            </span>
-          </button>
+          />
         ))}
       </div>
     </div>
