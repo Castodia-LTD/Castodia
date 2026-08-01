@@ -1,9 +1,19 @@
-import SupportShell from "@/components/layouts/SupportShell";
+import type { ReactNode } from "react";
+
+import { AppShell } from "@/components/layout";
+import { supportNavigation } from "@/config/navigation/supportNavigation";
 
 export default function SupportLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  return <SupportShell>{children}</SupportShell>;
+  return (
+    <AppShell
+      links={supportNavigation}
+      portal="support"
+    >
+      {children}
+    </AppShell>
+  );
 }

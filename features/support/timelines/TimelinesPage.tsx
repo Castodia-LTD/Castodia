@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import {
-  PageContainer,
+  ContentWidth,
   PageHeader,
   SectionCard,
-} from "@/components/layouts";
+} from "@/components/layout";
 import { supabase } from "@/lib/supabase";
 import TimelineServiceUserCard from "./components/TimelineServiceUserCard";
 import type { ServiceUser } from "./types";
@@ -88,7 +88,7 @@ export default function TimelinesPage() {
   }, []);
 
   return (
-    <PageContainer>
+    <ContentWidth>
       <PageHeader
         title="Timelines"
         subtitle="Select a service user to open their daily records."
@@ -116,6 +116,6 @@ export default function TimelinesPage() {
           ))}
         </div>
       )}
-    </PageContainer>
+    </ContentWidth>
   );
 }

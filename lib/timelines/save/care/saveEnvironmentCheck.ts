@@ -1,73 +1,83 @@
-import type { SaveContext } from "../types";
-import { saveTimelineEntry } from "../saveTimelineEntry";
+import type { SaveHandler } from "../types";
 
-export async function saveEnvironmentCheck(
-  ctx: SaveContext
-): Promise<boolean> {
-  const data = ctx.environmentCheckData;
-
-  if (!data) {
-    alert("Please complete the Environment Check form.");
+export const saveEnvironmentCheck: SaveHandler = async ({
+  supabase,
+  serviceUserId,
+  userId,
+  eventTime,
+  environmentCheckData,
+  resetEntryPanel,
+  setEntryPanelOpen,
+  loadEntries,
+}) => {
+  if (!environmentCheckData) {
+    alert("Environment check information is missing.");
     return false;
   }
 
-  if (!data.temperature?.trim()) {
-    alert("Please enter the current temperature.");
+  const {
+    temperature,
+    cleanliness,
+    hazardStatus,
+    hazardType,
+    otherHazardType,
+    riskLevel,
+    actionTaken,
+    reportedTo,
+    otherReportedTo,
+    notes,
+  } = environmentCheckData;
+
+  if (!temperature?.trim()) {
+    alert("Please record the current temperature.");
     return false;
   }
 
-  const temperature = Number(data.temperature);
-
-  if (Number.isNaN(temperature)) {
-    alert("Please enter a valid temperature.");
+  if (!cleanliness?.trim()) {
+    alert("Please select the cleanliness of the environment.");
     return false;
   }
 
-  if (!data.cleanliness) {
-    alert("Please select how clean the environment is.");
-    return false;
-  }
-
-  if (!data.hazardStatus) {
+  if (!hazardStatus) {
     alert("Please confirm whether any hazards were identified.");
     return false;
   }
 
   const hazardIdentified =
-    data.hazardStatus === "hazard_identified";
+    hazardStatus === "hazard_identified";
 
   if (hazardIdentified) {
-    if (!data.hazardType) {
-      alert("Please select the hazard type.");
+    if (!hazardType?.trim()) {
+      alert("Please select the type of hazard identified.");
       return false;
     }
 
     if (
-      data.hazardType === "Other" &&
-      !data.otherHazardType?.trim()
+      hazardType === "Other" &&
+      !otherHazardType?.trim()
     ) {
       alert("Please describe the hazard identified.");
       return false;
     }
 
-    if (!data.riskLevel) {
+    if (!riskLevel?.trim()) {
       alert("Please select the risk level.");
       return false;
     }
 
-    if (!data.actionTaken?.trim()) {
+    if (!actionTaken?.trim()) {
       alert("Please record the action taken.");
       return false;
     }
 
-    if (!data.reportedTo) {
-      alert("Please select who the hazard was reported to.");
+    if (!reportedTo?.trim()) {
+      alert("Please record who the hazard was reported to.");
       return false;
     }
 
     if (
-      data.reportedTo === "Other" &&
-      !data.otherReportedTo?.trim()
+      reportedTo === "Other" &&
+      !otherReportedTo?.trim()
     ) {
       alert("Please record who the hazard was reported to.");
       return false;
@@ -75,83 +85,81 @@ export async function saveEnvironmentCheck(
   }
 
   const cleanlinessConcern =
-    data.cleanliness === "Requires Cleaning" ||
-    data.cleanliness === "Unsanitary";
+    cleanliness === "Requires Cleaning" ||
+    cleanliness === "Unsanitary";
 
-  if (cleanlinessConcern && !data.notes?.trim()) {
+  if (cleanlinessConcern && !notes?.trim()) {
     alert(
-      "Please add notes when the environment requires cleaning or is unsanitary."
+      "Please record the cleaning action taken or relevant details.",
     );
     return false;
   }
 
-  const hazardType = hazardIdentified
-    ? data.hazardType === "Other"
-      ? data.otherHazardType.trim()
-      : data.hazardType
-    : "No hazards identified";
+  const summaryParts: string[] = [
+    `Temperature: ${temperature.trim()}°C`,
+    `Cleanliness: ${cleanliness}`,
+    hazardIdentified
+      ? "Hazards: Hazard identified"
+      : "Hazards: No hazards identified",
+  ];
 
-  const reportedTo = hazardIdentified
-    ? data.reportedTo === "Other"
-      ? data.otherReportedTo.trim()
-      : data.reportedTo
-    : "Not required";
+  if (hazardIdentified) {
+    const finalHazardType =
+      hazardType === "Other"
+        ? otherHazardType.trim()
+        : hazardType;
 
-  const finalContent = hazardIdentified
-    ? `Environment Check
+    const finalReportedTo =
+      reportedTo === "Other"
+        ? otherReportedTo.trim()
+        : reportedTo;
 
-Temperature:
-${temperature}°C
+    summaryParts.push(
+      `Hazard type: ${finalHazardType}`,
+      `Risk level: ${riskLevel}`,
+      `Action taken: ${actionTaken.trim()}`,
+      `Reported to: ${finalReportedTo}`,
+    );
+  }
 
-Cleanliness:
-${data.cleanliness}
+  if (notes?.trim()) {
+    summaryParts.push(`Notes: ${notes.trim()}`);
+  }
 
-Hazards:
-Hazard identified
+  const content = summaryParts.join("\n");
 
-Hazard Type:
-${hazardType}
+  const { error } = await supabase
+    .from("timeline_entries")
+    .insert({
+      service_user_id: serviceUserId,
+      created_by: userId,
+      entry_type: "Environment Check",
+      content,
+      event_time: eventTime,
+    });
 
-Risk Level:
-${data.riskLevel}
+  if (error) {
+    console.error(
+      "Failed to save environment check:",
+      {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      },
+    );
 
-Action Taken:
-${data.actionTaken.trim()}
+    alert(
+      error.message ||
+        "The environment check could not be saved.",
+    );
 
-Reported To:
-${reportedTo}
+    return false;
+  }
 
-Notes:
-${data.notes?.trim() || "Not recorded"}`
-    : `Environment Check
+  resetEntryPanel();
+  setEntryPanelOpen(false);
+  await loadEntries();
 
-Temperature:
-${temperature}°C
-
-Cleanliness:
-${data.cleanliness}
-
-Hazards:
-No hazards identified
-
-Notes:
-${data.notes?.trim() || "Not recorded"}`;
-
-  return saveTimelineEntry(ctx, {
-    entryType: "Environment Check",
-    content: finalContent,
-    metadata: {
-      temperature,
-      cleanliness: data.cleanliness,
-      hazardStatus: data.hazardStatus,
-      hazardIdentified,
-      hazardType: hazardIdentified ? hazardType : null,
-      riskLevel: hazardIdentified ? data.riskLevel : null,
-      actionTaken: hazardIdentified
-        ? data.actionTaken.trim()
-        : null,
-      reportedTo: hazardIdentified ? reportedTo : null,
-      notes: data.notes?.trim() || null,
-    },
-  });
-}
+  return true;
+};

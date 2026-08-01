@@ -1,54 +1,45 @@
-import {
-  BarChart3,
-  HeartPulse,
-  Home,
-  Pill,
-  Settings,
-  ShieldAlert,
-  Users,
-  CalendarDays,
-} from "lucide-react";
+import type { AppShellLink } from "@/components/layout";
 
-export const managerMenuItems = [
+export const managerNavigation: AppShellLink[] = [
   {
     href: "/manager/dashboard",
     label: "Insights",
-    icon: Home,
+    icon: "home",
+    exact: true,
   },
   {
     href: "/manager/calendar",
     label: "Calendar",
-    icon: CalendarDays,
+    icon: "calendar",
   },
   {
     href: "/manager/service-users",
     label: "Service Users",
-    icon: Users,
+    icon: "service-users",
   },
   {
     href: "/manager/staff",
     label: "Staff",
-    icon: ShieldAlert,
+    icon: "staff",
   },
   {
     href: "/manager/emar",
     label: "eMAR",
-    icon: Pill,
+    icon: "emar",
   },
   {
     href: "/manager/safeguarding",
     label: "Safeguarding",
-    icon: HeartPulse,
+    icon: "safeguarding",
   },
   {
     href: "/manager/compliance",
     label: "Compliance",
-    icon: BarChart3,
+    icon: "compliance",
   },
   {
     href: "/manager/admin",
     label: "Administration",
-    icon: Settings,
+    icon: "settings",
   },
-  
-]
+];

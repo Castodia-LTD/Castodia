@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import {
-  PageContainer,
+   ContentWidth,
   PageHeader,
   SectionCard,
-} from "@/components/layouts";
+} from "@/components/layout";
 import { supabase } from "@/lib/supabase";
 
 type ServiceUser = {
@@ -168,7 +168,7 @@ if (profile?.role === "manager") {
   }, []);
 
   return (
-    <PageContainer>
+    <ContentWidth>
       <PageHeader
         title="Support Dashboard"
         subtitle={name ? `Welcome, ${name}` : "Your assigned care updates"}
@@ -249,6 +249,6 @@ if (profile?.role === "manager") {
             </SectionCard>
           ))}
       </section>
-    </PageContainer>
+    </ContentWidth>
   );
 }

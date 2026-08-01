@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import {
-  PageContainer,
+  ContentWidth,
   PageHeader,
   SectionCard,
-} from "@/components/layouts";
+} from "@/components/layout";
 import { supabase } from "@/lib/supabase";
 import HandoverCard from "./components/HandoverCard";
 import HandoverForm from "./components/HandoverForm";
@@ -376,7 +376,7 @@ setServiceUsers(visibleServiceUsers);
   }, []);
 
   return (
-    <PageContainer>
+    <ContentWidth>
       <PageHeader
         title="Handovers"
         subtitle="Create and review handovers for your assigned service users."
@@ -431,6 +431,6 @@ setServiceUsers(visibleServiceUsers);
             />
           ))}
       </div>
-    </PageContainer>
+    </ContentWidth>
   );
 }

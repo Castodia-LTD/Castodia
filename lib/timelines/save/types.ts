@@ -4,8 +4,17 @@ export type PersonalCareData = {
   notes: string;
 };
 
+export type ToiletingData = {
+  toiletingOutcome: string;
+  assistanceRequired: string;
+  padChanged: string;
+  bristolType: string;
+  toiletingNotes: string;
+};
+
 export type SaveContext = {
   supabase: any;
+
   serviceUserId: string;
   organisationId: string;
   userId: string;
@@ -15,6 +24,7 @@ export type SaveContext = {
   setEntryPanelOpen: (value: boolean) => void;
   loadEntries: () => Promise<void>;
 
+  // Activities
   activityTitle: string;
   activityLocation: string;
   activityPeople: string;
@@ -23,22 +33,34 @@ export type SaveContext = {
   activityNotes: string;
 
   communityAccessData?: any;
+  socialInteractionData?: any;
+  contactVisitData?: any;
+  shoppingData?: any;
+  householdTasksData?: any;
+
+  // Care
   environmentCheckData?: any;
   nutritionHydrationData?: any;
   personalCareData?: PersonalCareData;
+  toiletingData?: ToiletingData;
 
+  // Wellbeing
   behaviourObserved: string[];
   behaviourFrequency: string;
   behaviourSupportProvided: string[];
   behaviourOutcome: string;
   behaviourNotes: string;
 
+  // Body map
   bodyMapMarkers: any[];
   bodyMapNotes: string;
 
+  // Health
   healthObservationData?: any;
   symptomsData?: any;
   healthProfessionalData?: any;
+
+  // Incidents
   accidentFallInjuryData?: any;
   medicationErrorData?: any;
   nearMissData?: any;
@@ -53,5 +75,5 @@ export type SaveContext = {
 };
 
 export type SaveHandler = (
-  ctx: SaveContext
+  ctx: SaveContext,
 ) => Promise<boolean>;

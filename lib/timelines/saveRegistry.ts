@@ -10,8 +10,9 @@ import { saveHouseholdTasks } from "./save/activities/saveHouseholdTasks";
 
 // Care
 import { saveNutritionHydration } from "./save/care/saveNutritionHydration";
-import { saveEnvironmentCheck} from "./save/care/saveEnvironmentCheck";
+import { saveEnvironmentCheck } from "./save/care/saveEnvironmentCheck";
 import { savePersonalCare } from "./save/care/savePersonalCare";
+import { saveToileting } from "./save/care/saveToileting";
 
 // Health
 import { saveHealthObservation } from "./save/health/saveHealthObservation";
@@ -24,9 +25,10 @@ import { saveBehaviourObservation } from "./save/wellbeing/saveBehaviourObservat
 // Incidents
 import { saveBehaviourIncident } from "./save/incidents/saveBehaviourIncident";
 import { saveBodyMap } from "./save/incidents/saveBodyMap";
-import { saveAccidentFallInjury} from "./save/incidents/saveAccidentFallInjury";
-import { saveMedicationError} from "./save/incidents/saveMedicationError";
+import { saveAccidentFallInjury } from "./save/incidents/saveAccidentFallInjury";
+import { saveMedicationError } from "./save/incidents/saveMedicationError";
 import { saveNearMiss } from "./save/incidents/saveNearMiss";
+
 export const saveRegistry: Record<string, SaveHandler> = {
   // Activities
   Activity: saveActivity,
@@ -40,6 +42,7 @@ export const saveRegistry: Record<string, SaveHandler> = {
   "Nutrition & Hydration": saveNutritionHydration,
   "Environment Check": saveEnvironmentCheck,
   "Personal Care": savePersonalCare,
+  Toileting: saveToileting,
 
   // Health
   "Health Observation": saveHealthObservation,
@@ -55,5 +58,4 @@ export const saveRegistry: Record<string, SaveHandler> = {
   "Accident / Fall / Injury": saveAccidentFallInjury,
   "Medication Error": saveMedicationError,
   "Near Miss": saveNearMiss,
-
 };
