@@ -1,9 +1,21 @@
-import PlatformShell from "@/features/platform/layouts/PlatformShell";
+import type { ReactNode } from "react";
+
+import { AppShell } from "@/components/layout/AppShell";
+import { platformNavigation } from "@/config/navigation/platformNavigation";
+
+type PlatformLayoutProps = {
+  children: ReactNode;
+};
 
 export default function PlatformLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <PlatformShell>{children}</PlatformShell>;
+}: PlatformLayoutProps) {
+  return (
+    <AppShell
+      portal="platform"
+      links={platformNavigation}
+    >
+      {children}
+    </AppShell>
+  );
 }
