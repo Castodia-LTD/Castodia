@@ -26,4 +26,9 @@ export const supportMenuItems = [
     href: "/support/service-users",
     icon: Users,
   },
+   {
+    label: "Safeguarding",
+    href: "/support/reporting/safeguarding",
+    icon: Users,
+  },
 ];

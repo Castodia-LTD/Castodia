@@ -22,4 +22,9 @@ export const supportNavigation: AppShellLink[] = [
     label: "Handovers",
     icon: "handovers",
   },
+   {
+    label: "Safeguarding",
+    href: "/support/reporting/safeguarding",
+    icon: "safeguarding",
+  },
 ];
