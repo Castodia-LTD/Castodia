@@ -9,10 +9,7 @@ import {
   MessageSquareText,
 } from "lucide-react";
 
-import {
-  CastodiaCard,
-  CastodiaPageShell,
-} from "@/components/castodia";
+import { CastodiaCard } from "@/components/castodia";
 import StaffHero, {
   type StaffHeroStaff,
 } from "@/components/manager/staff-hub/StaffHero";
@@ -102,7 +99,6 @@ export default async function StaffHubPage({
   };
 
   return (
-    <CastodiaPageShell>
       <div className="space-y-6">
         <StaffHubHeader staffId={staff.id} />
 
@@ -206,6 +202,5 @@ export default async function StaffHubPage({
           </CastodiaCard>
         </div>
       </div>
-    </CastodiaPageShell>
   );
 }
