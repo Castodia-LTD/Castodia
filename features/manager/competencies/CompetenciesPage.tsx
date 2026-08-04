@@ -187,13 +187,21 @@ export default function CompetenciesPage() {
       title="Competencies"
       description="Track staff competency status across required training and assessment areas."
       maxWidth="wide"
-      actions={
-  <Link href="/manager/staff/competencies/new">
-    <CastodiaButton>
-      <Plus size={16} />
-      Add Competency
-    </CastodiaButton>
-  </Link>
+     actions={
+  <div className="flex items-center gap-2">
+    <Link href="/manager/staff">
+      <CastodiaButton variant="secondary">
+        ← Back to Staff
+      </CastodiaButton>
+    </Link>
+
+    <Link href="/manager/staff/competencies/new">
+      <CastodiaButton>
+        <Plus size={16} />
+        Add Competency
+      </CastodiaButton>
+    </Link>
+  </div>
 }
     >
       <div className="grid gap-4 md:grid-cols-5">

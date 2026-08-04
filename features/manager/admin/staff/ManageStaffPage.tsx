@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
+  ArrowLeft,
   Camera,
   Loader2,
   Pencil,
@@ -423,13 +425,24 @@ export default function StaffAdminPage() {
     };
   }, [editPhotoPreview]);
 
-  return (
-    <CastodiaPageShell
-      title="Staff Management"
-      description="Create staff logins and manage staff access across your organisation."
-      maxWidth="wide"
-    >
-      <CastodiaSection title="Create Staff Login">
+return (
+  <CastodiaPageShell
+    title="Staff Management"
+    description="Create staff logins and manage staff access across your organisation."
+    maxWidth="wide"
+  >
+    <div className="mb-6">
+      <Link
+        href="/manager/staff"
+        className="inline-flex items-center gap-2 text-sm font-medium text-cyan-700 transition hover:text-cyan-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Staff Hub
+      </Link>
+    </div>
+
+    <CastodiaSection title="Create Staff Login">
+      ...
         <CastodiaCard>
           <div className="grid gap-6 xl:grid-cols-[160px_minmax(0,1fr)]">
             <div>

@@ -1,4 +1,4 @@
-import StaffHubPage from "@/features/manager/admin/staff/StaffHubPage";
+import StaffEmploymentPage from "@/features/manager/staff/employment/StaffEmploymentPage";
 
 type PageProps = {
   params: Promise<{
@@ -9,5 +9,5 @@ type PageProps = {
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
 
-  return <StaffHubPage staffId={id} />;
+  return <StaffEmploymentPage staffId={id} />;
 }

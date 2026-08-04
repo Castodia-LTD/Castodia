@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -154,13 +154,22 @@ export default function SupervisionsPage() {
       description="Track staff supervision dates, review status and follow-up needs."
       maxWidth="wide"
       actions={
-        <Link href="/manager/staff/supervisions/new">
-          <CastodiaButton>
-            <Plus size={16} />
-            New Supervision
-          </CastodiaButton>
-        </Link>
-      }
+  <div className="flex items-center gap-2">
+    <Link href="/manager/staff">
+      <CastodiaButton variant="secondary">
+        <ArrowLeft className="h-4 w-4" />
+        Back to Staff
+      </CastodiaButton>
+    </Link>
+
+    <Link href="/manager/staff/supervisions/new">
+      <CastodiaButton>
+        <Plus className="h-4 w-4" />
+        New Supervision
+      </CastodiaButton>
+    </Link>
+  </div>
+}
     >
       <div className="grid gap-4 md:grid-cols-4">
         <CastodiaCard padding="md">

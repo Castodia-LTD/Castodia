@@ -51,39 +51,39 @@ type StaffProfile = {
 const hubSections = [
   {
     label: "Overview",
-    segment: "",
+    href: (id: string) => `/manager/staff/${id}`,
     icon: UserRound,
   },
   {
     label: "Employment",
-    segment: "employment",
+    href: (id: string) => `/manager/staff/${id}/employment`,
     icon: BriefcaseBusiness,
   },
   {
     label: "Training",
-    segment: "training",
+    href: (id: string) => `/manager/staff/training`,
     icon: GraduationCap,
   },
   {
     label: "Competencies",
-    segment: "competencies",
+    href: () => "/manager/staff/competencies",
     icon: ClipboardCheck,
   },
   {
     label: "Supervisions",
-    segment: "supervisions",
+    href: (id: string) => `/manager/staff/supervisions`,
     icon: MessageSquareText,
   },
   {
     label: "Documents",
-    segment: "documents",
+    href: (id: string) => `/manager/staff/${id}/documents`,
     icon: FileText,
   },
-  {
-    label: "Access & Permissions",
-    segment: "access",
-    icon: ShieldCheck,
-  },
+ {
+  label: "Access & Permissions",
+  href: () => "/manager/admin/access",
+  icon: ShieldCheck,
+},
 ];
 
 const overviewCards = [
@@ -425,12 +425,9 @@ export default function StaffHubPage({
             {hubSections.map((section) => {
               const Icon = section.icon;
 
-              const href = section.segment
-                ? `${baseHref}/${section.segment}`
-                : baseHref;
+const href = section.href(staff.id);
 
-              const isOverview = section.segment === "";
-
+const isOverview = href === baseHref;
               return (
                 <Link
                   key={section.label}

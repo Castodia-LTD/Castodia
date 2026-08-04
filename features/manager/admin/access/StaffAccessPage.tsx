@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -158,11 +160,19 @@ export default function StaffServiceUserAccessPage() {
   }, []);
 
   return (
-    <CastodiaPageShell
-      title="Access Permissions"
-      description="Assign staff members to the service users they support."
-      maxWidth="wide"
-    >
+  <CastodiaPageShell
+    title="Access Permissions"
+    description="Assign staff members to the service users they support."
+    maxWidth="wide"
+    actions={
+      <Link href="/manager/staff">
+        <CastodiaButton variant="secondary">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Staff
+        </CastodiaButton>
+      </Link>
+    }
+  >
       <CastodiaSection title="Assign Access">
         <CastodiaCard>
           <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
@@ -254,5 +264,6 @@ export default function StaffServiceUserAccessPage() {
         )}
       </CastodiaSection>
     </CastodiaPageShell>
+    
   );
 }

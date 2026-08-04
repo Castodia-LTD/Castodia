@@ -17,45 +17,45 @@ type StaffHubNavigationProps = {
   staffId: string;
 };
 
-const staffHubItems = [
+  const staffHubItems = [
   {
     label: "Overview",
-    segment: "",
+    href: (id: string) => `/manager/staff/${id}`,
     icon: LayoutDashboard,
   },
   {
     label: "Employment",
-    segment: "employment",
+    href: (id: string) => `/manager/staff/${id}/employment`,
     icon: BriefcaseBusiness,
   },
   {
     label: "Training",
-    segment: "training",
+    href: () => "/THIS-IS-A-TEST",
     icon: GraduationCap,
   },
   {
     label: "Competencies",
-    segment: "competencies",
+    href: () => "/manager/staff/competencies",
     icon: ClipboardCheck,
   },
   {
     label: "Supervisions",
-    segment: "supervisions",
+    href: () => "/manager/staff/supervisions",
     icon: MessageSquareText,
   },
   {
     label: "Documents",
-    segment: "documents",
+    href: (id: string) => `/manager/staff/${id}/documents`,
     icon: FileText,
   },
   {
     label: "Access & Permissions",
-    segment: "access",
+    href: () => "/manager/admin/access",
     icon: ShieldCheck,
   },
   {
     label: "Timeline",
-    segment: "timeline",
+    href: (id: string) => `/manager/staff/${id}/timeline`,
     icon: History,
   },
 ];
@@ -73,13 +73,11 @@ export default function StaffHubNavigation({
     >
       <div className="flex gap-2 overflow-x-auto pb-1">
         {staffHubItems.map((item) => {
-          const href = item.segment
-            ? `${baseHref}/${item.segment}`
-            : baseHref;
+          const href = item.href(staffId);
 
-          const isActive = item.segment
-            ? pathname === href || pathname.startsWith(`${href}/`)
-            : pathname === baseHref;
+const isActive =
+  pathname === href ||
+  (href !== baseHref && pathname.startsWith(`${href}/`));
 
           const Icon = item.icon;
 
