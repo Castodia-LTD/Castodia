@@ -1,9 +1,13 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { CastodiaCard } from "@/components/castodia";
+import { createClient } from "@/lib/supabase/client";
+
+const PHOTO_BUCKET = "service-user-photos";
 
 type ServiceUserOption = {
   id: string;
@@ -23,7 +27,15 @@ type Props = {
   fullName: string;
   houseName: string | null;
   dob: string | null;
-  photoUrl: string | null;
+
+  /*
+   * Store the private Supabase Storage object path here,
+   * for example:
+   *
+   * 123e4567-e89b-12d3-a456-426614174000/profile-123456789.jpg
+   */
+  photoPath: string | null;
+
   portal?: Portal;
   serviceUsers?: ServiceUserOption[];
   onServiceUserChange?: (id: string) => void;
@@ -36,11 +48,11 @@ const tabs: HubTab[] = [
   { label: "Body Maps", path: "body-maps" },
   { label: "Documents", path: "documents" },
   { label: "Memories", path: "memories" },
-  { 
-    label: "Incident Review", 
+  {
+    label: "Incident Review",
     path: "reviews",
     managerOnly: true,
-   },
+  },
   {
     label: "Wellbeing Indicators",
     path: "wellbeing-indicators",
@@ -53,31 +65,82 @@ export default function ServiceUserHubHeader({
   fullName,
   houseName,
   dob,
-  photoUrl,
+  photoPath,
   portal = "manager",
   serviceUsers = [],
   onServiceUserChange,
 }: Props) {
   const pathname = usePathname();
+  const supabase = useMemo(() => createClient(), []);
+
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoLoading, setPhotoLoading] = useState(Boolean(photoPath));
 
   const basePath = `/${portal}/service-users/${id}`;
+  const aboutMeHref = `${basePath}/about-me`;
+  const editHref = `${basePath}/edit`;
 
   const initials = fullName
     .split(" ")
+    .filter(Boolean)
     .map((part) => part.charAt(0))
     .join("")
     .slice(0, 2)
     .toUpperCase();
 
-  const aboutMeHref = `${basePath}/about-me`;
-
   const isAboutMeActive =
-    pathname === aboutMeHref ||
-    pathname.startsWith(`${aboutMeHref}/`);
+    pathname === aboutMeHref || pathname.startsWith(`${aboutMeHref}/`);
+
+  const isEditActive =
+    pathname === editHref || pathname.startsWith(`${editHref}/`);
 
   const visibleTabs = tabs.filter(
     (tab) => !tab.managerOnly || portal === "manager"
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProfilePhoto() {
+      if (!photoPath) {
+        setPhotoUrl(null);
+        setPhotoLoading(false);
+        return;
+      }
+
+      setPhotoLoading(true);
+
+      const { data, error } = await supabase.storage
+        .from(PHOTO_BUCKET)
+        .createSignedUrl(photoPath, 60 * 60);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (error) {
+        console.error("Unable to load service user profile photo:", {
+          message: error.message,
+          name: error.name,
+          photoPath,
+          serviceUserId: id,
+        });
+
+        setPhotoUrl(null);
+        setPhotoLoading(false);
+        return;
+      }
+
+      setPhotoUrl(data.signedUrl);
+      setPhotoLoading(false);
+    }
+
+    void loadProfilePhoto();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, photoPath, supabase]);
 
   return (
     <div className="w-full">
@@ -97,10 +160,7 @@ export default function ServiceUserHubHeader({
                 className="w-full rounded-xl border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
               >
                 {serviceUsers.map((serviceUser) => (
-                  <option
-                    key={serviceUser.id}
-                    value={serviceUser.id}
-                  >
+                  <option key={serviceUser.id} value={serviceUser.id}>
                     {serviceUser.full_name}
                   </option>
                 ))}
@@ -110,7 +170,9 @@ export default function ServiceUserHubHeader({
 
           <div className="rounded-3xl bg-gradient-to-r from-cyan-50 via-white to-teal-50 px-8 py-6">
             <div className="flex flex-col items-center text-center">
-              {photoUrl ? (
+              {photoLoading ? (
+                <div className="h-40 w-40 animate-pulse rounded-full bg-slate-200 shadow-lg ring-8 ring-white" />
+              ) : photoUrl ? (
                 <img
                   src={photoUrl}
                   alt={fullName}
@@ -118,7 +180,7 @@ export default function ServiceUserHubHeader({
                 />
               ) : (
                 <div className="flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 text-6xl font-bold text-white shadow-lg ring-8 ring-white">
-                  {initials}
+                  {initials || "SU"}
                 </div>
               )}
 
@@ -133,22 +195,36 @@ export default function ServiceUserHubHeader({
 
                 {dob && (
                   <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-100">
-                    DOB:{" "}
-                    {new Date(dob).toLocaleDateString("en-GB")}
+                    DOB: {new Date(dob).toLocaleDateString("en-GB")}
                   </span>
                 )}
               </div>
 
-              <Link
-                href={aboutMeHref}
-                className={
-                  isAboutMeActive
-                    ? "mt-5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:shadow-md"
-                    : "mt-5 rounded-xl border border-cyan-200 bg-white px-8 py-3 text-sm font-bold text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50"
-                }
-              >
-                About Me
-              </Link>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link
+                  href={aboutMeHref}
+                  className={
+                    isAboutMeActive
+                      ? "rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:shadow-md"
+                      : "rounded-xl border border-cyan-200 bg-white px-8 py-3 text-sm font-bold text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50"
+                  }
+                >
+                  About Me
+                </Link>
+
+                {portal === "manager" && (
+                  <Link
+                    href={editHref}
+                    className={
+                      isEditActive
+                        ? "rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:shadow-md"
+                        : "rounded-xl border border-slate-200 bg-white px-8 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+                    }
+                  >
+                    Edit Service User
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 
@@ -157,8 +233,7 @@ export default function ServiceUserHubHeader({
               const href = `${basePath}/${tab.path}`;
 
               const isActive =
-                pathname === href ||
-                pathname.startsWith(`${href}/`);
+                pathname === href || pathname.startsWith(`${href}/`);
 
               return (
                 <Link

@@ -18,7 +18,7 @@ type ServiceUser = {
   full_name: string;
   first_name: string | null;
   surname: string | null;
-  photo_url: string | null;
+  photo_path: string | null;
   house_name: string | null;
 };
 
@@ -110,7 +110,7 @@ export default function ServiceUserPage({ portal }: Props) {
                 full_name,
                 first_name,
                 surname,
-                photo_url,
+                photo_path,
                 house_name
               `
             )
@@ -345,7 +345,7 @@ export default function ServiceUserPage({ portal }: Props) {
         fullName={selectedServiceUser.full_name}
         houseName={selectedServiceUser.house_name}
         dob={null}
-        photoUrl={selectedServiceUser.photo_url}
+        photoPath={selectedServiceUser.photo_path}
         portal={portal}
         serviceUsers={serviceUsers.map((serviceUser) => ({
           id: serviceUser.id,

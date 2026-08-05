@@ -37,9 +37,4 @@ export const managerNavigation: AppShellLink[] = [
     label: "Compliance",
     icon: "compliance",
   },
-  {
-    href: "/manager/admin",
-    label: "Administration",
-    icon: "settings",
-  },
 ];
