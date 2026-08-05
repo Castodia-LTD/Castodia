@@ -1,3 +1,4 @@
+
 "use client";
 import EmploymentSummary from "./components/EmploymentSummary";
 
@@ -51,6 +52,7 @@ type StaffProfile = {
 export default function StaffEmploymentPage({
   staffId,
 }: StaffEmploymentPageProps) {
+   console.log("Staff ID:", staffId);
   const [staff, setStaff] =
     useState<StaffProfile | null>(null);
 
