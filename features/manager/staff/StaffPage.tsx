@@ -123,6 +123,7 @@ export default function StaffPage({ portal }: Props) {
             currentProfile.organisation_id
           )
           .order("full_name", { ascending: true });
+          console.log("Loaded staff:", data);
 
         if (!error) {
           loadedStaff = (data ?? []) as StaffMember[];
