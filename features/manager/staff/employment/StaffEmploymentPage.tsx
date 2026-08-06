@@ -52,7 +52,7 @@ type StaffProfile = {
 export default function StaffEmploymentPage({
   staffId,
 }: StaffEmploymentPageProps) {
-   console.log("Staff ID:", staffId);
+   console.log("Employment staffId:", staffId);
   const [staff, setStaff] =
     useState<StaffProfile | null>(null);
 

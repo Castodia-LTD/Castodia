@@ -196,6 +196,7 @@ function sanitiseFileName(fileName: string) {
 export default function StaffDocumentsPage({
   staffId,
 }: StaffDocumentsPageProps) {
+  console.log("Documents staffId:", staffId);
   const [staff, setStaff] = useState<StaffProfile | null>(null);
   const [documents, setDocuments] = useState<StaffDocument[]>([]);
 
