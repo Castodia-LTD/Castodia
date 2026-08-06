@@ -192,7 +192,7 @@ function sanitiseFileName(fileName: string) {
     .replace(/[^a-zA-Z0-9._-]/g, "-")
     .replace(/-+/g, "-");
 }
-// Staff document route
+
 export default function StaffDocumentsPage({
   staffId,
 }: StaffDocumentsPageProps) {

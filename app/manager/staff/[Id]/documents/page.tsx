@@ -1,3 +1,4 @@
+// staff document route
 import StaffDocumentsPage from "@/features/manager/staff/documents/StaffDocumentsPage";
 
 type PageProps = {

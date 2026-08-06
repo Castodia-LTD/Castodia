@@ -1,3 +1,4 @@
+// staff hub route
 import StaffHubPage from "@/features/manager/admin/staff/StaffHubPage";
 
 type PageProps = {

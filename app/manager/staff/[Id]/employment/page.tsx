@@ -1,3 +1,4 @@
+// Staff employment route
 import StaffEmploymentPage from "@/features/manager/staff/employment/StaffEmploymentPage";
 
 type PageProps = {
