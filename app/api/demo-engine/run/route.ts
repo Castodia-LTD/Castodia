@@ -1,0 +1,94 @@
+import { NextResponse } from "next/server";
+
+import { runDemoEngine } from "@/lib/demo-engine/api";
+import { DEMO_ORGANISATION_ID } from "@/lib/demo-engine/config";
+import { createClient } from "@/lib/supabase/server";
+
+export async function POST() {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          error: "You must be signed in.",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const {
+      data: profile,
+      error: profileError,
+    } = await supabase
+      .from("profiles")
+      .select(`
+        role,
+        organisation_id
+      `)
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      throw new Error(profileError.message);
+    }
+
+    if (profile?.role !== "manager") {
+      return NextResponse.json(
+        {
+          error:
+            "Only managers can run the Demo Engine.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
+    if (
+      profile.organisation_id !==
+      DEMO_ORGANISATION_ID
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "The Demo Engine is only available inside the configured demo organisation.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
+    const result = await runDemoEngine();
+
+    return NextResponse.json({
+      success: true,
+      result,
+    });
+  } catch (error) {
+    console.error(
+      "Demo Engine failed:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "The Demo Engine could not be run.",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}

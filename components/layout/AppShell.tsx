@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  ArrowLeftRight,
   BarChart3,
   Bug,
   Building2,
@@ -64,16 +65,7 @@ export type AppShellPortal =
 
 type AppShellProps = {
   children: ReactNode;
-
-  /**
-   * Navigation links are optional so the shell can also be used
-   * for login, password reset and onboarding pages.
-   */
   links?: AppShellLink[];
-
-  /**
-   * Portal is required only for authenticated portal layouts.
-   */
   portal?: AppShellPortal;
 };
 
@@ -106,11 +98,8 @@ const portalHomes: Record<AppShellPortal, string> = {
   platform: "/platform/dashboard",
 };
 
-/**
- * Keep the mobile footer deliberately small.
- * Any remaining links are still available in the mobile drawer.
- */
 const MOBILE_NAV_LIMIT = 4;
+const SIDEBAR_STORAGE_KEY = "castodia-sidebar-collapsed";
 
 export function AppShell({
   children,
@@ -122,20 +111,29 @@ export function AppShell({
 
   const [name, setName] = useState("");
   const [role, setRole] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] =
-    useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
-  const [loggingOut, setLoggingOut] =
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [reportIssueOpen, setReportIssueOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [sidebarCollapsed, setSidebarCollapsed] =
     useState(false);
 
-  const [reportIssueOpen, setReportIssueOpen] =
-    useState(false);
-
-  const [mobileMenuOpen, setMobileMenuOpen] =
+  const [sidebarPreferenceLoaded, setSidebarPreferenceLoaded] =
     useState(false);
 
   const isAuthenticatedShell =
     Boolean(portal) && links.length > 0;
+
+  useEffect(() => {
+    const savedValue = window.localStorage.getItem(
+      SIDEBAR_STORAGE_KEY,
+    );
+
+    setSidebarCollapsed(savedValue === "true");
+    setSidebarPreferenceLoaded(true);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticatedShell) {
@@ -160,7 +158,7 @@ export function AppShell({
       if (userError) {
         console.error(
           "Unable to load authenticated user:",
-          userError.message
+          userError.message,
         );
         return;
       }
@@ -169,12 +167,11 @@ export function AppShell({
         return;
       }
 
-      const { data: profile, error } =
-        await supabase
-          .from("profiles")
-          .select("full_name, role, photo_url")
-          .eq("id", user.id)
-          .single();
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("full_name, role, photo_url")
+        .eq("id", user.id)
+        .single();
 
       if (!mounted) {
         return;
@@ -183,7 +180,7 @@ export function AppShell({
       if (error) {
         console.error(
           "Unable to load profile:",
-          error.message
+          error.message,
         );
         return;
       }
@@ -200,29 +197,21 @@ export function AppShell({
     };
   }, [isAuthenticatedShell]);
 
-  /**
-   * Close the drawer whenever navigation completes.
-   */
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  /**
-   * Prevent the page behind the mobile drawer from scrolling.
-   */
   useEffect(() => {
     if (!mobileMenuOpen) {
       return;
     }
 
-    const previousOverflow =
-      document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow =
-        previousOverflow;
+      document.body.style.overflow = previousOverflow;
     };
   }, [mobileMenuOpen]);
 
@@ -249,9 +238,7 @@ export function AppShell({
       .trim()
       .split(/\s+/)
       .slice(0, 2)
-      .map((part) =>
-        part.charAt(0).toUpperCase()
-      )
+      .map((part) => part.charAt(0).toUpperCase())
       .join("");
   }, [name]);
 
@@ -266,6 +253,19 @@ export function AppShell({
     );
   }
 
+  function toggleSidebar() {
+    setSidebarCollapsed((currentValue) => {
+      const nextValue = !currentValue;
+
+      window.localStorage.setItem(
+        SIDEBAR_STORAGE_KEY,
+        String(nextValue),
+      );
+
+      return nextValue;
+    });
+  }
+
   async function handleLogout() {
     if (loggingOut) {
       return;
@@ -273,13 +273,12 @@ export function AppShell({
 
     setLoggingOut(true);
 
-    const { error } =
-      await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
       console.error(
         "Unable to log out:",
-        error.message
+        error.message,
       );
 
       setLoggingOut(false);
@@ -296,13 +295,8 @@ export function AppShell({
     setReportIssueOpen(true);
   }
 
-  const portalHome = portal
-    ? portalHomes[portal]
-    : "/";
-
-  const portalName = portal
-    ? portalNames[portal]
-    : "";
+  const portalHome = portal ? portalHomes[portal] : "/";
+  const portalName = portal ? portalNames[portal] : "";
 
   const canSwitchPortal =
     isAuthenticatedShell &&
@@ -311,8 +305,7 @@ export function AppShell({
 
   const canReportIssue =
     isAuthenticatedShell &&
-    (portal === "manager" ||
-      portal === "support");
+    (portal === "manager" || portal === "support");
 
   const switchPortalHref =
     portal === "manager"
@@ -329,18 +322,14 @@ export function AppShell({
       ? "Switch to Support"
       : "Return to Manager";
 
-  const mobileLinks = links.slice(
-    0,
-    MOBILE_NAV_LIMIT
-  );
+  const mobileLinks = links.slice(0, MOBILE_NAV_LIMIT);
 
   const hasAdditionalMobileLinks =
     links.length > MOBILE_NAV_LIMIT;
 
-  const hiddenMobileLinksAreActive =
-    links
-      .slice(MOBILE_NAV_LIMIT)
-      .some(isLinkActive);
+  const hiddenMobileLinksAreActive = links
+    .slice(MOBILE_NAV_LIMIT)
+    .some(isLinkActive);
 
   return (
     <div className="flex min-h-dvh w-full bg-[#f7f9fb] text-slate-950">
@@ -348,35 +337,86 @@ export function AppShell({
       {isAuthenticatedShell ? (
         <aside
           className={[
-            "sticky top-0 hidden h-dvh w-[290px] shrink-0",
+            "sticky top-0 hidden h-dvh shrink-0 overflow-hidden",
             "border-r border-slate-200",
             "bg-gradient-to-b from-[#f8fcfc] via-[#f4fbfb] to-[#eaf7f7]",
+            "transition-[width] duration-300 ease-out",
             "lg:flex lg:flex-col",
+            sidebarPreferenceLoaded && sidebarCollapsed
+              ? "w-[76px]"
+              : "w-[270px]",
           ].join(" ")}
         >
-          <div className="shrink-0 px-5 pb-5 pt-7">
-            <Link
-              href={portalHome}
-              className="inline-flex items-center"
-            >
-              <Image
-                src="/logo.png"
-                alt="Castodia"
-                width={210}
-                height={70}
-                priority
-                className="h-auto w-[210px] object-contain"
-              />
-            </Link>
-
-            <div
+          <div
+            className={[
+              "shrink-0 pb-3 pt-4",
+              sidebarCollapsed ? "px-2" : "px-4",
+            ].join(" ")}
+          >
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label={
+                sidebarCollapsed
+                  ? "Expand navigation menu"
+                  : "Collapse navigation menu"
+              }
+              aria-expanded={!sidebarCollapsed}
+              title={
+                sidebarCollapsed
+                  ? "Expand navigation"
+                  : "Collapse navigation"
+              }
               className={[
-                "mt-7 rounded-[20px] border border-slate-200",
-                "bg-white px-4 py-4",
-                "shadow-[0_8px_24px_rgba(15,23,42,0.04)]",
+                "flex rounded-xl outline-none transition-all duration-200",
+                "hover:bg-white/60",
+                "focus-visible:ring-2 focus-visible:ring-teal-500",
+                sidebarCollapsed
+                  ? "mx-auto h-12 w-12 items-center justify-center p-1"
+                  : "w-full items-center justify-start px-1 py-1",
               ].join(" ")}
             >
-              <div className="flex items-center gap-4">
+              <Image
+                src={
+                  sidebarCollapsed
+                    ? "/castodia-mark.png"
+                    : "/logo.png"
+                }
+                alt=""
+                width={sidebarCollapsed ? 44 : 185}
+                height={sidebarCollapsed ? 44 : 62}
+                priority
+                className={
+                  sidebarCollapsed
+                    ? "h-11 w-11 object-contain"
+                    : "h-auto w-[185px] object-contain"
+                }
+              />
+            </button>
+
+            <div
+              title={
+                sidebarCollapsed
+                  ? `${greeting}, ${name || "Welcome"} — ${portalName}`
+                  : undefined
+              }
+              className={[
+                "mt-4 border border-slate-200 bg-white",
+                "shadow-[0_6px_18px_rgba(15,23,42,0.04)]",
+                "transition-all duration-200",
+                sidebarCollapsed
+                  ? "flex justify-center rounded-2xl px-2 py-3"
+                  : "rounded-[18px] px-3.5 py-3",
+              ].join(" ")}
+            >
+              <div
+                className={[
+                  "flex items-center",
+                  sidebarCollapsed
+                    ? "justify-center"
+                    : "gap-3",
+                ].join(" ")}
+              >
                 <ProfileAvatar
                   photoUrl={photoUrl}
                   name={name}
@@ -384,49 +424,68 @@ export function AppShell({
                   size="large"
                 />
 
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-500">
-                    {greeting}
-                  </p>
+                {!sidebarCollapsed ? (
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-slate-500">
+                      {greeting}
+                    </p>
 
-                  <p className="mt-0.5 truncate text-[18px] font-semibold leading-tight text-slate-950">
-                    {name || "Welcome"}
-                  </p>
+                    <p className="mt-0.5 truncate text-base font-semibold leading-tight text-slate-950">
+                      {name || "Welcome"}
+                    </p>
 
-                  <p className="mt-1 text-sm font-medium text-teal-600">
-                    {portalName}
-                  </p>
-                </div>
+                    <p className="mt-0.5 text-xs font-medium text-teal-600">
+                      {portalName}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
 
-          <nav className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-3">
-            <div className="space-y-2">
+          <nav
+            aria-label="Main navigation"
+            className={[
+              "min-h-0 flex-1 overflow-y-auto pb-3 pt-1",
+              sidebarCollapsed ? "px-2" : "px-4",
+            ].join(" ")}
+          >
+            <div className="space-y-1">
               {links.map((link) => {
                 const Icon = iconMap[link.icon];
-                const active =
-                  isLinkActive(link);
+                const active = isLinkActive(link);
 
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
                     aria-current={
-                      active
-                        ? "page"
+                      active ? "page" : undefined
+                    }
+                    aria-label={
+                      sidebarCollapsed
+                        ? link.label
+                        : undefined
+                    }
+                    title={
+                      sidebarCollapsed
+                        ? link.label
                         : undefined
                     }
                     className={[
-                      "group flex min-h-14 items-center gap-4 rounded-[18px] px-5",
-                      "text-[16px] font-medium transition-all duration-200",
+                      "group flex min-h-11 rounded-[16px]",
+                      "text-[15px] font-medium",
+                      "transition-all duration-200",
                       "focus-visible:outline-none focus-visible:ring-2",
                       "focus-visible:ring-teal-500 focus-visible:ring-offset-2",
+                      sidebarCollapsed
+                        ? "items-center justify-center px-2"
+                        : "items-center gap-3 px-4",
                       active
                         ? [
                             "bg-gradient-to-r from-[#079c9c] to-[#6ed6ce]",
                             "text-white",
-                            "shadow-[0_10px_25px_rgba(13,148,136,0.2)]",
+                            "shadow-[0_7px_18px_rgba(13,148,136,0.18)]",
                           ].join(" ")
                         : [
                             "text-slate-600",
@@ -436,7 +495,7 @@ export function AppShell({
                     ].join(" ")}
                   >
                     <Icon
-                      size={22}
+                      size={20}
                       strokeWidth={1.9}
                       className={[
                         "shrink-0",
@@ -447,31 +506,55 @@ export function AppShell({
                       aria-hidden="true"
                     />
 
-                    <span className="min-w-0 truncate">
-                      {link.label}
-                    </span>
+                    {!sidebarCollapsed ? (
+                      <span className="min-w-0 truncate">
+                        {link.label}
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })}
             </div>
           </nav>
 
-          <div className="shrink-0 border-t border-slate-200 bg-white/20 px-5 py-5">
-            <div className="space-y-2">
+          <div
+            className={[
+              "shrink-0 border-t border-slate-200 bg-white/20 py-3",
+              sidebarCollapsed ? "px-2" : "px-4",
+            ].join(" ")}
+          >
+            <div className="space-y-1.5">
               {canSwitchPortal ? (
                 <Link
                   href={switchPortalHref}
+                  aria-label={switchPortalLabel}
+                  title={
+                    sidebarCollapsed
+                      ? switchPortalLabel
+                      : undefined
+                  }
                   className={[
-                    "flex min-h-11 items-center justify-center rounded-2xl",
-                    "border border-slate-200 bg-white px-4 py-2.5",
-                    "text-center text-sm font-semibold text-teal-700",
+                    "flex min-h-10 items-center rounded-xl",
+                    "border border-slate-200 bg-white",
+                    "text-xs font-semibold text-teal-700",
                     "shadow-sm transition-colors",
                     "hover:border-teal-200 hover:bg-teal-50",
                     "focus-visible:outline-none focus-visible:ring-2",
                     "focus-visible:ring-teal-500",
+                    sidebarCollapsed
+                      ? "justify-center px-2"
+                      : "justify-center px-3 py-2 text-center",
                   ].join(" ")}
                 >
-                  {switchPortalLabel}
+                  {sidebarCollapsed ? (
+                    <ArrowLeftRight
+                      size={18}
+                      strokeWidth={1.9}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    switchPortalLabel
+                  )}
                 </Link>
               ) : null}
 
@@ -481,22 +564,33 @@ export function AppShell({
                   onClick={() =>
                     setReportIssueOpen(true)
                   }
+                  aria-label="Report an issue"
+                  title={
+                    sidebarCollapsed
+                      ? "Report an issue"
+                      : undefined
+                  }
                   className={[
-                    "flex min-h-11 w-full items-center justify-center gap-2",
-                    "rounded-2xl border border-teal-200 bg-teal-50",
-                    "px-4 py-2.5 text-sm font-semibold text-teal-700",
+                    "flex min-h-10 w-full items-center",
+                    "rounded-xl border border-teal-200 bg-teal-50",
+                    "text-xs font-semibold text-teal-700",
                     "transition-colors",
                     "hover:border-teal-300 hover:bg-teal-100",
                     "focus-visible:outline-none focus-visible:ring-2",
                     "focus-visible:ring-teal-500",
+                    sidebarCollapsed
+                      ? "justify-center px-2"
+                      : "justify-center gap-2 px-3 py-2",
                   ].join(" ")}
                 >
                   <Bug
-                    size={17}
+                    size={16}
                     aria-hidden="true"
                   />
 
-                  Report an issue
+                  {!sidebarCollapsed ? (
+                    <span>Report an issue</span>
+                  ) : null}
                 </button>
               ) : null}
 
@@ -506,25 +600,44 @@ export function AppShell({
                   void handleLogout()
                 }
                 disabled={loggingOut}
+                aria-label={
+                  loggingOut
+                    ? "Logging out"
+                    : "Log out"
+                }
+                title={
+                  sidebarCollapsed
+                    ? loggingOut
+                      ? "Logging out"
+                      : "Log out"
+                    : undefined
+                }
                 className={[
-                  "flex min-h-12 w-full items-center gap-3 rounded-2xl px-5",
-                  "text-[15px] font-medium text-slate-600",
+                  "flex min-h-10 w-full items-center rounded-xl",
+                  "text-sm font-medium text-slate-600",
                   "transition-colors",
                   "hover:bg-white hover:text-slate-950",
                   "focus-visible:outline-none focus-visible:ring-2",
                   "focus-visible:ring-teal-500",
                   "disabled:cursor-not-allowed disabled:opacity-60",
+                  sidebarCollapsed
+                    ? "justify-center px-2"
+                    : "gap-3 px-4",
                 ].join(" ")}
               >
                 <LogOut
-                  size={21}
+                  size={19}
                   strokeWidth={1.9}
                   aria-hidden="true"
                 />
 
-                {loggingOut
-                  ? "Logging out..."
-                  : "Log out"}
+                {!sidebarCollapsed ? (
+                  <span>
+                    {loggingOut
+                      ? "Logging out..."
+                      : "Log out"}
+                  </span>
+                ) : null}
               </button>
             </div>
           </div>
@@ -720,9 +833,7 @@ export function AppShell({
             style={{
               gridTemplateColumns: `repeat(${
                 mobileLinks.length +
-                (hasAdditionalMobileLinks
-                  ? 1
-                  : 0)
+                (hasAdditionalMobileLinks ? 1 : 0)
               }, minmax(0, 1fr))`,
             }}
           >
@@ -736,9 +847,7 @@ export function AppShell({
                   key={link.href}
                   href={link.href}
                   aria-current={
-                    active
-                      ? "page"
-                      : undefined
+                    active ? "page" : undefined
                   }
                   className={[
                     "relative flex min-w-0 flex-col items-center justify-center",
@@ -750,12 +859,7 @@ export function AppShell({
                   ].join(" ")}
                 >
                   {active ? (
-                    <span
-                      className={[
-                        "absolute inset-x-3 top-0 h-0.5",
-                        "rounded-full bg-teal-500",
-                      ].join(" ")}
-                    />
+                    <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-teal-500" />
                   ) : null}
 
                   <Icon
@@ -793,12 +897,7 @@ export function AppShell({
               >
                 {hiddenMobileLinksAreActive ||
                 mobileMenuOpen ? (
-                  <span
-                    className={[
-                      "absolute inset-x-3 top-0 h-0.5",
-                      "rounded-full bg-teal-500",
-                    ].join(" ")}
-                  />
+                  <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-teal-500" />
                 ) : null}
 
                 <MoreHorizontal
@@ -814,7 +913,7 @@ export function AppShell({
         </nav>
       ) : null}
 
-      {/* Mobile navigation drawer */}
+      {/* Mobile drawer */}
       {isAuthenticatedShell ? (
         <div
           className={[
@@ -863,14 +962,14 @@ export function AppShell({
                 "env(safe-area-inset-bottom)",
             }}
           >
-            <div className="shrink-0 border-b border-slate-200/80 px-5 pb-5 pt-5">
+            <div className="shrink-0 border-b border-slate-200/80 px-5 pb-4 pt-4">
               <div className="flex items-center justify-between gap-4">
                 <Image
                   src="/logo.png"
                   alt="Castodia"
-                  width={155}
-                  height={52}
-                  className="h-auto w-[145px] object-contain"
+                  width={145}
+                  height={48}
+                  className="h-auto w-[140px] object-contain"
                 />
 
                 <button
@@ -880,13 +979,13 @@ export function AppShell({
                   }
                   aria-label="Close navigation menu"
                   className={[
-                    "inline-flex h-11 w-11 items-center justify-center",
-                    "rounded-2xl border border-slate-200 bg-white",
+                    "inline-flex h-10 w-10 items-center justify-center",
+                    "rounded-xl border border-slate-200 bg-white",
                     "text-slate-600 shadow-sm",
                   ].join(" ")}
                 >
                   <X
-                    size={22}
+                    size={21}
                     aria-hidden="true"
                   />
                 </button>
@@ -894,9 +993,9 @@ export function AppShell({
 
               <div
                 className={[
-                  "mt-5 flex items-center gap-3 rounded-[20px]",
-                  "border border-slate-200 bg-white px-4 py-4",
-                  "shadow-[0_8px_24px_rgba(15,23,42,0.04)]",
+                  "mt-4 flex items-center gap-3 rounded-[18px]",
+                  "border border-slate-200 bg-white px-3.5 py-3",
+                  "shadow-[0_6px_18px_rgba(15,23,42,0.04)]",
                 ].join(" ")}
               >
                 <ProfileAvatar
@@ -907,15 +1006,15 @@ export function AppShell({
                 />
 
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-500">
+                  <p className="text-xs font-medium text-slate-500">
                     {greeting}
                   </p>
 
-                  <p className="truncate text-lg font-semibold text-slate-950">
+                  <p className="truncate text-base font-semibold text-slate-950">
                     {name || "Welcome"}
                   </p>
 
-                  <p className="mt-0.5 text-sm font-medium text-teal-600">
+                  <p className="mt-0.5 text-xs font-medium text-teal-600">
                     {portalName} Portal
                   </p>
                 </div>
@@ -925,29 +1024,27 @@ export function AppShell({
                 <Link
                   href={switchPortalHref}
                   className={[
-                    "mt-3 flex min-h-12 items-center justify-between",
-                    "rounded-2xl border border-teal-200 bg-teal-50",
-                    "px-4 text-sm font-semibold text-teal-700",
+                    "mt-3 flex min-h-10 items-center justify-between",
+                    "rounded-xl border border-teal-200 bg-teal-50",
+                    "px-4 text-xs font-semibold text-teal-700",
                   ].join(" ")}
                 >
-                  <span>
-                    {switchPortalLabel}
-                  </span>
+                  <span>{switchPortalLabel}</span>
 
                   <ChevronRight
-                    size={18}
+                    size={17}
                     aria-hidden="true"
                   />
                 </Link>
               ) : null}
             </div>
 
-            <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
-              <p className="mb-3 px-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+            <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              <p className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                 Navigation
               </p>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {links.map((link) => {
                   const Icon =
                     iconMap[link.icon];
@@ -965,15 +1062,15 @@ export function AppShell({
                           : undefined
                       }
                       className={[
-                        "group flex min-h-13 items-center gap-4",
-                        "rounded-[18px] px-4 py-3",
+                        "group flex min-h-11 items-center gap-3",
+                        "rounded-[16px] px-4 py-2",
                         "text-[15px] font-semibold",
                         "transition-all",
                         active
                           ? [
                               "bg-gradient-to-r from-[#079c9c] to-[#6ed6ce]",
                               "text-white",
-                              "shadow-[0_10px_25px_rgba(13,148,136,0.2)]",
+                              "shadow-[0_7px_18px_rgba(13,148,136,0.18)]",
                             ].join(" ")
                           : [
                               "text-slate-600",
@@ -983,7 +1080,7 @@ export function AppShell({
                       ].join(" ")}
                     >
                       <Icon
-                        size={21}
+                        size={20}
                         strokeWidth={1.9}
                         className={[
                           "shrink-0",
@@ -999,7 +1096,7 @@ export function AppShell({
                       </span>
 
                       <ChevronRight
-                        size={17}
+                        size={16}
                         className={[
                           "shrink-0",
                           active
@@ -1014,8 +1111,8 @@ export function AppShell({
               </div>
             </nav>
 
-            <div className="shrink-0 border-t border-slate-200/80 bg-white/35 px-4 py-4">
-              <div className="space-y-2">
+            <div className="shrink-0 border-t border-slate-200/80 bg-white/35 px-4 py-3">
+              <div className="space-y-1.5">
                 {canReportIssue ? (
                   <button
                     type="button"
@@ -1023,13 +1120,13 @@ export function AppShell({
                       handleOpenIssueModal
                     }
                     className={[
-                      "flex min-h-12 w-full items-center justify-center gap-2",
-                      "rounded-2xl border border-teal-200 bg-teal-50",
-                      "px-4 text-sm font-semibold text-teal-700",
+                      "flex min-h-10 w-full items-center justify-center gap-2",
+                      "rounded-xl border border-teal-200 bg-teal-50",
+                      "px-4 text-xs font-semibold text-teal-700",
                     ].join(" ")}
                   >
                     <Bug
-                      size={18}
+                      size={17}
                       aria-hidden="true"
                     />
 
@@ -1044,15 +1141,15 @@ export function AppShell({
                   }
                   disabled={loggingOut}
                   className={[
-                    "flex min-h-12 w-full items-center gap-3",
-                    "rounded-2xl px-4",
+                    "flex min-h-10 w-full items-center gap-3",
+                    "rounded-xl px-4",
                     "text-sm font-semibold text-slate-600",
                     "transition-colors hover:bg-white",
                     "disabled:cursor-not-allowed disabled:opacity-60",
                   ].join(" ")}
                 >
                   <LogOut
-                    size={20}
+                    size={19}
                     aria-hidden="true"
                   />
 
@@ -1100,8 +1197,8 @@ function ProfileAvatar({
         "rounded-full border-2 border-teal-500",
         "bg-gradient-to-br from-teal-500 to-cyan-400",
         isLarge
-          ? "h-14 w-14"
-          : "h-11 w-11",
+          ? "h-12 w-12"
+          : "h-10 w-10",
       ].join(" ")}
     >
       {photoUrl ? (
@@ -1113,7 +1210,7 @@ function ProfileAvatar({
               : "Profile photo"
           }
           fill
-          sizes={isLarge ? "56px" : "44px"}
+          sizes={isLarge ? "48px" : "40px"}
           className="object-cover"
         />
       ) : (
@@ -1121,8 +1218,8 @@ function ProfileAvatar({
           className={[
             "font-bold text-white",
             isLarge
-              ? "text-base"
-              : "text-sm",
+              ? "text-sm"
+              : "text-xs",
           ].join(" ")}
         >
           {initials}

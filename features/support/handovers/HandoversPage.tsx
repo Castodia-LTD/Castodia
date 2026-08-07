@@ -2,14 +2,29 @@
 
 import { useEffect, useState } from "react";
 import {
-  ContentWidth,
-  PageHeader,
-  SectionCard,
-} from "@/components/layout";
+  ArrowRight,
+  ClipboardList,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Users,
+} from "lucide-react";
+
+import { ContentWidth } from "@/components/layout";
+
+import { CastodiaCard } from "@/components/castodia";
+
 import { supabase } from "@/lib/supabase";
+
+import { generateHandoverSummary } from "@/lib/handovers/generateSummary";
+
 import HandoverCard from "./components/HandoverCard";
 import HandoverForm from "./components/HandoverForm";
-import type { Handover, ServiceUser } from "./types";
+
+import type {
+  Handover,
+  ServiceUser,
+} from "./types";
 
 type HandoverLink = {
   handover_id: string;
@@ -17,294 +32,430 @@ type HandoverLink = {
 };
 
 export default function HandoversPage() {
-  const [handovers, setHandovers] = useState<Handover[]>([]);
-  const [serviceUsers, setServiceUsers] = useState<ServiceUser[]>([]);
+  const [handovers, setHandovers] = useState<
+    Handover[]
+  >([]);
+
+  const [serviceUsers, setServiceUsers] = useState<
+    ServiceUser[]
+  >([]);
+
   const [userId, setUserId] = useState("");
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [selectedServiceUsers, setSelectedServiceUsers] = useState<string[]>(
-    []
-  );
 
-  const [generating, setGenerating] = useState(false);
-  const [handoverPeriod, setHandoverPeriod] = useState("24");
-  const [formOpen, setFormOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [
+    selectedServiceUsers,
+    setSelectedServiceUsers,
+  ] = useState<string[]>([]);
 
-  async function loadData() {
-    setLoading(true);
+  const [generating, setGenerating] =
+    useState(false);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const [handoverPeriod, setHandoverPeriod] =
+    useState("24");
 
-    if (!user) {
-      setLoading(false);
-      return;
+  const [formOpen, setFormOpen] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [errorMessage, setErrorMessage] =
+    useState<string | null>(null);
+
+  async function loadData(
+    showFullLoader = true,
+  ) {
+    if (showFullLoader) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
     }
 
-    setUserId(user.id);
+    setErrorMessage(null);
 
-    const { data: profile } = await supabase
-  .from("profiles")
-  .select("role")
-  .eq("id", user.id)
-  .single();
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-let visibleServiceUsers: ServiceUser[] = [];
+      if (userError) {
+        throw new Error(
+          userError.message,
+        );
+      }
 
-if (profile?.role === "manager") {
-  const { data } = await supabase
-    .from("service_users")
-    .select("id, full_name, house_name")
-    .eq("is_active", true)
-    .order("full_name");
+      if (!user) {
+        throw new Error(
+          "You must be signed in to view handovers.",
+        );
+      }
 
-  visibleServiceUsers = data || [];
-} else {
-  const { data: accessRows } = await supabase
-    .from("staff_service_user_access")
-    .select(`
-      service_users (
-        id,
-        full_name,
-        house_name
-      )
-    `)
-    .eq("staff_id", user.id);
+      setUserId(user.id);
 
-  visibleServiceUsers =
-    accessRows
-      ?.map((row: any) => row.service_users)
-      .filter(Boolean) || [];
-}
+      const {
+        data: profile,
+        error: profileError,
+      } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
 
-setServiceUsers(visibleServiceUsers);
+      if (profileError) {
+        throw new Error(
+          profileError.message,
+        );
+      }
 
-    const visibleServiceUserIds = visibleServiceUsers.map(
-      (serviceUser: ServiceUser) => serviceUser.id
-    );
+      let visibleServiceUsers: ServiceUser[] =
+        [];
 
-    if (visibleServiceUserIds.length === 0) {
-      setHandovers([]);
-      setLoading(false);
-      return;
-    }
+      if (
+        profile?.role === "manager"
+      ) {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("service_users")
+          .select(
+            "id, full_name, house_name",
+          )
+          .eq("is_active", true)
+          .order("full_name");
 
-    const { data: handoverLinks } = await supabase
-      .from("handover_service_users")
-      .select("handover_id, service_user_id")
-      .in("service_user_id", visibleServiceUserIds);
+        if (error) {
+          throw new Error(
+            error.message,
+          );
+        }
 
-    const handoverIds = [
-      ...new Set(handoverLinks?.map((link) => link.handover_id) || []),
-    ];
+        visibleServiceUsers =
+          data ?? [];
+      } else {
+        const {
+          data: accessRows,
+          error,
+        } = await supabase
+          .from(
+            "staff_service_user_access",
+          )
+          .select(`
+            service_users (
+              id,
+              full_name,
+              house_name
+            )
+          `)
+          .eq("staff_id", user.id);
 
-    if (handoverIds.length === 0) {
-      setHandovers([]);
-      setLoading(false);
-      return;
-    }
+        if (error) {
+          throw new Error(
+            error.message,
+          );
+        }
 
-    const { data: handoverData, error } = await supabase
-      .from("handovers")
-      .select("*")
-      .eq("active", true)
-      .in("id", handoverIds)
-      .order("created_at", { ascending: false });
+        visibleServiceUsers =
+          accessRows
+            ?.map(
+              (row: any) =>
+                row.service_users,
+            )
+            .filter(Boolean) ?? [];
+      }
 
-    if (error) {
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
+      setServiceUsers(
+        visibleServiceUsers,
+      );
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name");
-
-    const { data: reads } = await supabase
-      .from("handover_reads")
-      .select("handover_id, staff_id");
-
-    const enrichedHandovers =
-      handoverData?.map((handover) => {
-        const staff = profiles?.find(
-          (profile) => profile.id === handover.created_by
+      const visibleServiceUserIds =
+        visibleServiceUsers.map(
+          (serviceUser) =>
+            serviceUser.id,
         );
 
-        const hasRead = reads?.some(
-          (read) =>
-            read.handover_id === handover.id && read.staff_id === user.id
+      if (
+        visibleServiceUserIds.length === 0
+      ) {
+        setHandovers([]);
+        return;
+      }
+
+      const {
+        data: handoverLinks,
+        error: linkError,
+      } = await supabase
+        .from(
+          "handover_service_users",
+        )
+        .select(
+          "handover_id, service_user_id",
+        )
+        .in(
+          "service_user_id",
+          visibleServiceUserIds,
         );
 
-        const readNames =
-          reads
-            ?.filter((read) => read.handover_id === handover.id)
-            .map((read) => {
-              const profile = profiles?.find(
-                (person) => person.id === read.staff_id
+      if (linkError) {
+        throw new Error(
+          linkError.message,
+        );
+      }
+
+      const handoverIds = [
+        ...new Set(
+          handoverLinks?.map(
+            (link) =>
+              link.handover_id,
+          ) ?? [],
+        ),
+      ];
+
+      if (
+        handoverIds.length === 0
+      ) {
+        setHandovers([]);
+        return;
+      }
+
+      const [
+        handoverResult,
+        profilesResult,
+        readsResult,
+      ] = await Promise.all([
+        supabase
+          .from("handovers")
+          .select("*")
+          .eq("active", true)
+          .in("id", handoverIds)
+          .order("created_at", {
+            ascending: false,
+          }),
+
+        supabase
+          .from("profiles")
+          .select(
+            "id, full_name",
+          ),
+
+        supabase
+          .from("handover_reads")
+          .select(
+            "handover_id, staff_id",
+          ),
+      ]);
+
+      if (handoverResult.error) {
+        throw new Error(
+          handoverResult.error.message,
+        );
+      }
+
+      if (profilesResult.error) {
+        throw new Error(
+          profilesResult.error.message,
+        );
+      }
+
+      if (readsResult.error) {
+        throw new Error(
+          readsResult.error.message,
+        );
+      }
+
+      const handoverData =
+        handoverResult.data ?? [];
+
+      const profiles =
+        profilesResult.data ?? [];
+
+      const reads =
+        readsResult.data ?? [];
+
+      const enrichedHandovers =
+        handoverData.map(
+          (handover) => {
+            const staff =
+              profiles.find(
+                (profile) =>
+                  profile.id ===
+                  handover.created_by,
               );
 
-              return profile?.full_name;
-            })
-            .filter(Boolean) || [];
+            const hasRead =
+              reads.some(
+                (read) =>
+                  read.handover_id ===
+                    handover.id &&
+                  read.staff_id ===
+                    user.id,
+              );
 
-        const linkedServiceUsers =
-          handoverLinks
-            ?.filter(
-              (link: HandoverLink) => link.handover_id === handover.id
-            )
-            .map((link: HandoverLink) =>
-              visibleServiceUsers.find(
-                (serviceUser: ServiceUser) =>
-                  serviceUser.id === link.service_user_id
-              )
-            )
-            .filter(Boolean) || [];
+            const readNames =
+              reads
+                .filter(
+                  (read) =>
+                    read.handover_id ===
+                    handover.id,
+                )
+                .map((read) => {
+                  const profile =
+                    profiles.find(
+                      (person) =>
+                        person.id ===
+                        read.staff_id,
+                    );
 
-        return {
-          ...handover,
-          staff_name: staff?.full_name || "Unknown",
-          read: hasRead || false,
-          read_by: readNames as string[],
-          service_users: linkedServiceUsers,
-        };
-      }) || [];
+                  return profile?.full_name;
+                })
+                .filter(Boolean);
 
-    setHandovers(enrichedHandovers);
-    setLoading(false);
+            const linkedServiceUsers =
+              handoverLinks
+                ?.filter(
+                  (
+                    link: HandoverLink,
+                  ) =>
+                    link.handover_id ===
+                    handover.id,
+                )
+                .map(
+                  (
+                    link: HandoverLink,
+                  ) =>
+                    visibleServiceUsers.find(
+                      (
+                        serviceUser,
+                      ) =>
+                        serviceUser.id ===
+                        link.service_user_id,
+                    ),
+                )
+                .filter(Boolean) ?? [];
+
+            return {
+              ...handover,
+
+              staff_name:
+                staff?.full_name ||
+                "Unknown",
+
+              read: hasRead,
+
+              read_by:
+                readNames as string[],
+
+              service_users:
+                linkedServiceUsers,
+            };
+          },
+        );
+
+      setHandovers(
+        enrichedHandovers,
+      );
+    } catch (error) {
+      setHandovers([]);
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Handovers could not be loaded.",
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }
 
-  function toggleServiceUser(id: string) {
-    setSelectedServiceUsers((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id]
+  function toggleServiceUser(
+    id: string,
+  ) {
+    setSelectedServiceUsers(
+      (current) =>
+        current.includes(id)
+          ? current.filter(
+              (item) =>
+                item !== id,
+            )
+          : [...current, id],
     );
-  }
-
-  function daysSince(dateString?: string) {
-    if (!dateString) return "No record";
-
-    const then = new Date(dateString);
-    const now = new Date();
-
-    const diff = Math.floor(
-      (now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (diff === 0) return "Today";
-    if (diff === 1) return "Yesterday";
-
-    return `${diff} days ago`;
   }
 
   async function generateAutomaticSummary() {
-    if (selectedServiceUsers.length === 0) {
-      alert("Select at least one service user.");
+    if (
+      selectedServiceUsers.length ===
+      0
+    ) {
+      alert(
+        "Select at least one service user.",
+      );
+
       return;
     }
 
     setGenerating(true);
 
     try {
-      const lines: string[] = [];
-      const since = new Date();
+      const summary =
+        await generateHandoverSummary({
+          serviceUsers:
+            serviceUsers.map(
+              (serviceUser) => ({
+                id: serviceUser.id,
+                full_name:
+                  serviceUser.full_name,
+              }),
+            ),
 
-      since.setHours(since.getHours() - Number(handoverPeriod));
+          serviceUserIds:
+            selectedServiceUsers,
 
-      for (const serviceUserId of selectedServiceUsers) {
-        const serviceUser = serviceUsers.find(
-          (person) => person.id === serviceUserId
-        );
+          hoursBack:
+            Number(
+              handoverPeriod,
+            ),
+        });
 
-        if (!serviceUser) continue;
-
-        lines.push(`${serviceUser.full_name}`);
-
-        const { data: recentTimeline } = await supabase
-          .from("timeline_entries")
-          .select("entry_type, created_at")
-          .eq("service_user_id", serviceUserId)
-          .gte("created_at", since.toISOString())
-          .order("created_at", { ascending: false });
-
-        const sleepEntries =
-          recentTimeline?.filter((entry) => entry.entry_type === "Sleep") ||
-          [];
-
-        if (sleepEntries.length > 0) {
-          lines.push("");
-          lines.push("Sleep:");
-          lines.push(`• ${sleepEntries.length} sleep observations recorded`);
-        }
-
-        const { data: toileting } = await supabase
-          .from("toileting_records")
-          .select("toileting_outcome")
-          .eq("service_user_id", serviceUserId)
-          .gte("created_at", since.toISOString())
-          .order("created_at", { ascending: false });
-
-        const bowelMovements =
-          toileting?.filter((record) =>
-            ["Bowel movement", "Both"].includes(record.toileting_outcome)
-          ).length || 0;
-
-        lines.push("");
-        lines.push("Continence:");
-        lines.push(`• ${bowelMovements} bowel movements recorded`);
-
-        const { data: personalCare } = await supabase
-          .from("personal_care_records")
-          .select("care_type, occurred_at")
-          .eq("service_user_id", serviceUserId)
-          .order("occurred_at", { ascending: false });
-
-        const lastWash = personalCare?.find((row) =>
-          ["Shower", "Bath", "Strip wash"].includes(row.care_type)
-        );
-
-        const lastClothing = personalCare?.find(
-          (row) => row.care_type === "Clothing changed"
-        );
-
-        lines.push("");
-        lines.push("Personal Care:");
-        lines.push(`• Last washed: ${daysSince(lastWash?.occurred_at)}`);
-        lines.push(
-          `• Last clothing change: ${daysSince(lastClothing?.occurred_at)}`
-        );
-
-        const incidentCount =
-          recentTimeline?.filter((entry) => entry.entry_type === "Incident")
-            .length || 0;
-
-        if (incidentCount > 0) {
-          lines.push("");
-          lines.push("Incidents:");
-          lines.push(`• ${incidentCount} incidents recorded`);
-        }
-
-        lines.push("");
-      }
-
-      setContent(lines.join("\n"));
+      setContent(summary);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "The automatic handover summary could not be generated.",
+      );
     } finally {
       setGenerating(false);
     }
   }
 
   async function createHandover() {
-    if (!title.trim() || !content.trim()) {
-      alert("Please enter a title and handover details.");
+    if (
+      !title.trim() ||
+      !content.trim()
+    ) {
+      alert(
+        "Please enter a title and handover details.",
+      );
+
       return;
     }
 
-    if (selectedServiceUsers.length === 0) {
-      alert("Please select at least one service user.");
+    if (
+      selectedServiceUsers.length ===
+      0
+    ) {
+      alert(
+        "Please select at least one service user.",
+      );
+
       return;
     }
 
@@ -313,15 +464,22 @@ setServiceUsers(visibleServiceUsers);
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("You must be logged in.");
+      alert(
+        "You must be logged in.",
+      );
+
       return;
     }
 
-    const { data: handover, error } = await supabase
+    const {
+      data: handover,
+      error,
+    } = await supabase
       .from("handovers")
       .insert({
         title: title.trim(),
-        content: content.trim(),
+        content:
+          content.trim(),
         created_by: user.id,
         active: true,
       })
@@ -333,17 +491,30 @@ setServiceUsers(visibleServiceUsers);
       return;
     }
 
-    const links = selectedServiceUsers.map((serviceUserId) => ({
-      handover_id: handover.id,
-      service_user_id: serviceUserId,
-    }));
+    const links =
+      selectedServiceUsers.map(
+        (serviceUserId) => ({
+          handover_id:
+            handover.id,
 
-    const { error: linkError } = await supabase
-      .from("handover_service_users")
+          service_user_id:
+            serviceUserId,
+        }),
+      );
+
+    const {
+      error: linkError,
+    } = await supabase
+      .from(
+        "handover_service_users",
+      )
       .insert(links);
 
     if (linkError) {
-      alert(linkError.message);
+      alert(
+        linkError.message,
+      );
+
       return;
     }
 
@@ -352,85 +523,297 @@ setServiceUsers(visibleServiceUsers);
     setSelectedServiceUsers([]);
     setFormOpen(false);
 
-    await loadData();
+    await loadData(false);
   }
 
-  async function markAsRead(handoverId: string) {
-    if (!userId) return;
+  async function markAsRead(
+    handoverId: string,
+  ) {
+    if (!userId) {
+      return;
+    }
 
-    const { error } = await supabase.from("handover_reads").insert({
-      handover_id: handoverId,
-      staff_id: userId,
-    });
+    const { error } =
+      await supabase
+        .from("handover_reads")
+        .insert({
+          handover_id:
+            handoverId,
+          staff_id: userId,
+        });
 
-    if (error && !error.message.includes("duplicate")) {
+    if (
+      error &&
+      !error.message.includes(
+        "duplicate",
+      )
+    ) {
       alert(error.message);
       return;
     }
 
-    await loadData();
+    await loadData(false);
   }
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
+  const unreadCount =
+    handovers.filter(
+      (handover) =>
+        !handover.read,
+    ).length;
+
   return (
-    <ContentWidth>
-      <PageHeader
-        title="Handovers"
-        subtitle="Create and review handovers for your assigned service users."
-      >
-        <button
-          onClick={() => setFormOpen(true)}
-          className="rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-900/30"
-        >
-          + New
-        </button>
-      </PageHeader>
+        <ContentWidth>
+        <div className="space-y-6 py-6">
+          {/* Page introduction */}
+          <section className="overflow-hidden rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-teal-50 shadow-sm">
+            <div className="flex flex-col gap-6 px-6 py-7 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 text-white shadow-sm">
+                  <ClipboardList className="h-6 w-6" />
+                </div>
 
-      {formOpen && (
-        <div className="mb-8">
-          <HandoverForm
-            title={title}
-            content={content}
-            handoverPeriod={handoverPeriod}
-            serviceUsers={serviceUsers}
-            selectedServiceUsers={selectedServiceUsers}
-            generating={generating}
-            onTitleChange={setTitle}
-            onContentChange={setContent}
-            onHandoverPeriodChange={setHandoverPeriod}
-            onToggleServiceUser={toggleServiceUser}
-            onGenerateSummary={generateAutomaticSummary}
-            onCreateHandover={createHandover}
-            onClose={() => setFormOpen(false)}
-          />
-        </div>
-      )}
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+                    Handovers
+                  </h1>
 
-      <div className="space-y-4">
-        {loading && (
-          <SectionCard>
-            <p className="text-sm text-slate-400">Loading handovers...</p>
-          </SectionCard>
-        )}
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                    Share important updates between shifts
+                    and keep everyone supporting the person
+                    informed.
+                  </p>
+                </div>
+              </div>
 
-        {!loading && handovers.length === 0 && (
-          <SectionCard>
-            <p className="text-sm text-slate-400">No active handovers.</p>
-          </SectionCard>
-        )}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    void loadData(false)
+                  }
+                  disabled={refreshing}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={[
+                      "h-4 w-4",
+                      refreshing
+                        ? "animate-spin"
+                        : "",
+                    ].join(" ")}
+                  />
 
-        {!loading &&
-          handovers.map((handover) => (
-            <HandoverCard
-              key={handover.id}
-              handover={handover}
-              onMarkAsRead={markAsRead}
+                  Refresh
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormOpen(
+                      (current) =>
+                        !current,
+                    )
+                  }
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:shadow-md"
+                >
+                  <Plus className="h-4 w-4" />
+
+                  New Handover
+                </button>
+              </div>
+            </div>
+
+            <div className="grid border-t border-cyan-100/80 sm:grid-cols-3">
+              <SummaryMetric
+                label="Active"
+                value={
+                  handovers.length
+                }
+              />
+
+              <SummaryMetric
+                label="Unread"
+                value={
+                  unreadCount
+                }
+              />
+
+              <SummaryMetric
+                label="Service users"
+                value={
+                  serviceUsers.length
+                }
+              />
+            </div>
+          </section>
+
+          {/* Progressive disclosure form */}
+          {formOpen ? (
+            <section className="rounded-3xl border border-white/70 bg-gradient-to-br from-cyan-50/70 via-white/90 to-teal-50/70 p-1 shadow-sm backdrop-blur-md">
+              <HandoverForm
+                title={title}
+                content={content}
+                handoverPeriod={
+                  handoverPeriod
+                }
+                serviceUsers={
+                  serviceUsers
+                }
+                selectedServiceUsers={
+                  selectedServiceUsers
+                }
+                generating={
+                  generating
+                }
+                onTitleChange={
+                  setTitle
+                }
+                onContentChange={
+                  setContent
+                }
+                onHandoverPeriodChange={
+                  setHandoverPeriod
+                }
+                onToggleServiceUser={
+                  toggleServiceUser
+                }
+                onGenerateSummary={() =>
+                  void generateAutomaticSummary()
+                }
+                onCreateHandover={() =>
+                  void createHandover()
+                }
+                onClose={() =>
+                  setFormOpen(false)
+                }
+              />
+            </section>
+          ) : null}
+
+          {errorMessage ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+              {errorMessage}
+            </div>
+          ) : null}
+
+          {/* Handovers */}
+          {loading ? (
+            <CastodiaCard>
+              <div className="flex min-h-40 items-center justify-center gap-3 text-sm font-medium text-slate-500">
+                <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+
+                Loading handovers...
+              </div>
+            </CastodiaCard>
+          ) : handovers.length ===
+            0 ? (
+            <EmptyState
+              onCreate={() =>
+                setFormOpen(true)
+              }
             />
-          ))}
+          ) : (
+            <section className="space-y-4">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-950">
+                    Current handovers
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Most recent first
+                  </p>
+                </div>
+
+                {unreadCount > 0 ? (
+                  <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-700">
+                    {unreadCount} unread
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="space-y-4">
+                {handovers.map(
+                  (handover) => (
+                    <HandoverCard
+                      key={
+                        handover.id
+                      }
+                      handover={
+                        handover
+                      }
+                      onMarkAsRead={
+                        markAsRead
+                      }
+                    />
+                  ),
+                )}
+              </div>
+            </section>
+          )}
+        </div>
+      </ContentWidth>
+  );
+}
+
+type SummaryMetricProps = {
+  label: string;
+  value: number;
+};
+
+function SummaryMetric({
+  label,
+  value,
+}: SummaryMetricProps) {
+  return (
+    <div className="border-b border-cyan-100/70 px-6 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-1 text-xl font-bold text-slate-950">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+type EmptyStateProps = {
+  onCreate: () => void;
+};
+
+function EmptyState({
+  onCreate,
+}: EmptyStateProps) {
+  return (
+    <section className="mx-auto max-w-3xl rounded-3xl border border-white/70 bg-gradient-to-br from-cyan-50/70 via-white/90 to-teal-50/70 px-8 py-12 text-center shadow-sm backdrop-blur-md">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-teal-600 shadow-sm ring-1 ring-teal-100">
+        <Users className="h-6 w-6" />
       </div>
-    </ContentWidth>
+
+      <h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
+        No active handovers
+      </h2>
+
+      <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-600">
+        Handovers help staff share important information
+        between shifts so that support remains safe,
+        consistent and informed.
+      </p>
+
+      <button
+        type="button"
+        onClick={onCreate}
+        className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:shadow-md"
+      >
+        Create a Handover
+
+        <ArrowRight className="h-4 w-4" />
+      </button>
+    </section>
   );
 }
