@@ -107,6 +107,7 @@ export default function TimelineEntryPanel({
         supabase,
         organisationId,
         serviceUserId,
+        serviceUserName,
         userId: user.id,
         eventTime,
 
@@ -145,11 +146,8 @@ export default function TimelineEntryPanel({
         environmentCheckData:
           form.environmentCheckData ?? undefined,
 
-        personalCareData: {
-          careType: form.careType ?? "",
-          assistanceLevel: form.assistanceLevel ?? "",
-          notes: form.personalCareNotes ?? "",
-        },
+        personalCareData:
+  form.personalCareData ?? undefined,
 
         toiletingData: {
           toiletingOutcome:
@@ -161,6 +159,12 @@ export default function TimelineEntryPanel({
           toiletingNotes:
             form.toiletingNotes ?? "",
         },
+
+        sleepStatus: form.sleepStatus ?? "",
+        sleepNotes: form.sleepNotes ?? "",
+
+        continenceCareData:
+        form.continenceCareData ?? undefined,
 
         // Wellbeing
         behaviourObserved:
@@ -234,72 +238,10 @@ export default function TimelineEntryPanel({
       return;
     }
 
-    if (form.entryType === "Sleep") {
-      if (!form.sleepStatus) {
-        alert("Please select sleep status.");
-        return;
-      }
+    const finalContent =
+      form.content?.trim() ?? "";
 
-      const summary = form.sleepNotes?.trim()
-        ? `${form.sleepStatus} — ${form.sleepNotes.trim()}`
-        : form.sleepStatus;
-
-      const { error } = await supabase
-        .from("timeline_entries")
-        .insert({
-          service_user_id: serviceUserId,
-          created_by: user.id,
-          entry_type: "Sleep",
-          content: summary,
-          event_time: eventTime,
-        });
-
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
-      form.closeAndReset();
-      await onSaved();
-      return;
-    }
-
-    const isIncident =
-      form.entryType === "Incident";
-
-    const antecedent =
-      form.antecedent?.trim() ?? "";
-
-    const behaviour =
-      form.behaviour?.trim() ?? "";
-
-    const consequence =
-      form.consequence?.trim() ?? "";
-
-    const finalContent = isIncident
-      ? `Antecedent:
-${antecedent}
-
-Behaviour:
-${behaviour}
-
-Consequence / Outcome:
-${consequence}`
-      : form.content?.trim() ?? "";
-
-    if (
-      isIncident &&
-      (!antecedent ||
-        !behaviour ||
-        !consequence)
-    ) {
-      alert(
-        "Please complete antecedent, behaviour and consequence/outcome.",
-      );
-      return;
-    }
-
-    if (!finalContent.trim()) {
+    if (!finalContent) {
       alert("Please enter some information.");
       return;
     }
@@ -333,44 +275,55 @@ ${consequence}`
   return (
     <div
       ref={entryPanelRef}
-      className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl space-y-4 overflow-y-auto border-l border-white/10 bg-slate-950/95 p-6 shadow-2xl backdrop-blur"
+      className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl overflow-y-auto border-l border-teal-100 bg-gradient-to-b from-[#f8fcfc] via-[#f4fbfb] to-[#eaf7f7] shadow-[-20px_0_45px_rgba(15,23,42,0.14)]"
     >
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
-          Add Entry
-        </h2>
+      <div className="sticky top-0 z-10 border-b border-teal-100 bg-white/95 px-5 py-4 backdrop-blur-xl sm:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">
+              Timeline
+            </p>
 
-        <button
-          type="button"
-          onClick={form.closeAndReset}
-          className="rounded-full bg-white/10 px-4 py-2 text-sm"
-        >
-          Close
-        </button>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">
+              Add Entry
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={form.closeAndReset}
+            className="rounded-xl border border-teal-100 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-teal-200 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+          >
+            Close
+          </button>
+        </div>
       </div>
 
+      <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
       {!form.entryType && (
-        <EntryCategoryTiles
-          organisationId={organisationId}
-          selectedCategoryId={
-            form.selectedCategoryId
-          }
-          setSelectedCategoryId={
-            form.setSelectedCategoryId
-          }
-          setEntryType={form.setEntryType}
-        />
+        <div className="rounded-[24px] border border-teal-200/70 bg-gradient-to-br from-[#0f766e] via-[#0891b2] to-[#0f766e] p-5 shadow-[0_12px_30px_rgba(13,148,136,0.16)] sm:p-6">
+          <EntryCategoryTiles
+            organisationId={organisationId}
+            selectedCategoryId={
+              form.selectedCategoryId
+            }
+            setSelectedCategoryId={
+              form.setSelectedCategoryId
+            }
+            setEntryType={form.setEntryType}
+          />
+        </div>
       )}
 
       {form.entryType && (
         <>
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 p-3">
+          <div className="flex items-center justify-between rounded-2xl border border-teal-100 bg-white p-4 shadow-sm">
             <div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-600">
                 Recording
               </p>
 
-              <p className="font-semibold text-white">
+              <p className="font-semibold text-slate-950">
                 {form.entryType}
               </p>
             </div>
@@ -381,22 +334,32 @@ ${consequence}`
                 form.setEntryType("");
                 form.setSelectedCategoryId(null);
               }}
-              className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-slate-300"
+              className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700 transition hover:border-teal-200 hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               Change
             </button>
           </div>
 
-          <input
-            type="time"
-            value={form.entryTime}
-            onChange={(event) =>
-              form.setEntryTime(
-                event.target.value,
-              )
-            }
-            className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-          />
+          <div className="rounded-2xl border border-teal-100 bg-white p-4 shadow-sm">
+            <label
+              htmlFor="timeline-entry-time"
+              className="mb-2 block text-sm font-medium text-slate-800"
+            >
+              Entry time
+            </label>
+
+            <input
+              id="timeline-entry-time"
+              type="time"
+              value={form.entryTime}
+              onChange={(event) =>
+                form.setEntryTime(
+                  event.target.value,
+                )
+              }
+              className="min-h-11 w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            />
+          </div>
 
           {SelectedForm ? (
             <SelectedForm
@@ -423,7 +386,7 @@ ${consequence}`
                 )
               }
               placeholder="Write entry..."
-              className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
+              className="min-h-12 w-full rounded-xl border border-teal-200 bg-white px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
             />
           )}
 
@@ -432,13 +395,14 @@ ${consequence}`
               <button
                 type="button"
                 onClick={addEntry}
-                className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-teal-400 p-4 text-xl font-semibold"
+                className="w-full rounded-xl bg-gradient-to-r from-[#079c9c] to-[#6ed6ce] p-4 text-lg font-semibold text-white shadow-[0_8px_20px_rgba(13,148,136,0.18)] transition hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
               >
                 Save Entry
               </button>
             )}
         </>
       )}
+      </div>
     </div>
   );
 }

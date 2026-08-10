@@ -2,7 +2,7 @@ import type { SaveContext } from "../types";
 import { saveTimelineEntry } from "../saveTimelineEntry";
 
 export async function savePersonalCare(
-  ctx: SaveContext
+  ctx: SaveContext,
 ): Promise<boolean> {
   const data = ctx.personalCareData;
 
@@ -11,16 +11,25 @@ export async function savePersonalCare(
     return false;
   }
 
-  if (!data.assistanceLevel) {
+  const noCareCompleted =
+    data.careType === "No personal care completed";
+
+  if (!noCareCompleted && !data.assistanceLevel) {
     alert("Please select the level of assistance provided.");
     return false;
   }
 
-  if (
-    data.assistanceLevel === "Refused" &&
-    !data.notes?.trim()
-  ) {
-    alert("Please add notes when personal care is refused.");
+  const notesRequired =
+    noCareCompleted ||
+    data.assistanceLevel === "Refused";
+
+  if (notesRequired && !data.notes?.trim()) {
+    alert(
+      noCareCompleted
+        ? "Please record why no personal care was completed."
+        : "Please add notes when personal care is refused.",
+    );
+
     return false;
   }
 
@@ -30,7 +39,7 @@ Care Completed:
 ${data.careType}
 
 Assistance Level:
-${data.assistanceLevel}
+${noCareCompleted ? "Not applicable" : data.assistanceLevel}
 
 Notes:
 ${data.notes?.trim() || "Not recorded"}`;

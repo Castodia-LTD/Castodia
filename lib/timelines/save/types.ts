@@ -16,6 +16,7 @@ export type SaveContext = {
   supabase: any;
 
   serviceUserId: string;
+  serviceUserName: string;
   organisationId: string;
   userId: string;
   eventTime: string;
@@ -43,6 +44,7 @@ export type SaveContext = {
   nutritionHydrationData?: any;
   personalCareData?: PersonalCareData;
   toiletingData?: ToiletingData;
+  continenceCareData?: any;
 
   // Wellbeing
   behaviourObserved: string[];
@@ -50,6 +52,9 @@ export type SaveContext = {
   behaviourSupportProvided: string[];
   behaviourOutcome: string;
   behaviourNotes: string;
+
+  sleepStatus: string;
+  sleepNotes: string;
 
   // Body map
   bodyMapMarkers: any[];

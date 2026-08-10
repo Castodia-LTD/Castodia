@@ -13,6 +13,7 @@ import { saveNutritionHydration } from "./save/care/saveNutritionHydration";
 import { saveEnvironmentCheck } from "./save/care/saveEnvironmentCheck";
 import { savePersonalCare } from "./save/care/savePersonalCare";
 import { saveToileting } from "./save/care/saveToileting";
+import { saveContinenceCare } from "./save/care/saveContinenceCare";
 
 // Health
 import { saveHealthObservation } from "./save/health/saveHealthObservation";
@@ -21,7 +22,7 @@ import { saveHealthProfessional } from "./save/health/saveHealthProfessional";
 
 // Wellbeing
 import { saveBehaviourObservation } from "./save/wellbeing/saveBehaviourObservation";
-
+import { saveSleepCheck } from "./save/wellbeing/saveSleepCheck";
 // Incidents
 import { saveBehaviourIncident } from "./save/incidents/saveBehaviourIncident";
 import { saveBodyMap } from "./save/incidents/saveBodyMap";
@@ -43,6 +44,7 @@ export const saveRegistry: Record<string, SaveHandler> = {
   "Environment Check": saveEnvironmentCheck,
   "Personal Care": savePersonalCare,
   Toileting: saveToileting,
+  "Continence Care": saveContinenceCare,
 
   // Health
   "Health Observation": saveHealthObservation,
@@ -51,6 +53,7 @@ export const saveRegistry: Record<string, SaveHandler> = {
 
   // Wellbeing
   "Behaviour Observation": saveBehaviourObservation,
+  Sleep: saveSleepCheck,
 
   // Incidents
   "Behaviour Incident": saveBehaviourIncident,

@@ -263,38 +263,50 @@ export default function TimelineEntryPanelLive({
       {entryPanelOpen && (
         <div
           ref={entryPanelRef}
-          className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl space-y-4 overflow-y-auto border-l border-slate-200 bg-slate-50 p-6 shadow-2xl"
+          className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl overflow-y-auto border-l border-teal-100 bg-gradient-to-b from-[#f8fcfc] via-[#f4fbfb] to-[#eaf7f7] shadow-[-20px_0_45px_rgba(15,23,42,0.14)]"
         >
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Add Entry
-            </h2>
+          <div className="sticky top-0 z-10 border-b border-teal-100 bg-white/95 px-5 py-4 backdrop-blur-xl sm:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">
+                  Timeline
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                  Add Entry
+                </h2>
+              </div>
 
-            <button
-              onClick={() => {
-                resetEntryPanel();
-                setEntryPanelOpen(false);
-              }}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-            >
-              Close
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  resetEntryPanel();
+                  setEntryPanelOpen(false);
+                }}
+                className="rounded-xl border border-teal-100 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-teal-200 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                Close
+              </button>
+            </div>
           </div>
 
+          <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+
           {!entryType && (
-            <EntryCategoryTiles
-  organisationId={organisationId}
-  selectedCategoryId={selectedCategoryId}
-  setSelectedCategoryId={setSelectedCategoryId}
-  setEntryType={setEntryType}
-/>
+            <div className="rounded-[24px] border border-teal-200/70 bg-gradient-to-br from-[#0f766e] via-[#0891b2] to-[#0f766e] p-5 shadow-[0_12px_30px_rgba(13,148,136,0.16)] sm:p-6">
+              <EntryCategoryTiles
+                organisationId={organisationId}
+                selectedCategoryId={selectedCategoryId}
+                setSelectedCategoryId={setSelectedCategoryId}
+                setEntryType={setEntryType}
+              />
+            </div>
           )}
 
           {entryType && (
             <>
-              <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between rounded-2xl border border-teal-100 bg-white p-4 shadow-sm">
                 <div>
-                  <p className="text-xs text-slate-500">Recording</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-600">Recording</p>
                   <p className="font-semibold text-slate-950">{entryType}</p>
                 </div>
 
@@ -303,18 +315,28 @@ export default function TimelineEntryPanelLive({
                     setEntryType("");
                     setSelectedCategoryId(null);
                   }}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                  className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700 transition hover:border-teal-200 hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                 >
                   Change
                 </button>
               </div>
 
-              <input
-                type="time"
-                value={entryTime}
-                onChange={(event) => setEntryTime(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 outline-none"
-              />
+              <div className="rounded-2xl border border-teal-100 bg-white p-4 shadow-sm">
+                <label
+                  htmlFor="timeline-entry-time"
+                  className="mb-2 block text-sm font-medium text-slate-800"
+                >
+                  Entry time
+                </label>
+
+                <input
+                  id="timeline-entry-time"
+                  type="time"
+                  value={entryTime}
+                  onChange={(event) => setEntryTime(event.target.value)}
+                  className="min-h-11 w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                />
+              </div>
 
               {SelectedForm ? (
                 <SelectedForm
@@ -444,17 +466,21 @@ export default function TimelineEntryPanelLive({
                   value={content}
                   onChange={(event) => setContent(event.target.value)}
                   placeholder="Write entry..."
-                  className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 outline-none"
+                  className="min-h-12 w-full rounded-xl border border-teal-200 bg-white px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                 />
               )}
 
               {entryType !== "Wellbeing" && entryType !== "Medication" && (
-                <CastodiaButton onClick={addEntry} className="w-full">
+                <CastodiaButton
+                  onClick={addEntry}
+                  className="w-full shadow-[0_8px_20px_rgba(13,148,136,0.18)]"
+                >
                   Save Entry
                 </CastodiaButton>
               )}
             </>
           )}
+          </div>
         </div>
       )}
     </>

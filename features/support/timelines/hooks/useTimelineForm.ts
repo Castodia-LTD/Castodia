@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { getTimeNow } from "@/lib/shared/date";
 
 export function useTimelineForm() {
@@ -11,69 +12,42 @@ export function useTimelineForm() {
    */
 
   const [content, setContent] = useState("");
-
   const [entryType, setEntryType] = useState("");
-
-  const [selectedCategoryId, setSelectedCategoryId] = useState<
-    string | null
-  >(null);
-
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState<string | null>(null);
   const [entryPanelOpen, setEntryPanelOpen] = useState(false);
-
   const [entryTime, setEntryTime] = useState(getTimeNow());
 
   /*
    * =========================================================
-   * ACTIVITY
+   * ACTIVITIES
    * =========================================================
    */
 
-  /*
-   * Activity
-   */
-
   const [activityTitle, setActivityTitle] = useState("");
-
   const [activityLocation, setActivityLocation] = useState("");
-
   const [activityPeople, setActivityPeople] = useState("");
-
-  const [activityParticipation, setActivityParticipation] =
-    useState("");
-
+  const [activityParticipation, setActivityParticipation] = useState("");
   const [activityOutcome, setActivityOutcome] = useState("");
-
   const [activityNotes, setActivityNotes] = useState("");
 
-  /*
-   * Community Access
-   */
-
-  const [communityDestination, setCommunityDestination] =
-    useState("");
-
+  const [communityDestination, setCommunityDestination] = useState("");
   const [communityTransport, setCommunityTransport] = useState("");
-
-  const [
-    communitySupportProvided,
-    setCommunitySupportProvided,
-  ] = useState("");
-
+  const [communitySupportProvided, setCommunitySupportProvided] =
+    useState("");
   const [communityAccessData, setCommunityAccessData] =
     useState<any>(null);
 
-  /*
-   * Nutrition and Hydration
-   */
-
-  const [nutritionHydrationData, setNutritionHydrationData] =
+  const [socialInteractionData, setSocialInteractionData] =
     useState<any>(null);
 
-  /*
-   * Environment Check
-   */
+  const [contactVisitData, setContactVisitData] =
+    useState<any>(null);
 
-  const [environmentCheckData, setEnvironmentCheckData] =
+  const [shoppingData, setShoppingData] =
+    useState<any>(null);
+
+  const [householdTasksData, setHouseholdTasksData] =
     useState<any>(null);
 
   /*
@@ -82,40 +56,29 @@ export function useTimelineForm() {
    * =========================================================
    */
 
-  /*
-   * Toileting
-   */
+  const [nutritionHydrationData, setNutritionHydrationData] =
+    useState<any>(null);
+
+  const [environmentCheckData, setEnvironmentCheckData] =
+    useState<any>(null);
+
+  const [continenceCareData, setContinenceCareData] =
+    useState<any>(null);
 
   const [toiletingOutcome, setToiletingOutcome] = useState("");
-
   const [assistanceRequired, setAssistanceRequired] = useState("");
-
   const [padChanged, setPadChanged] = useState("");
-
   const [bristolType, setBristolType] = useState("");
-
   const [toiletingNotes, setToiletingNotes] = useState("");
 
   const [continenceSettings, setContinenceSettings] =
     useState<any>(null);
 
-  /*
-   * Personal Care
-   */
-
-  const [careType, setCareType] = useState("");
-
-  const [assistanceLevel, setAssistanceLevel] = useState("");
-
-  const [personalCareNotes, setPersonalCareNotes] = useState("");
-
-  /*
-   * Sleep
-   */
-
-  const [sleepStatus, setSleepStatus] = useState("");
-
-  const [sleepNotes, setSleepNotes] = useState("");
+  const [personalCareData, setPersonalCareData] = useState({
+    careType: "",
+    assistanceLevel: "",
+    notes: "",
+  });
 
   /*
    * =========================================================
@@ -123,102 +86,64 @@ export function useTimelineForm() {
    * =========================================================
    */
 
-  /*
-   * Health Observation
-   */
-
   const [healthObservationData, setHealthObservationData] =
     useState<any>(null);
 
-  /*
-   * Symptoms
-   */
-
-  const [symptomsData, setSymptomsData] = useState<any>(null);
-
-  /*
-   * Health Professional Contact
-   */
+  const [symptomsData, setSymptomsData] =
+    useState<any>(null);
 
   const [healthProfessionalData, setHealthProfessionalData] =
     useState<any>(null);
 
-  /*
-   * Medication Administration
-   */
-
-  const [medicationProfiles, setMedicationProfiles] = useState<
-    any[]
-  >([]);
+  const [medicationProfiles, setMedicationProfiles] =
+    useState<any[]>([]);
 
   const [selectedRound, setSelectedRound] = useState("Morning");
 
-  const [medicationStatuses, setMedicationStatuses] = useState<
-    Record<string, string>
-  >({});
+  const [medicationStatuses, setMedicationStatuses] =
+    useState<Record<string, string>>({});
 
-  const [medicationReasons, setMedicationReasons] = useState<
-    Record<string, string>
-  >({});
-
-  /*
-   * Medication Error
-   */
+  const [medicationReasons, setMedicationReasons] =
+    useState<Record<string, string>>({});
 
   const [medicationErrorData, setMedicationErrorData] =
     useState<any>(null);
 
   /*
-   * Body Map
-   */
-
-  const [bodyMapMarkers, setBodyMapMarkers] = useState<any[]>([]);
-
-  const [bodyMapNotes, setBodyMapNotes] = useState("");
-
-  /*
    * =========================================================
-   * MOOD AND WELLBEING
+   * WELLBEING
    * =========================================================
    */
 
-  /*
-   * ABC Record
-   */
+  const [sleepStatus, setSleepStatus] = useState("");
+  const [sleepNotes, setSleepNotes] = useState("");
 
-  const [antecedent, setAntecedent] = useState("");
+  const [behaviourObserved, setBehaviourObserved] =
+    useState<string[]>([]);
 
-  const [behaviour, setBehaviour] = useState("");
-
-  const [consequence, setConsequence] = useState("");
-
-  /*
-   * Behaviour Observation
-   */
-
-  const [behaviourObserved, setBehaviourObserved] = useState<
-    string[]
-  >([]);
-
-  const [behaviourFrequency, setBehaviourFrequency] = useState("");
+  const [behaviourFrequency, setBehaviourFrequency] =
+    useState("");
 
   const [
     behaviourSupportProvided,
     setBehaviourSupportProvided,
   ] = useState<string[]>([]);
 
-  const [behaviourOutcome, setBehaviourOutcome] = useState("");
+  const [behaviourOutcome, setBehaviourOutcome] =
+    useState("");
 
-  const [behaviourNotes, setBehaviourNotes] = useState("");
+  const [behaviourNotes, setBehaviourNotes] =
+    useState("");
 
   /*
-   * =========================================================
-   * INCIDENT
-   * =========================================================
+   * WellbeingObservationForm currently owns its own persistence,
+   * so no additional local timeline state is required here.
    */
 
   /*
-   * Behaviour Incident
+   * =========================================================
+   * INCIDENTS
+   * =========================================================
    */
 
   const [
@@ -263,18 +188,19 @@ export function useTimelineForm() {
     }[]
   >([]);
 
-  /*
-   * Accident / Fall / Injury
-   */
+  const [bodyMapMarkers, setBodyMapMarkers] =
+    useState<any[]>([]);
 
-  const [accidentFallInjuryData, setAccidentFallInjuryData] =
+  const [bodyMapNotes, setBodyMapNotes] =
+    useState("");
+
+  const [
+    accidentFallInjuryData,
+    setAccidentFallInjuryData,
+  ] = useState<any>(null);
+
+  const [nearMissData, setNearMissData] =
     useState<any>(null);
-
-  /*
-   * Near Miss
-   */
-
-  const [nearMissData, setNearMissData] = useState<any>(null);
 
   /*
    * =========================================================
@@ -290,10 +216,6 @@ export function useTimelineForm() {
   }
 
   function resetActivityState() {
-    /*
-     * Activity
-     */
-
     setActivityTitle("");
     setActivityLocation("");
     setActivityPeople("");
@@ -301,32 +223,21 @@ export function useTimelineForm() {
     setActivityOutcome("");
     setActivityNotes("");
 
-    /*
-     * Community Access
-     */
-
     setCommunityDestination("");
     setCommunityTransport("");
     setCommunitySupportProvided("");
     setCommunityAccessData(null);
 
-    /*
-     * Nutrition and Hydration
-     */
-
-    setNutritionHydrationData(null);
-
-    /*
-     * Environment Check
-     */
-
-    setEnvironmentCheckData(null);
+    setSocialInteractionData(null);
+    setContactVisitData(null);
+    setShoppingData(null);
+    setHouseholdTasksData(null);
   }
 
   function resetCareState() {
-    /*
-     * Toileting
-     */
+    setNutritionHydrationData(null);
+    setEnvironmentCheckData(null);
+    setContinenceCareData(null);
 
     setToiletingOutcome("");
     setAssistanceRequired("");
@@ -335,84 +246,37 @@ export function useTimelineForm() {
     setToiletingNotes("");
 
     /*
-     * Continence settings are service-user configuration.
-     * They are intentionally not cleared when the panel resets.
+     * continenceSettings is service-user configuration.
+     * It is intentionally not cleared when the panel resets.
      */
 
-    /*
-     * Personal Care
-     */
-
-    setCareType("");
-    setAssistanceLevel("");
-    setPersonalCareNotes("");
-
-    /*
-     * Sleep
-     */
-
-    setSleepStatus("");
-    setSleepNotes("");
+    setPersonalCareData({
+      careType: "",
+      assistanceLevel: "",
+      notes: "",
+    });
   }
 
   function resetHealthState() {
-    /*
-     * Health Observation
-     */
-
     setHealthObservationData(null);
-
-    /*
-     * Symptoms
-     */
-
     setSymptomsData(null);
-
-    /*
-     * Health Professional Contact
-     */
-
     setHealthProfessionalData(null);
-
-    /*
-     * Medication Administration
-     */
 
     setSelectedRound("Morning");
     setMedicationStatuses({});
     setMedicationReasons({});
 
     /*
-     * Medication profiles are loaded records.
-     * They are intentionally not cleared when the panel resets.
-     */
-
-    /*
-     * Medication Error
+     * medicationProfiles contains loaded records.
+     * It is intentionally not cleared when the panel resets.
      */
 
     setMedicationErrorData(null);
-
-    /*
-     * Body Map
-     */
-
-    setBodyMapMarkers([]);
-    setBodyMapNotes("");
   }
 
-  function resetMoodWellbeingState() {
-    /*
-     * ABC Record
-     */
-
-    setAntecedent("");
-    setBehaviour("");
-    setConsequence("");
-
-    /*
-     * Behaviour Observation
-     */
+  function resetWellbeingState() {
+    setSleepStatus("");
+    setSleepNotes("");
 
     setBehaviourObserved([]);
     setBehaviourFrequency("");
@@ -422,10 +286,6 @@ export function useTimelineForm() {
   }
 
   function resetIncidentState() {
-    /*
-     * Behaviour Incident
-     */
-
     setBehaviourIncidentTrigger("");
     setBehaviourIncidentTypes([]);
     setBehaviourIncidentDescription("");
@@ -434,16 +294,10 @@ export function useTimelineForm() {
     setBehaviourIncidentOutcomes([]);
     setBehaviourIncidentNotes("");
 
-    /*
-     * Accident / Fall / Injury
-     */
+    setBodyMapMarkers([]);
+    setBodyMapNotes("");
 
     setAccidentFallInjuryData(null);
-
-    /*
-     * Near Miss
-     */
-
     setNearMissData(null);
   }
 
@@ -458,7 +312,7 @@ export function useTimelineForm() {
     resetActivityState();
     resetCareState();
     resetHealthState();
-    resetMoodWellbeingState();
+    resetWellbeingState();
     resetIncidentState();
   }
 
@@ -486,14 +340,6 @@ export function useTimelineForm() {
    * =========================================================
    * RETURNED FORM API
    * =========================================================
-   *
-   * The API remains flat so your existing components can keep
-   * using properties such as:
-   *
-   * form.environmentCheckData
-   * form.setEnvironmentCheckData
-   * form.toiletingOutcome
-   * form.setToiletingOutcome
    */
 
   return {
@@ -518,7 +364,7 @@ export function useTimelineForm() {
 
     /*
      * =======================================================
-     * Activity
+     * Activities
      * =======================================================
      */
 
@@ -552,17 +398,32 @@ export function useTimelineForm() {
     communityAccessData,
     setCommunityAccessData,
 
-    nutritionHydrationData,
-    setNutritionHydrationData,
+    socialInteractionData,
+    setSocialInteractionData,
 
-    environmentCheckData,
-    setEnvironmentCheckData,
+    contactVisitData,
+    setContactVisitData,
+
+    shoppingData,
+    setShoppingData,
+
+    householdTasksData,
+    setHouseholdTasksData,
 
     /*
      * =======================================================
      * Care
      * =======================================================
      */
+
+    nutritionHydrationData,
+    setNutritionHydrationData,
+
+    environmentCheckData,
+    setEnvironmentCheckData,
+
+    continenceCareData,
+    setContinenceCareData,
 
     toiletingOutcome,
     setToiletingOutcome,
@@ -582,20 +443,8 @@ export function useTimelineForm() {
     continenceSettings,
     setContinenceSettings,
 
-    careType,
-    setCareType,
-
-    assistanceLevel,
-    setAssistanceLevel,
-
-    personalCareNotes,
-    setPersonalCareNotes,
-
-    sleepStatus,
-    setSleepStatus,
-
-    sleepNotes,
-    setSleepNotes,
+    personalCareData,
+    setPersonalCareData,
 
     /*
      * =======================================================
@@ -627,26 +476,17 @@ export function useTimelineForm() {
     medicationErrorData,
     setMedicationErrorData,
 
-    bodyMapMarkers,
-    setBodyMapMarkers,
-
-    bodyMapNotes,
-    setBodyMapNotes,
-
     /*
      * =======================================================
-     * Mood and Wellbeing
+     * Wellbeing
      * =======================================================
      */
 
-    antecedent,
-    setAntecedent,
+    sleepStatus,
+    setSleepStatus,
 
-    behaviour,
-    setBehaviour,
-
-    consequence,
-    setConsequence,
+    sleepNotes,
+    setSleepNotes,
 
     behaviourObserved,
     setBehaviourObserved,
@@ -665,7 +505,7 @@ export function useTimelineForm() {
 
     /*
      * =======================================================
-     * Incident
+     * Incidents
      * =======================================================
      */
 
@@ -692,6 +532,12 @@ export function useTimelineForm() {
 
     prnOptions,
 
+    bodyMapMarkers,
+    setBodyMapMarkers,
+
+    bodyMapNotes,
+    setBodyMapNotes,
+
     accidentFallInjuryData,
     setAccidentFallInjuryData,
 
@@ -706,7 +552,7 @@ export function useTimelineForm() {
     resetActivityState,
     resetCareState,
     resetHealthState,
-    resetMoodWellbeingState,
+    resetWellbeingState,
     resetIncidentState,
 
     /*

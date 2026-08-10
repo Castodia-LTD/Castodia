@@ -1,4 +1,16 @@
+"use client";
+
+import {
+  FormAlert,
+  FormChoiceGroup,
+  FormField,
+  FormSection,
+  FormTextarea,
+} from "@/components/timelines/forms/shared";
+
 type Props = {
+  serviceUserName?: string;
+
   sleepStatus: string;
   setSleepStatus: (value: string) => void;
 
@@ -6,31 +18,121 @@ type Props = {
   setSleepNotes: (value: string) => void;
 };
 
+const sleepStatusOptions = [
+  {
+    value: "Asleep",
+    label: "Asleep",
+    description: "The person was observed sleeping.",
+  },
+  {
+    value: "Awake",
+    label: "Awake",
+    description: "The person was awake at the time of observation.",
+  },
+];
+
 export default function SleepForm({
+  serviceUserName = "",
   sleepStatus,
   setSleepStatus,
   sleepNotes,
   setSleepNotes,
 }: Props) {
+  const initials = getInitials(serviceUserName);
+
+  const observationSummary =
+    sleepStatus === "Asleep"
+      ? `${initials} appeared asleep.`
+      : sleepStatus === "Awake"
+        ? `${initials} appeared awake.`
+        : "";
+
   return (
-    <div className="space-y-4">
-      <select
-        value={sleepStatus}
-        onChange={(e) => setSleepStatus(e.target.value)}
-        className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white outline-none"
+    <div className="space-y-6">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-600">
+          Daily observation
+        </p>
+
+        <h3 className="mt-1 text-xl font-semibold text-slate-950">
+          Sleep
+        </h3>
+
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Record whether the person appeared asleep or awake and add any
+          relevant observations.
+        </p>
+      </div>
+
+      <FormSection
+        title="Sleep status"
+        description="Choose the person's observed sleep state."
       >
-        <option value="">Select sleep status</option>
+        <FormChoiceGroup
+          label="Current status"
+          value={sleepStatus}
+          options={sleepStatusOptions}
+          onChange={setSleepStatus}
+          columns={2}
+          required
+        />
 
-        <option value="Asleep">Asleep</option>
-        <option value="Awake">Awake</option>
-      </select>
+        {sleepStatus && (
+          <FormAlert
+            variant="success"
+            title="Observation recorded"
+          >
+            {observationSummary}
+          </FormAlert>
+        )}
+      </FormSection>
 
-      <textarea
-        value={sleepNotes}
-        onChange={(e) => setSleepNotes(e.target.value)}
-        placeholder="Optional notes..."
-        className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none"
-      />
+      {sleepStatus && (
+        <FormSection
+          title="Observation"
+          description={
+            sleepStatus === "Asleep"
+              ? "Add any useful information about the person's sleep."
+              : "Add any useful information about the person's wakefulness."
+          }
+        >
+          <FormField
+            label="Notes"
+            description={
+              sleepStatus === "Asleep"
+                ? "For example: settled, restless, disturbed, repositioned or checks completed."
+                : "For example: settled in bed, watching television, walking around or requesting support."
+            }
+            htmlFor="sleep-notes"
+          >
+            <FormTextarea
+              id="sleep-notes"
+              value={sleepNotes}
+              onChange={(event) =>
+                setSleepNotes(event.target.value)
+              }
+              rows={4}
+              placeholder={
+                sleepStatus === "Asleep"
+                  ? "Add any relevant sleep observations..."
+                  : "Add any relevant observations while awake..."
+              }
+            />
+          </FormField>
+        </FormSection>
+      )}
     </div>
   );
+}
+
+function getInitials(name: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "Client";
 }

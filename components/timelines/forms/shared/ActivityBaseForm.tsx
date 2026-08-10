@@ -1,3 +1,13 @@
+"use client";
+
+import {
+  FormChoiceGroup,
+  FormField,
+  FormInput,
+  FormSection,
+  FormTextarea,
+} from "@/components/timelines/forms/shared";
+
 type ExtraField = {
   label: string;
   value: string;
@@ -25,19 +35,59 @@ type Props = {
 };
 
 const participationOptions = [
-  "Independent",
-  "Prompted",
-  "Supported",
-  "Full Assistance",
-  "Refused",
+  {
+    value: "Independent",
+    label: "Independent",
+    description: "Completed without staff support.",
+  },
+  {
+    value: "Prompted",
+    label: "Prompted",
+    description: "Verbal encouragement or reminders were provided.",
+  },
+  {
+    value: "Supported",
+    label: "Supported",
+    description: "Practical staff support was provided.",
+  },
+  {
+    value: "Full Assistance",
+    label: "Full assistance",
+    description: "Staff provided most or all of the support required.",
+  },
+  {
+    value: "Refused",
+    label: "Refused",
+    description: "The activity was offered but declined.",
+  },
 ];
 
 const outcomeOptions = [
-  "Very Positive",
-  "Positive",
-  "Neutral",
-  "Negative",
-  "Unable to Complete",
+  {
+    value: "Very Positive",
+    label: "Very positive",
+    description: "Strong engagement or clear benefit observed.",
+  },
+  {
+    value: "Positive",
+    label: "Positive",
+    description: "The activity was completed with a positive outcome.",
+  },
+  {
+    value: "Neutral",
+    label: "Neutral",
+    description: "No significant positive or negative outcome observed.",
+  },
+  {
+    value: "Negative",
+    label: "Negative",
+    description: "Distress, dissatisfaction or another negative outcome was observed.",
+  },
+  {
+    value: "Unable to Complete",
+    label: "Unable to complete",
+    description: "The activity could not be completed.",
+  },
 ];
 
 export default function ActivityBaseForm({
@@ -53,95 +103,122 @@ export default function ActivityBaseForm({
   notes,
   setNotes,
 }: Props) {
+  const needsNotes =
+    participationLevel === "Refused" ||
+    outcome === "Negative" ||
+    outcome === "Unable to Complete";
+
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="mb-2 text-sm font-semibold text-slate-300">
-          {primaryLabel}
-        </p>
+    <div className="space-y-6">
+      <FormSection
+        title="Activity details"
+        description="Record the main details of the activity."
+      >
+        <FormField
+          label={primaryLabel}
+          required
+        >
+          <FormInput
+            value={primaryValue}
+            onChange={(event) =>
+              setPrimaryValue(event.target.value)
+            }
+            placeholder={primaryPlaceholder}
+          />
+        </FormField>
 
-        <input
-          value={primaryValue}
-          onChange={(e) => setPrimaryValue(e.target.value)}
-          placeholder={primaryPlaceholder}
-          className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-        />
-      </div>
+        {extraFields.map((field) => (
+          <FormField
+            key={field.label}
+            label={field.label}
+          >
+            {field.type === "textarea" ? (
+              <FormTextarea
+                value={field.value}
+                onChange={(event) =>
+                  field.setValue(event.target.value)
+                }
+                placeholder={field.placeholder}
+                rows={4}
+              />
+            ) : (
+              <FormInput
+                value={field.value}
+                onChange={(event) =>
+                  field.setValue(event.target.value)
+                }
+                placeholder={field.placeholder}
+              />
+            )}
+          </FormField>
+        ))}
+      </FormSection>
 
-      {extraFields.map((field) => (
-        <div key={field.label}>
-          <p className="mb-2 text-sm font-semibold text-slate-300">
-            {field.label}
-          </p>
+      {primaryValue.trim() && (
+        <FormSection
+          title="Participation"
+          description="Record how independently the person took part."
+        >
+          <FormChoiceGroup
+            label="Participation level"
+            value={participationLevel}
+            options={participationOptions}
+            onChange={setParticipationLevel}
+            columns={2}
+            required
+          />
+        </FormSection>
+      )}
 
-          {field.type === "textarea" ? (
-            <textarea
-              value={field.value}
-              onChange={(e) => field.setValue(e.target.value)}
-              placeholder={field.placeholder}
-              className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
+      {participationLevel && (
+        <FormSection
+          title="Outcome"
+          description="Record the overall outcome of the activity."
+        >
+          <FormChoiceGroup
+            label="Activity outcome"
+            value={outcome}
+            options={outcomeOptions}
+            onChange={setOutcome}
+            columns={2}
+            required
+          />
+        </FormSection>
+      )}
+
+      {outcome && (
+        <FormSection
+          title="Observations"
+          description={
+            needsNotes
+              ? "Add the relevant detail before saving."
+              : "Record any useful observations or additional information."
+          }
+        >
+          <FormField
+            label="Notes / observations"
+            required={needsNotes}
+            description={
+              needsNotes
+                ? "Include any reason given, difficulty encountered, support offered or follow-up required."
+                : "Optional details about engagement, preferences, support or outcome."
+            }
+          >
+            <FormTextarea
+              value={notes}
+              onChange={(event) =>
+                setNotes(event.target.value)
+              }
+              placeholder={
+                needsNotes
+                  ? "Add the required details..."
+                  : "Optional notes or observations..."
+              }
+              rows={5}
             />
-          ) : (
-            <input
-              value={field.value}
-              onChange={(e) => field.setValue(e.target.value)}
-              placeholder={field.placeholder}
-              className="w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-            />
-          )}
-        </div>
-      ))}
-
-      <div>
-        <p className="mb-2 text-sm font-semibold text-slate-300">
-          Participation level
-        </p>
-
-        <div className="grid grid-cols-2 gap-2">
-          {participationOptions.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setParticipationLevel(option)}
-              className={`rounded-2xl p-3 text-sm font-semibold ${
-                participationLevel === option
-                  ? "bg-blue-500 text-white"
-                  : "bg-white/10 text-slate-300"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-2 text-sm font-semibold text-slate-300">Outcome</p>
-
-        <div className="grid grid-cols-2 gap-2">
-          {outcomeOptions.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setOutcome(option)}
-              className={`rounded-2xl p-3 text-sm font-semibold ${
-                outcome === option
-                  ? "bg-teal-500 text-white"
-                  : "bg-white/10 text-slate-300"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes / observations"
-        className="min-h-32 w-full rounded-2xl border border-white/10 bg-white/10 p-4 text-white outline-none placeholder:text-slate-500"
-      />
+          </FormField>
+        </FormSection>
+      )}
     </div>
   );
 }

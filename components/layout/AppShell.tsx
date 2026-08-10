@@ -770,15 +770,18 @@ export function AppShell({
         ) : null}
 
         <main
-          className={[
-            "min-h-0 min-w-0 flex-1 overflow-x-hidden bg-[#fbfcfd]",
-            isAuthenticatedShell
-              ? "pb-[calc(82px+env(safe-area-inset-bottom))] lg:pb-0"
-              : "",
-          ].join(" ")}
-        >
-          {children}
-        </main>
+  className={[
+    "min-h-0 min-w-0 flex-1 overflow-x-hidden bg-[#fbfcfd]",
+    isAuthenticatedShell
+      ? [
+          "px-4 sm:px-6 lg:px-8 xl:px-10",
+          "pb-[calc(82px+env(safe-area-inset-bottom))] lg:pb-0",
+        ].join(" ")
+      : "",
+  ].join(" ")}
+>
+  {children}
+</main>
       </div>
 
       {/* Mobile report issue button */}

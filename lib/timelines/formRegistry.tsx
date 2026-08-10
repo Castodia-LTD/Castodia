@@ -1,27 +1,72 @@
+"use client";
+
+import type React from "react";
+
+/* -------------------------------------------------------------------------- */
+/* Activities                                                                 */
+/* -------------------------------------------------------------------------- */
+
 import ActivityForm from "@/components/timelines/forms/activities/ActivityForm";
 import CommunityAccessForm from "@/components/timelines/forms/activities/CommunityAccessForm";
+import ContactVisitForm from "@/components/timelines/forms/activities/ContactVisitForm";
+import HouseholdTasksForm from "@/components/timelines/forms/activities/HouseholdTasksForm";
+import ShoppingForm from "@/components/timelines/forms/activities/ShoppingForm";
 import SocialInteractionForm from "@/components/timelines/forms/activities/SocialInteractionForm";
-import MedicationForm from "@/components/timelines/forms/health/MedicationForm";
-import ToiletingForm from "@/components/timelines/forms/care/ToiletingForm";
+
+/* -------------------------------------------------------------------------- */
+/* Care                                                                       */
+/* -------------------------------------------------------------------------- */
+
+import ContinenceCareForm from "@/components/timelines/forms/care/ContinenceCareForm";
+import EnvironmentCheckForm from "@/components/timelines/forms/care/EnvironmentCheckForm";
+import NutritionHydrationForm from "@/components/timelines/forms/care/NutritionHydrationForm";
 import PersonalCareForm from "@/components/timelines/forms/care/PersonalCareForm";
+import ToiletingForm from "@/components/timelines/forms/care/ToiletingForm";
+
+/* -------------------------------------------------------------------------- */
+/* Health                                                                     */
+/* -------------------------------------------------------------------------- */
+
+import HealthObservationForm from "@/components/timelines/forms/health/HealthObservationForm";
+import HealthProfessionalForm from "@/components/timelines/forms/health/HealthProfessionalForm";
+import MedicationForm from "@/components/timelines/forms/health/MedicationForm";
+import SymptomsForm from "@/components/timelines/forms/health/SymptomsForm";
+
+/* -------------------------------------------------------------------------- */
+/* Wellbeing                                                                  */
+/* -------------------------------------------------------------------------- */
+
+import BehaviourObservationForm from "@/components/timelines/forms/wellbeing/BehaviourObservationForm";
 import SleepForm from "@/components/timelines/forms/wellbeing/SleepForm";
 import WellbeingObservationForm from "@/components/timelines/forms/wellbeing/WellbeingObservationForm";
-import ContactVisitForm from "@/components/timelines/forms/activities/ContactVisitForm";
-import ShoppingForm from "@/components/timelines/forms/activities/ShoppingForm";
-import HouseholdTasksForm from "@/components/timelines/forms/activities/HouseholdTasksForm";
-import BehaviourObservationForm from "@/components/timelines/forms/wellbeing/BehaviourObservationForm";
-import BodyMapForm from "@/components/timelines/forms/incidents/BodyMapForm";
-import BehaviourIncidentForm from "@/components/timelines/forms/incidents/BehaviourIncidentForm";
-import NutritionHydrationForm from "@/components/timelines/forms/care/NutritionHydrationForm";
-import HealthObservationForm from "@/components/timelines/forms/health/HealthObservationForm";
-import SymptomsForm from "@/components/timelines/forms/health/SymptomsForm";
-import HealthProfessionalForm from "@/components/timelines/forms/health/HealthProfessionalForm";
-import EnvironmentCheckForm from "@/components/timelines/forms/care/EnvironmentCheckForm";
+
+/* -------------------------------------------------------------------------- */
+/* Incidents                                                                  */
+/* -------------------------------------------------------------------------- */
+
 import AccidentFallInjuryForm from "@/components/timelines/forms/incidents/AccidentFallInjuryForm";
+import BehaviourIncidentForm from "@/components/timelines/forms/incidents/BehaviourIncidentForm";
+import BodyMapForm from "@/components/timelines/forms/incidents/BodyMapForm";
 import MedicationErrorForm from "@/components/timelines/forms/incidents/MedicationErrorForm";
 import NearMissForm from "@/components/timelines/forms/incidents/NearMissform";
 
-export const formRegistry: Record<string, any> = {
+type RegistryComponent = (props: any) => React.ReactNode;
+
+export type TimelineFormCategory =
+  | "activities"
+  | "care"
+  | "health"
+  | "wellbeing"
+  | "incidents";
+
+/* -------------------------------------------------------------------------- */
+/* Activities                                                                 */
+/* -------------------------------------------------------------------------- */
+
+export const activityFormRegistry: Record<
+  string,
+  RegistryComponent
+> = {
   Activity: (props: any) => (
     <ActivityForm
       title={props.activityTitle}
@@ -40,129 +85,149 @@ export const formRegistry: Record<string, any> = {
   ),
 
   "Community Access": (props: any) => (
-  <CommunityAccessForm
-    onChange={props.setCommunityAccessData}
-  />
-),
+    <CommunityAccessForm {...props} />
+  ),
 
-"Social Interaction": (props: any) => (
-  <SocialInteractionForm
-    whoInvolved={props.activityPeople}
-    setWhoInvolved={props.setActivityPeople}
-    interactionType={props.activityTitle}
-    setInteractionType={props.setActivityTitle}
-    location={props.activityLocation}
-    setLocation={props.setActivityLocation}
-    participationLevel={props.activityParticipation}
-    setParticipationLevel={props.setActivityParticipation}
-    outcome={props.activityOutcome}
-    setOutcome={props.setActivityOutcome}
-    notes={props.activityNotes}
-    setNotes={props.setActivityNotes}
-  />
-),
-"Contact / Visit": (props: any) => (
-  <ContactVisitForm
-    personContacted={props.activityPeople}
-    setPersonContacted={props.setActivityPeople}
+  "Social Interaction": (props: any) => (
+    <SocialInteractionForm {...props} />
+  ),
 
-    relationship={props.activityTitle}
-    setRelationship={props.setActivityTitle}
+  "Contact / Visit": (props: any) => (
+    <ContactVisitForm
+      personContacted={props.activityPeople}
+      setPersonContacted={props.setActivityPeople}
+      relationship={props.activityTitle}
+      setRelationship={props.setActivityTitle}
+      contactMethod={props.activityLocation}
+      setContactMethod={props.setActivityLocation}
+      participationLevel={props.activityParticipation}
+      setParticipationLevel={props.setActivityParticipation}
+      outcome={props.activityOutcome}
+      setOutcome={props.setActivityOutcome}
+      notes={props.activityNotes}
+      setNotes={props.setActivityNotes}
+    />
+  ),
 
-    contactMethod={props.activityLocation}
-    setContactMethod={props.setActivityLocation}
+  Shopping: (props: any) => (
+    <ShoppingForm
+      shopLocation={props.activityLocation}
+      setShopLocation={props.setActivityLocation}
+      itemsPurchased={props.activityTitle}
+      setItemsPurchased={props.setActivityTitle}
+      moneyManagement={props.activityPeople}
+      setMoneyManagement={props.setActivityPeople}
+      participationLevel={props.activityParticipation}
+      setParticipationLevel={props.setActivityParticipation}
+      outcome={props.activityOutcome}
+      setOutcome={props.setActivityOutcome}
+      notes={props.activityNotes}
+      setNotes={props.setActivityNotes}
+    />
+  ),
 
-    participationLevel={props.activityParticipation}
-    setParticipationLevel={props.setActivityParticipation}
+  "Household Tasks": (props: any) => (
+    <HouseholdTasksForm
+      taskCompleted={props.activityTitle}
+      setTaskCompleted={props.setActivityTitle}
+      areaOfHome={props.activityLocation}
+      setAreaOfHome={props.setActivityLocation}
+      supportProvided={props.activityPeople}
+      setSupportProvided={props.setActivityPeople}
+      participationLevel={props.activityParticipation}
+      setParticipationLevel={props.setActivityParticipation}
+      outcome={props.activityOutcome}
+      setOutcome={props.setActivityOutcome}
+      notes={props.activityNotes}
+      setNotes={props.setActivityNotes}
+    />
+  ),
+};
 
-    outcome={props.activityOutcome}
-    setOutcome={props.setActivityOutcome}
+/* -------------------------------------------------------------------------- */
+/* Care                                                                       */
+/* -------------------------------------------------------------------------- */
 
-    notes={props.activityNotes}
-    setNotes={props.setActivityNotes}
-  />
-),
-"Shopping": (props: any) => (
-  <ShoppingForm
-    shopLocation={props.activityLocation}
-    setShopLocation={props.setActivityLocation}
+export const careFormRegistry: Record<
+  string,
+  RegistryComponent
+> = {
+  "Nutrition & Hydration": (props: any) => (
+    <NutritionHydrationForm
+      onChange={props.setNutritionHydrationData}
+    />
+  ),
 
-    itemsPurchased={props.activityTitle}
-    setItemsPurchased={props.setActivityTitle}
+  "Environment Check": (props: any) => (
+    <EnvironmentCheckForm
+      environmentCheckData={props.environmentCheckData}
+      setEnvironmentCheckData={props.setEnvironmentCheckData}
+      onChange={props.setEnvironmentCheckData}
+    />
+  ),
 
-    moneyManagement={props.activityPeople}
-    setMoneyManagement={props.setActivityPeople}
-
-    participationLevel={props.activityParticipation}
-    setParticipationLevel={props.setActivityParticipation}
-
-    outcome={props.activityOutcome}
-    setOutcome={props.setActivityOutcome}
-
-    notes={props.activityNotes}
-    setNotes={props.setActivityNotes}
-  />
-),
-
-Medication: (props: any) => (
-  <MedicationForm
-    serviceUserId={props.serviceUserId}
-    onSaved={props.onSaved}
-    onCreateTimelineEntry={props.onCreateTimelineEntry}
-  />
-),
-
-"Household Tasks": (props: any) => (
-  <HouseholdTasksForm
-    taskCompleted={props.activityTitle}
-    setTaskCompleted={props.setActivityTitle}
-
-    areaOfHome={props.activityLocation}
-    setAreaOfHome={props.setActivityLocation}
-
-    supportProvided={props.activityPeople}
-    setSupportProvided={props.setActivityPeople}
-
-    participationLevel={props.activityParticipation}
-    setParticipationLevel={props.setActivityParticipation}
-
-    outcome={props.activityOutcome}
-    setOutcome={props.setActivityOutcome}
-
-    notes={props.activityNotes}
-    setNotes={props.setActivityNotes}
-  />
-),
-
-  Toileting: (props: any) => (
-    <ToiletingForm
-      toiletingOutcome={props.toiletingOutcome}
-      setToiletingOutcome={props.setToiletingOutcome}
-      assistanceRequired={props.assistanceRequired}
-      setAssistanceRequired={props.setAssistanceRequired}
-      padChanged={props.padChanged}
-      setPadChanged={props.setPadChanged}
-      bristolType={props.bristolType}
-      setBristolType={props.setBristolType}
-      toiletingNotes={props.toiletingNotes}
-      setToiletingNotes={props.setToiletingNotes}
-      continenceSettings={props.continenceSettings}
+  "Continence Care": (props: any) => (
+    <ContinenceCareForm
+      continenceCareData={props.continenceCareData}
+      setContinenceCareData={props.setContinenceCareData}
+      onChange={props.setContinenceCareData}
     />
   ),
 
   "Personal Care": (props: any) => (
-  <PersonalCareForm
-    careType={props.careType}
-    setCareType={props.setCareType}
-    assistanceLevel={props.assistanceLevel}
-    setAssistanceLevel={props.setAssistanceLevel}
-    personalCareNotes={props.personalCareNotes}
-    setPersonalCareNotes={props.setPersonalCareNotes}
-  />
-),
+    <PersonalCareForm
+      personalCareData={props.personalCareData}
+      setPersonalCareData={props.setPersonalCareData}
+    />
+  ),
 
+  Toileting: (props: any) => (
+    <ToiletingForm {...props} />
+  ),
+};
+
+/* -------------------------------------------------------------------------- */
+/* Health                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export const healthFormRegistry: Record<
+  string,
+  RegistryComponent
+> = {
+  Medication: (props: any) => (
+    <MedicationForm {...props} />
+  ),
+
+  "Health Observation": (props: any) => (
+    <HealthObservationForm
+      onChange={props.setHealthObservationData}
+    />
+  ),
+
+  Symptoms: (props: any) => (
+    <SymptomsForm
+      onChange={props.setSymptomsData}
+    />
+  ),
+
+  "Health Professional": (props: any) => (
+    <HealthProfessionalForm
+      onChange={props.setHealthProfessionalData}
+    />
+  ),
+};
+
+/* -------------------------------------------------------------------------- */
+/* Wellbeing                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export const wellbeingFormRegistry: Record<
+  string,
+  RegistryComponent
+> = {
   Sleep: (props: any) => (
     <SleepForm
+      serviceUserName={props.serviceUserName}
       sleepStatus={props.sleepStatus}
       setSleepStatus={props.setSleepStatus}
       sleepNotes={props.sleepNotes}
@@ -171,91 +236,101 @@ Medication: (props: any) => (
   ),
 
   Wellbeing: (props: any) => (
-    <WellbeingObservationForm
-      serviceUserId={props.serviceUserId}
-      serviceUserName={props.serviceUserName}
-      onSaved={props.onSaved}
-    />
+    <WellbeingObservationForm {...props} />
   ),
 
   "Behaviour Observation": (props: any) => (
-    <BehaviourObservationForm
-      behaviourObserved={props.behaviourObserved}
-      setBehaviourObserved={props.setBehaviourObserved}
-      behaviourFrequency={props.behaviourFrequency}
-      setBehaviourFrequency={props.setBehaviourFrequency}
-      behaviourSupportProvided={props.behaviourSupportProvided}
-      setBehaviourSupportProvided={props.setBehaviourSupportProvided}
-      behaviourOutcome={props.behaviourOutcome}
-      setBehaviourOutcome={props.setBehaviourOutcome}
-      behaviourNotes={props.behaviourNotes}
-      setBehaviourNotes={props.setBehaviourNotes}
-    />
+    <BehaviourObservationForm {...props} />
   ),
-    "Body Map": (props: any) => (
-    <BodyMapForm
-      bodyMapMarkers={props.bodyMapMarkers}
-      setBodyMapMarkers={props.setBodyMapMarkers}
-      bodyMapNotes={props.bodyMapNotes}
-      setBodyMapNotes={props.setBodyMapNotes}
-      serviceUserGender={props.serviceUserGender}
-    />
-  ),
-"Behaviour Incident": (props: any) => (
-  <BehaviourIncidentForm
-    trigger={props.behaviourIncidentTrigger}
-    setTrigger={props.setBehaviourIncidentTrigger}
-    behaviourTypes={props.behaviourIncidentTypes}
-    setBehaviourTypes={props.setBehaviourIncidentTypes}
-    description={props.behaviourIncidentDescription}
-    setDescription={props.setBehaviourIncidentDescription}
-    supportProvided={props.behaviourIncidentSupport}
-    setSupportProvided={props.setBehaviourIncidentSupport}
-    linkedPrnAdministrationId={props.linkedPrnAdministrationId}
-    setLinkedPrnAdministrationId={props.setLinkedPrnAdministrationId}
-    prnOptions={props.prnOptions}
-    immediateOutcomes={props.behaviourIncidentOutcomes}
-    setImmediateOutcomes={props.setBehaviourIncidentOutcomes}
-    notes={props.behaviourIncidentNotes}
-    setNotes={props.setBehaviourIncidentNotes}
-  />
-),
-"Nutrition & Hydration": (props: any) => (
-  <NutritionHydrationForm
-    onChange={props.setNutritionHydrationData}
-  />
-),
-"Health Observation": (props: any) => (
-  <HealthObservationForm
-    onChange={props.setHealthObservationData}
-  />
-),
-Symptoms: (props: any) => (
-  <SymptomsForm onChange={props.setSymptomsData} />
-),
-"Health Professional": (props: any) => (
-  <HealthProfessionalForm
-    onChange={props.setHealthProfessionalData}
-  />
-),
-"Environment Check": (props: any) => (
-  <EnvironmentCheckForm
-    onChange={props.setEnvironmentCheckData}
-    />
-),
-"Accident / Fall / Injury": (props: any) => (
-  <AccidentFallInjuryForm
-    onChange={props.setAccidentFallInjuryData}
-    />
-),
-"Medication Error": (props: any) => (
-  <MedicationErrorForm
-  onChange={props.setMedicationErrorData}
-  />
-),
-"Near Miss": (props: any) => (
-  <NearMissForm
-  onChange={props.setNearMissData}
-  />
-),
 };
+
+/* -------------------------------------------------------------------------- */
+/* Incidents                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export const incidentFormRegistry: Record<
+  string,
+  RegistryComponent
+> = {
+  "Body Map": (props: any) => (
+    <BodyMapForm {...props} />
+  ),
+
+  "Behaviour Incident": (props: any) => (
+    <BehaviourIncidentForm {...props} />
+  ),
+
+  "Accident / Fall / Injury": (props: any) => (
+    <AccidentFallInjuryForm
+      onChange={props.setAccidentFallInjuryData}
+    />
+  ),
+
+  "Medication Error": (props: any) => (
+    <MedicationErrorForm
+      onChange={props.setMedicationErrorData}
+    />
+  ),
+
+  "Near Miss": (props: any) => (
+    <NearMissForm
+      onChange={props.setNearMissData}
+    />
+  ),
+};
+
+/* -------------------------------------------------------------------------- */
+/* Combined registry                                                          */
+/* -------------------------------------------------------------------------- */
+
+export const formRegistry: Record<
+  string,
+  RegistryComponent
+> = {
+  ...activityFormRegistry,
+  ...careFormRegistry,
+  ...healthFormRegistry,
+  ...wellbeingFormRegistry,
+  ...incidentFormRegistry,
+};
+
+/* -------------------------------------------------------------------------- */
+/* Category helpers                                                           */
+/* -------------------------------------------------------------------------- */
+
+export const formRegistryByCategory: Record<
+  TimelineFormCategory,
+  Record<string, RegistryComponent>
+> = {
+  activities: activityFormRegistry,
+  care: careFormRegistry,
+  health: healthFormRegistry,
+  wellbeing: wellbeingFormRegistry,
+  incidents: incidentFormRegistry,
+};
+
+export function getFormCategory(
+  entryType: string,
+): TimelineFormCategory | null {
+  if (entryType in activityFormRegistry) {
+    return "activities";
+  }
+
+  if (entryType in careFormRegistry) {
+    return "care";
+  }
+
+  if (entryType in healthFormRegistry) {
+    return "health";
+  }
+
+  if (entryType in wellbeingFormRegistry) {
+    return "wellbeing";
+  }
+
+  if (entryType in incidentFormRegistry) {
+    return "incidents";
+  }
+
+  return null;
+}
