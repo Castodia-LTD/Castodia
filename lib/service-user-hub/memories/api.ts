@@ -124,18 +124,23 @@ export async function getMemories(
     "Service user ID",
   );
 
-  const { data: memoryData, error: memoryError } =
-    await supabase
-      .from("memories")
-      .select("*")
-      .eq("service_user_id", cleanServiceUserId)
-      .eq("archived", false)
-      .order("memory_date", {
-        ascending: false,
-      })
-      .order("created_at", {
-        ascending: false,
-      });
+  const {
+    data: memoryData,
+    error: memoryError,
+  } = await supabase
+    .from("memories")
+    .select("*")
+    .eq(
+      "service_user_id",
+      cleanServiceUserId,
+    )
+    .eq("archived", false)
+    .order("memory_date", {
+      ascending: false,
+    })
+    .order("created_at", {
+      ascending: false,
+    });
 
   if (memoryError) {
     throw new Error(memoryError.message);
@@ -152,17 +157,19 @@ export async function getMemories(
     (memory) => memory.id,
   );
 
-  const { data: photoData, error: photoError } =
-    await supabase
-      .from("memory_photos")
-      .select("*")
-      .in("memory_id", memoryIds)
-      .order("display_order", {
-        ascending: true,
-      })
-      .order("created_at", {
-        ascending: true,
-      });
+  const {
+    data: photoData,
+    error: photoError,
+  } = await supabase
+    .from("memory_photos")
+    .select("*")
+    .in("memory_id", memoryIds)
+    .order("display_order", {
+      ascending: true,
+    })
+    .order("created_at", {
+      ascending: true,
+    });
 
   if (photoError) {
     throw new Error(photoError.message);
@@ -175,30 +182,38 @@ export async function getMemories(
     await attachSignedUrls(photos);
 
   const profileIds = memories.flatMap(
-    (memory) => [
-      memory.created_by,
-      memory.updated_by,
-      memory.family_visibility_changed_by,
-    ].filter(
-      (value): value is string => Boolean(value),
-    ),
+    (memory) =>
+      [
+        memory.created_by,
+        memory.updated_by,
+        memory.family_visibility_changed_by,
+      ].filter(
+        (value): value is string =>
+          Boolean(value),
+      ),
   );
 
-  const names = await getProfileNames(profileIds);
+  const names =
+    await getProfileNames(profileIds);
 
   return memories.map((memory) => ({
     ...memory,
 
     photos: photosWithUrls.filter(
-      (photo) => photo.memory_id === memory.id,
+      (photo) =>
+        photo.memory_id === memory.id,
     ),
 
     creator_name:
-      names.get(memory.created_by) ?? null,
+      names.get(memory.created_by) ??
+      null,
 
-    updated_by_name: memory.updated_by
-      ? names.get(memory.updated_by) ?? null
-      : null,
+    updated_by_name:
+      memory.updated_by
+        ? names.get(
+            memory.updated_by,
+          ) ?? null
+        : null,
 
     family_visibility_changed_by_name:
       memory.family_visibility_changed_by
@@ -217,63 +232,84 @@ export async function getMemory(
     "Memory ID",
   );
 
-  const { data: memory, error } = await supabase
+  const {
+    data: memoryRows,
+    error,
+  } = await supabase
     .from("memories")
     .select("*")
     .eq("id", cleanMemoryId)
     .eq("archived", false)
-    .maybeSingle();
+    .limit(1);
 
   if (error) {
     throw new Error(error.message);
   }
 
+  const memory =
+    memoryRows?.[0] ?? null;
+
   if (!memory) {
     return null;
   }
 
-  const { data: photoData, error: photoError } =
-    await supabase
-      .from("memory_photos")
-      .select("*")
-      .eq("memory_id", cleanMemoryId)
-      .order("display_order", {
-        ascending: true,
-      })
-      .order("created_at", {
-        ascending: true,
-      });
+  const {
+    data: photoData,
+    error: photoError,
+  } = await supabase
+    .from("memory_photos")
+    .select("*")
+    .eq(
+      "memory_id",
+      cleanMemoryId,
+    )
+    .order("display_order", {
+      ascending: true,
+    })
+    .order("created_at", {
+      ascending: true,
+    });
 
   if (photoError) {
     throw new Error(photoError.message);
   }
 
-  const typedMemory = memory as MemoryRecord;
+  const typedMemory =
+    memory as MemoryRecord;
 
-  const photos = await attachSignedUrls(
-    (photoData ?? []) as MemoryPhotoRecord[],
-  );
+  const photos =
+    await attachSignedUrls(
+      (photoData ??
+        []) as MemoryPhotoRecord[],
+    );
 
-  const names = await getProfileNames(
-    [
-      typedMemory.created_by,
-      typedMemory.updated_by,
-      typedMemory.family_visibility_changed_by,
-    ].filter(
-      (value): value is string => Boolean(value),
-    ),
-  );
+  const names =
+    await getProfileNames(
+      [
+        typedMemory.created_by,
+        typedMemory.updated_by,
+        typedMemory.family_visibility_changed_by,
+      ].filter(
+        (value): value is string =>
+          Boolean(value),
+      ),
+    );
 
   return {
     ...typedMemory,
     photos,
 
     creator_name:
-      names.get(typedMemory.created_by) ?? null,
+      names.get(
+        typedMemory.created_by,
+      ) ?? null,
 
-    updated_by_name: typedMemory.updated_by
-      ? names.get(typedMemory.updated_by) ?? null
-      : null,
+    updated_by_name:
+      typedMemory.updated_by
+        ? names.get(
+            typedMemory.updated_by,
+          ) ?? null
+        : null,
 
     family_visibility_changed_by_name:
       typedMemory.family_visibility_changed_by
@@ -304,35 +340,87 @@ export async function createMemory(
     "Memory date",
   );
 
-  const { data, error } = await supabase
+  console.log("Creating memory:", {
+    userId: user.id,
+    organisationId:
+      input.organisationId,
+    serviceUserId:
+      input.serviceUserId,
+  });
+
+  const {
+    data,
+    error,
+    status,
+    statusText,
+  } = await supabase
     .from("memories")
     .insert({
-      organisation_id: input.organisationId,
-      service_user_id: input.serviceUserId,
+      organisation_id:
+        input.organisationId,
+
+      service_user_id:
+        input.serviceUserId,
 
       title,
       story,
-      memory_date: memoryDate,
 
-      people_involved: optionalText(
-        input.peopleInvolved,
-      ),
+      memory_date:
+        memoryDate,
 
-      category: optionalText(input.category),
+      people_involved:
+        optionalText(
+          input.peopleInvolved,
+        ),
 
-      created_by: user.id,
+      category:
+        optionalText(
+          input.category,
+        ),
 
-      family_visible: false,
-      archived: false,
+      created_by:
+        user.id,
+
+      family_visible:
+        false,
+
+      archived:
+        false,
     })
-    .select("*")
-    .single();
+    .select("*");
+
+  console.log(
+    "Memory insert result:",
+    {
+      data,
+      error,
+      status,
+      statusText,
+    },
+  );
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      `Memory insert failed: ${error.message}`,
+    );
   }
 
-  return data as MemoryRecord;
+  if (
+    !data ||
+    data.length === 0
+  ) {
+    throw new Error(
+      "The memory insert returned no record. Check the memories RLS INSERT and SELECT policies.",
+    );
+  }
+
+  if (data.length > 1) {
+    throw new Error(
+      "The memory insert unexpectedly returned more than one record.",
+    );
+  }
+
+  return data[0] as MemoryRecord;
 }
 
 export async function updateMemory(
@@ -355,32 +443,61 @@ export async function updateMemory(
     "Memory date",
   );
 
-  const { data, error } = await supabase
+  const {
+    data,
+    error,
+  } = await supabase
     .from("memories")
     .update({
       title,
       story,
-      memory_date: memoryDate,
 
-      people_involved: optionalText(
-        input.peopleInvolved,
-      ),
+      memory_date:
+        memoryDate,
 
-      category: optionalText(input.category),
+      people_involved:
+        optionalText(
+          input.peopleInvolved,
+        ),
 
-      updated_by: user.id,
-      updated_at: new Date().toISOString(),
+      category:
+        optionalText(
+          input.category,
+        ),
+
+      updated_by:
+        user.id,
+
+      updated_at:
+        new Date().toISOString(),
     })
-    .eq("id", input.memoryId)
+    .eq(
+      "id",
+      input.memoryId,
+    )
     .eq("archived", false)
-    .select("*")
-    .single();
+    .select("*");
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return data as MemoryRecord;
+  if (
+    !data ||
+    data.length === 0
+  ) {
+    throw new Error(
+      "The memory could not be updated or is no longer available.",
+    );
+  }
+
+  if (data.length > 1) {
+    throw new Error(
+      "The memory update unexpectedly returned more than one record.",
+    );
+  }
+
+  return data[0] as MemoryRecord;
 }
 
 export async function uploadMemoryPhoto(
@@ -398,9 +515,11 @@ export async function uploadMemoryPhoto(
     input.file.name
       .split(".")
       .pop()
-      ?.toLowerCase() || "jpg";
+      ?.toLowerCase() ||
+    "jpg";
 
-  const photoId = crypto.randomUUID();
+  const photoId =
+    crypto.randomUUID();
 
   const storagePath = [
     input.organisationId,
@@ -411,43 +530,93 @@ export async function uploadMemoryPhoto(
 
   const { error: uploadError } =
     await supabase.storage
-      .from(MEMORY_PHOTO_BUCKET)
-      .upload(storagePath, input.file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+      .from(
+        MEMORY_PHOTO_BUCKET,
+      )
+      .upload(
+        storagePath,
+        input.file,
+        {
+          cacheControl:
+            "3600",
+
+          upsert:
+            false,
+        },
+      );
 
   if (uploadError) {
-    throw new Error(uploadError.message);
+    throw new Error(
+      uploadError.message,
+    );
   }
 
-  const { data, error } = await supabase
+  const {
+    data,
+    error,
+  } = await supabase
     .from("memory_photos")
     .insert({
-      memory_id: input.memoryId,
-      storage_path: storagePath,
+      memory_id:
+        input.memoryId,
 
-      caption: optionalText(input.caption),
+      storage_path:
+        storagePath,
+
+      caption:
+        optionalText(
+          input.caption,
+        ),
 
       display_order:
         input.displayOrder ?? 0,
 
-      created_by: user.id,
+      created_by:
+        user.id,
 
-      family_visible: true,
+      family_visible:
+        true,
     })
-    .select("*")
-    .single();
+    .select("*");
 
   if (error) {
     await supabase.storage
-      .from(MEMORY_PHOTO_BUCKET)
-      .remove([storagePath]);
+      .from(
+        MEMORY_PHOTO_BUCKET,
+      )
+      .remove([
+        storagePath,
+      ]);
 
-    throw new Error(error.message);
+    throw new Error(
+      error.message,
+    );
   }
 
-  return data as MemoryPhotoRecord;
+  if (
+    !data ||
+    data.length === 0
+  ) {
+    await supabase.storage
+      .from(
+        MEMORY_PHOTO_BUCKET,
+      )
+      .remove([
+        storagePath,
+      ]);
+
+    throw new Error(
+      "The photograph uploaded successfully, but its memory record could not be saved.",
+    );
+  }
+
+  if (data.length > 1) {
+    throw new Error(
+      "The photograph insert unexpectedly returned more than one record.",
+    );
+  }
+
+  return data[0] as MemoryPhotoRecord;
 }
 
 export async function removeMemoryPhoto(
@@ -455,78 +624,117 @@ export async function removeMemoryPhoto(
 ): Promise<void> {
   const { error: storageError } =
     await supabase.storage
-      .from(MEMORY_PHOTO_BUCKET)
-      .remove([photo.storage_path]);
+      .from(
+        MEMORY_PHOTO_BUCKET,
+      )
+      .remove([
+        photo.storage_path,
+      ]);
 
   if (storageError) {
-    throw new Error(storageError.message);
+    throw new Error(
+      storageError.message,
+    );
   }
 
-  const { error } = await supabase
-    .from("memory_photos")
-    .delete()
-    .eq("id", photo.id);
+  const { error } =
+    await supabase
+      .from(
+        "memory_photos",
+      )
+      .delete()
+      .eq(
+        "id",
+        photo.id,
+      );
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      error.message,
+    );
   }
 }
 
 export async function setMemoryFamilyAccess(
   input: SetMemoryFamilyAccessInput,
 ): Promise<void> {
-  const { error } = await supabase
-    .from("memories")
-    .update({
-      family_visible: input.familyVisible,
+  const { error } =
+    await supabase
+      .from("memories")
+      .update({
+        family_visible:
+          input.familyVisible,
 
-      family_visibility_note: optionalText(
-        input.note,
-      ),
-    })
-    .eq("id", input.memoryId)
-    .eq("archived", false);
+        family_visibility_note:
+          optionalText(
+            input.note,
+          ),
+      })
+      .eq(
+        "id",
+        input.memoryId,
+      )
+      .eq("archived", false);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      error.message,
+    );
   }
 }
 
 export async function setMemoryPhotoFamilyAccess(
   input: SetMemoryPhotoFamilyAccessInput,
 ): Promise<void> {
-  const { error } = await supabase
-    .from("memory_photos")
-    .update({
-      family_visible: input.familyVisible,
+  const { error } =
+    await supabase
+      .from(
+        "memory_photos",
+      )
+      .update({
+        family_visible:
+          input.familyVisible,
 
-      family_visibility_note: optionalText(
-        input.note,
-      ),
-    })
-    .eq("id", input.photoId);
+        family_visibility_note:
+          optionalText(
+            input.note,
+          ),
+      })
+      .eq(
+        "id",
+        input.photoId,
+      );
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      error.message,
+    );
   }
 }
 
 export async function archiveMemory(
   memoryId: string,
 ): Promise<void> {
-  const cleanMemoryId = requiredText(
-    memoryId,
-    "Memory ID",
-  );
+  const cleanMemoryId =
+    requiredText(
+      memoryId,
+      "Memory ID",
+    );
 
-  const { error } = await supabase
-    .from("memories")
-    .update({
-      archived: true,
-    })
-    .eq("id", cleanMemoryId);
+  const { error } =
+    await supabase
+      .from("memories")
+      .update({
+        archived: true,
+      })
+      .eq(
+        "id",
+        cleanMemoryId,
+      );
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      error.message,
+    );
   }
 }

@@ -30,79 +30,159 @@ export default function Home() {
     setLoggingIn(true);
 
     try {
-      const { error } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-
-      if (error) {
-        alert(error.message);
-        return;
-      }
+      // -----------------------------------------
+      // Authenticate with Supabase
+      // -----------------------------------------
 
       const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+        data: signInData,
+        error: signInError,
+      } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (userError || !user) {
-        alert(
-          userError?.message ||
-            "Unable to load your account."
-        );
+      if (signInError) {
+        alert(signInError.message);
         return;
       }
 
-      const { data: profile, error: profileError } =
-        await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
+      const user = signInData.user;
 
-      if (profileError || !profile?.role) {
-        alert(
-          profileError?.message ||
-            "Unable to load your user profile."
+      if (!user) {
+        alert("Unable to load your account.");
+        return;
+      }
+
+      // -----------------------------------------
+      // 1. Check whether this is a Family account
+      // -----------------------------------------
+
+      const {
+        data: familyRows,
+        error: familyError,
+      } = await supabase
+        .from("family_users")
+        .select(`
+          id,
+          auth_user_id,
+          service_user_id,
+          is_active
+        `)
+        .eq("auth_user_id", user.id)
+        .eq("is_active", true)
+        .limit(1);
+
+      if (familyError) {
+        console.error(
+          "Unable to resolve Family access:",
+          familyError,
         );
+
+        alert(familyError.message);
         return;
       }
 
       if (
-        profile.role === "castodia_owner" ||
-        profile.role === "castodia_admin"
+        familyRows &&
+        familyRows.length > 0
       ) {
-        router.replace("/platform/dashboard");
+        router.replace("/family");
         router.refresh();
         return;
       }
 
-      if (profile.role === "manager") {
-        router.replace("/manager/dashboard");
-        router.refresh();
+      // -----------------------------------------
+      // 2. Otherwise resolve professional access
+      // -----------------------------------------
+
+      const {
+        data: profileRows,
+        error: profileError,
+      } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .limit(1);
+
+      if (profileError) {
+        console.error(
+          "Unable to resolve professional profile:",
+          profileError,
+        );
+
+        alert(profileError.message);
         return;
       }
 
-      if (profile.role === "support") {
-        router.replace("/support/dashboard");
-        router.refresh();
+      const profile =
+        profileRows?.[0] ?? null;
+
+      if (!profile?.role) {
+        await supabase.auth.signOut();
+
+        alert(
+          "Your account does not have active Castodia access.",
+        );
+
         return;
       }
 
-      alert("No valid portal role was found for this user.");
+      // -----------------------------------------
+      // 3. Route professional user by actual role
+      // -----------------------------------------
+
+      switch (profile.role) {
+        case "castodia_owner":
+        case "castodia_admin":
+          router.replace("/platform/dashboard");
+          router.refresh();
+          return;
+
+        case "manager":
+          router.replace("/manager/dashboard");
+          router.refresh();
+          return;
+
+        case "support":
+          router.replace("/support/dashboard");
+          router.refresh();
+          return;
+
+        default:
+          await supabase.auth.signOut();
+
+          alert(
+            "No valid Castodia portal role was found for this account.",
+          );
+
+          return;
+      }
+    } catch (error) {
+      console.error(
+        "Login failed:",
+        error,
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign in.",
+      );
     } finally {
       setLoggingIn(false);
     }
   }
 
   async function handleForgotPassword() {
-    const trimmedEmail = email.trim();
+    const trimmedEmail =
+      email.trim().toLowerCase();
 
     if (!trimmedEmail) {
       alert(
-        "Enter your email address before requesting a password reset."
+        "Enter your email address before requesting a password reset.",
       );
+
       return;
     }
 
@@ -118,7 +198,7 @@ export default function Home() {
           trimmedEmail,
           {
             redirectTo: `${window.location.origin}/reset-password`,
-          }
+          },
         );
 
       if (error) {
@@ -127,7 +207,18 @@ export default function Home() {
       }
 
       alert(
-        "A password reset email has been sent. Please check your inbox."
+        "A password reset email has been sent. Please check your inbox.",
+      );
+    } catch (error) {
+      console.error(
+        "Password reset failed:",
+        error,
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to send the password reset email.",
       );
     } finally {
       setSendingReset(false);
@@ -160,10 +251,13 @@ export default function Home() {
             aria-hidden="true"
           >
             <div className="absolute left-[18%] top-[34%] h-px w-[48%] rotate-12 bg-white" />
+
             <div className="absolute left-[38%] top-[47%] h-px w-[42%] -rotate-12 bg-white" />
 
             <div className="absolute left-[17%] top-[33%] h-3 w-3 rounded-full bg-white" />
+
             <div className="absolute left-[52%] top-[42%] h-3 w-3 rounded-full bg-white" />
+
             <div className="absolute left-[76%] top-[37%] h-3 w-3 rounded-full bg-white" />
           </div>
 
@@ -199,6 +293,7 @@ export default function Home() {
                   className="h-5 w-5 shrink-0 text-cyan-200"
                   aria-hidden="true"
                 />
+
                 Role-based access
               </div>
 
@@ -207,6 +302,7 @@ export default function Home() {
                   className="h-5 w-5 shrink-0 text-cyan-200"
                   aria-hidden="true"
                 />
+
                 Secure cloud platform
               </div>
 
@@ -215,6 +311,7 @@ export default function Home() {
                   className="h-5 w-5 shrink-0 text-cyan-200"
                   aria-hidden="true"
                 />
+
                 Complete audit trails
               </div>
 
@@ -223,6 +320,7 @@ export default function Home() {
                   className="h-5 w-5 shrink-0 text-cyan-200"
                   aria-hidden="true"
                 />
+
                 Built for social care
               </div>
             </div>
@@ -322,7 +420,10 @@ export default function Home() {
                     onClick={() =>
                       void handleForgotPassword()
                     }
-                    disabled={sendingReset || loggingIn}
+                    disabled={
+                      sendingReset ||
+                      loggingIn
+                    }
                     className="w-full text-center text-sm font-semibold text-teal-700 transition hover:text-teal-900 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {sendingReset
