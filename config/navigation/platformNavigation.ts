@@ -23,6 +23,11 @@ export const platformNavigation: AppShellLink[] = [
     icon: "admin-users",
   },
   {
+        label: "Demonstration",
+    href: "/platform/demo-engine",
+    icon: "settings",
+  },
+  {
     label: "Settings",
     href: "/platform/settings",
     icon: "settings",

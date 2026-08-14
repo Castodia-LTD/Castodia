@@ -4,6 +4,11 @@ import { runDemoEngine } from "@/lib/demo-engine/api";
 import { DEMO_ORGANISATION_ID } from "@/lib/demo-engine/config";
 import { createClient } from "@/lib/supabase/server";
 
+const ALLOWED_ROLES = [
+  "owner",
+  "admin",
+];
+
 export async function POST() {
   try {
     const supabase = await createClient();
@@ -37,14 +42,21 @@ export async function POST() {
       .single();
 
     if (profileError) {
-      throw new Error(profileError.message);
+      throw new Error(
+        profileError.message,
+      );
     }
 
-    if (profile?.role !== "manager") {
+    if (
+      !profile?.role ||
+      !ALLOWED_ROLES.includes(
+        profile.role,
+      )
+    ) {
       return NextResponse.json(
         {
           error:
-            "Only managers can run the Demo Engine.",
+            "Only Castodia owners or administrators can run the Demo Engine.",
         },
         {
           status: 403,
@@ -67,7 +79,8 @@ export async function POST() {
       );
     }
 
-    const result = await runDemoEngine();
+    const result =
+      await runDemoEngine();
 
     return NextResponse.json({
       success: true,
