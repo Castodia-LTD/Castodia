@@ -90,7 +90,9 @@ function chooseWeightedScenario(
     }
   }
 
-  return eligible[eligible.length - 1] ?? null;
+  return eligible[
+    eligible.length - 1
+  ] ?? null;
 }
 
 function createRandomEventTime(
@@ -127,12 +129,22 @@ function createRandomEventTime(
       break;
   }
 
-  const eventTime = new Date(day);
+  const eventTime =
+    new Date(day);
 
   eventTime.setHours(
-    randomBetween(startHour, endHour),
-    randomBetween(0, 59),
-    0,
+    randomBetween(
+      startHour,
+      endHour,
+    ),
+    randomBetween(
+      0,
+      59,
+    ),
+    randomBetween(
+      0,
+      59,
+    ),
     0,
   );
 
@@ -146,21 +158,38 @@ function buildScenarioEntry(
   staffUserId: string,
   runId: string,
 ): DemoTimelineEntryInsert {
-  const context: DemoScenarioContext = {
-    serviceUserId: serviceUser.id,
-    firstName: getFirstName(serviceUser),
-    fullName: getFullName(serviceUser),
-    eventTime,
-  };
+  const context:
+    DemoScenarioContext = {
+      serviceUserId:
+        serviceUser.id,
+
+      firstName:
+        getFirstName(
+          serviceUser,
+        ),
+
+      fullName:
+        getFullName(
+          serviceUser,
+        ),
+
+      eventTime,
+    };
 
   return {
-    service_user_id: serviceUser.id,
-    created_by: staffUserId,
+    service_user_id:
+      serviceUser.id,
 
-    entry_type: scenario.entryType,
+    created_by:
+      staffUserId,
+
+    entry_type:
+      scenario.entryType,
 
     content:
-      scenario.generateContent(context),
+      scenario.generateContent(
+        context,
+      ),
 
     event_time:
       eventTime.toISOString(),
@@ -194,29 +223,41 @@ async function loadDemoServiceUsers() {
     DEMO_ORGANISATION_ID,
   );
 
-  const supabase = createAdminClient();
+  const supabase =
+    createAdminClient();
 
-  const { data, error } =
-    await supabase
-      .from("service_users")
-      .select(`
-        id,
-        first_name,
-        surname,
-        organisation_id,
-        is_active
-      `)
-      .eq(
-        "organisation_id",
-        DEMO_ORGANISATION_ID,
-      )
-      .eq("is_active", true)
-      .order("first_name", {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("service_users")
+    .select(`
+      id,
+      first_name,
+      surname,
+      organisation_id,
+      is_active
+    `)
+    .eq(
+      "organisation_id",
+      DEMO_ORGANISATION_ID,
+    )
+    .eq(
+      "is_active",
+      true,
+    )
+    .order(
+      "first_name",
+      {
         ascending: true,
-      })
-      .order("surname", {
+      },
+    )
+    .order(
+      "surname",
+      {
         ascending: true,
-      });
+      },
+    );
 
   if (error) {
     throw new Error(
@@ -224,10 +265,12 @@ async function loadDemoServiceUsers() {
     );
   }
 
-  const serviceUsers =
-    (data ?? []) as DemoServiceUser[];
+  const serviceUsers = (data ?? []) as DemoServiceUser[];
 
-  for (const serviceUser of serviceUsers) {
+  for (
+    const serviceUser
+    of serviceUsers
+  ) {
     if (
       serviceUser.organisation_id !==
       DEMO_ORGANISATION_ID
@@ -246,24 +289,30 @@ async function loadDemoStaffUserIds() {
     DEMO_ORGANISATION_ID,
   );
 
-  const supabase = createAdminClient();
+  const supabase =
+    createAdminClient();
 
-  const { data, error } =
-    await supabase
-      .from("profiles")
-      .select(`
-        id,
-        role,
-        organisation_id
-      `)
-      .eq(
-        "organisation_id",
-        DEMO_ORGANISATION_ID,
-      )
-      .in("role", [
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("profiles")
+    .select(`
+      id,
+      role,
+      organisation_id
+    `)
+    .eq(
+      "organisation_id",
+      DEMO_ORGANISATION_ID,
+    )
+    .in(
+      "role",
+      [
         "support",
         "manager",
-      ]);
+      ],
+    );
 
   if (error) {
     throw new Error(
@@ -271,9 +320,13 @@ async function loadDemoStaffUserIds() {
     );
   }
 
-  const rows = data ?? [];
+  const rows =
+    data ?? [];
 
-  for (const row of rows) {
+  for (
+    const row
+    of rows
+  ) {
     if (
       row.organisation_id !==
       DEMO_ORGANISATION_ID
@@ -295,7 +348,9 @@ async function loadDemoStaffUserIds() {
 function chooseStaffUserId(
   staffUserIds: string[],
 ) {
-  if (staffUserIds.length === 0) {
+  if (
+    staffUserIds.length === 0
+  ) {
     throw new Error(
       "No demo staff accounts are available to create timeline entries.",
     );
@@ -312,7 +367,8 @@ function chooseStaffUserId(
 function getGenerationDays() {
   const days: Date[] = [];
 
-  const today = new Date();
+  const today =
+    new Date();
 
   for (
     let index =
@@ -320,10 +376,12 @@ function getGenerationDays() {
     index >= 0;
     index -= 1
   ) {
-    const date = new Date(today);
+    const date =
+      new Date(today);
 
     date.setDate(
-      today.getDate() - index,
+      today.getDate() -
+        index,
     );
 
     date.setHours(
@@ -341,24 +399,31 @@ function getGenerationDays() {
 
 function getEntriesPerDay() {
   return randomBetween(
-    4,
-    7,
+    30,
+    40,
   );
 }
 
-function chooseTimeWindow(): DemoTimeWindow {
+function chooseTimeWindow():
+  DemoTimeWindow {
   const roll =
     Math.random();
 
-  if (roll < 0.12) {
+  if (
+    roll < 0.08
+  ) {
     return "overnight";
   }
 
-  if (roll < 0.4) {
+  if (
+    roll < 0.38
+  ) {
     return "morning";
   }
 
-  if (roll < 0.72) {
+  if (
+    roll < 0.72
+  ) {
     return "afternoon";
   }
 
@@ -374,17 +439,22 @@ function createEntriesForDay(
   const entries:
     DemoTimelineEntryInsert[] = [];
 
-  const usedScenarioIds =
-    new Set<string>();
+  const usedEventTimes =
+    new Set<number>();
 
   const targetCount =
     getEntriesPerDay();
 
   let attempts = 0;
 
+  const maxAttempts =
+    targetCount * 10;
+
   while (
-    entries.length < targetCount &&
-    attempts < 50
+    entries.length <
+      targetCount &&
+    attempts <
+      maxAttempts
   ) {
     attempts += 1;
 
@@ -394,11 +464,6 @@ function createEntriesForDay(
     const eligible =
       getEligibleScenarios(
         window,
-      ).filter(
-        (scenario) =>
-          !usedScenarioIds.has(
-            scenario.id,
-          ),
       );
 
     const scenario =
@@ -410,12 +475,40 @@ function createEntriesForDay(
       continue;
     }
 
-    const eventTime =
+    let eventTime =
       createRandomEventTime(
         day,
         scenario.timeWindow ??
           window,
       );
+
+    let timeCollisionAttempts =
+      0;
+
+    while (
+      usedEventTimes.has(
+        eventTime.getTime(),
+      ) &&
+      timeCollisionAttempts <
+        10
+    ) {
+      eventTime =
+        createRandomEventTime(
+          day,
+          scenario.timeWindow ??
+            window,
+        );
+
+      timeCollisionAttempts += 1;
+    }
+
+    if (
+      usedEventTimes.has(
+        eventTime.getTime(),
+      )
+    ) {
+      continue;
+    }
 
     if (
       eventTime.getTime() >
@@ -423,10 +516,6 @@ function createEntriesForDay(
     ) {
       continue;
     }
-
-    usedScenarioIds.add(
-      scenario.id,
-    );
 
     const staffUserId =
       chooseStaffUserId(
@@ -442,7 +531,21 @@ function createEntriesForDay(
         runId,
       ),
     );
+
+    usedEventTimes.add(
+      eventTime.getTime(),
+    );
   }
+
+  entries.sort(
+    (a, b) =>
+      new Date(
+        a.event_time,
+      ).getTime() -
+      new Date(
+        b.event_time,
+      ).getTime(),
+  );
 
   return entries;
 }
@@ -461,10 +564,11 @@ export async function generateDemoTimelineEntries(): Promise<GenerateTimelineRes
   const [
     serviceUsers,
     staffUserIds,
-  ] = await Promise.all([
-    loadDemoServiceUsers(),
-    loadDemoStaffUserIds(),
-  ]);
+  ] =
+    await Promise.all([
+      loadDemoServiceUsers(),
+      loadDemoStaffUserIds(),
+    ]);
 
   if (
     serviceUsers.length === 0
@@ -489,7 +593,8 @@ export async function generateDemoTimelineEntries(): Promise<GenerateTimelineRes
     DemoTimelineEntryInsert[] = [];
 
   for (
-    const serviceUser of serviceUsers
+    const serviceUser
+    of serviceUsers
   ) {
     if (
       serviceUser.organisation_id !==
@@ -500,19 +605,41 @@ export async function generateDemoTimelineEntries(): Promise<GenerateTimelineRes
       );
     }
 
-    for (const day of days) {
-      rows.push(
-        ...createEntriesForDay(
+    for (
+      const day
+      of days
+    ) {
+      const dayEntries =
+        createEntriesForDay(
           serviceUser,
           day,
           staffUserIds,
           runId,
-        ),
+        );
+
+      rows.push(
+        ...dayEntries,
       );
+
+      if (
+        dayEntries.length <
+        30
+      ) {
+        warnings.push(
+          `Only ${dayEntries.length} timeline entries were generated for ${getFullName(
+            serviceUser,
+          )} on ${day.toISOString().slice(
+            0,
+            10,
+          )}.`,
+        );
+      }
     }
   }
 
-  if (rows.length === 0) {
+  if (
+    rows.length === 0
+  ) {
     warnings.push(
       "No timeline entries were generated.",
     );
@@ -534,13 +661,16 @@ export async function generateDemoTimelineEntries(): Promise<GenerateTimelineRes
       ).getTime(),
   );
 
-  const supabase = createAdminClient();
+  const supabase =
+    createAdminClient();
 
   const {
     data,
     error,
   } = await supabase
-    .from("timeline_entries")
+    .from(
+      "timeline_entries",
+    )
     .insert(rows)
     .select("id");
 
