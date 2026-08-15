@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { runDemoEngine } from "@/lib/demo-engine/api";
-import { DEMO_ORGANISATION_ID } from "@/lib/demo-engine/config";
 import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_ROLES = [
-  "owner",
-  "admin",
+  "castodia_owner",
+  "castodia_admin",
 ];
 
 export async function POST() {
@@ -34,10 +33,7 @@ export async function POST() {
       error: profileError,
     } = await supabase
       .from("profiles")
-      .select(`
-        role,
-        organisation_id
-      `)
+      .select("role")
       .eq("id", user.id)
       .single();
 
@@ -64,21 +60,6 @@ export async function POST() {
       );
     }
 
-    if (
-      profile.organisation_id !==
-      DEMO_ORGANISATION_ID
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "The Demo Engine is only available inside the configured demo organisation.",
-        },
-        {
-          status: 403,
-        },
-      );
-    }
-
     const result =
       await runDemoEngine();
 
@@ -94,6 +75,7 @@ export async function POST() {
 
     return NextResponse.json(
       {
+        success: false,
         error:
           error instanceof Error
             ? error.message

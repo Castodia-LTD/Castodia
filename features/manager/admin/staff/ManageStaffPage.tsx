@@ -34,6 +34,8 @@ type StaffWithPhoto = Staff & {
   photo_url?: string | null;
 };
 
+type StaffRole = "manager" | "support";
+
 type CreateStaffResponse = {
   error?: string;
   staffId?: string;
@@ -52,29 +54,63 @@ const allowedPhotoTypes = [
 ];
 
 export default function StaffAdminPage() {
-  const photoInputRef = useRef<HTMLInputElement | null>(null);
-  const editPhotoInputRef = useRef<HTMLInputElement | null>(null);
+  const photoInputRef =
+    useRef<HTMLInputElement | null>(null);
 
-  const [staff, setStaff] = useState<StaffWithPhoto[]>([]);
+  const editPhotoInputRef =
+    useRef<HTMLInputElement | null>(null);
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"manager" | "staff">("staff");
+  const [staff, setStaff] =
+    useState<StaffWithPhoto[]>([]);
 
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [fullName, setFullName] =
+    useState("");
 
-  const [loadingStaff, setLoadingStaff] = useState(true);
-  const [creatingStaff, setCreatingStaff] = useState(false);
+  const [email, setEmail] =
+    useState("");
 
-  const [editingStaff, setEditingStaff] = useState<StaffWithPhoto | null>(null);
-  const [editFullName, setEditFullName] = useState("");
-  const [editRole, setEditRole] = useState<"manager" | "staff">("staff");
-  const [editPhoto, setEditPhoto] = useState<File | null>(null);
-  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
-  const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
-  const [savingStaff, setSavingStaff] = useState(false);
+  const [password, setPassword] =
+    useState("");
+
+  const [role, setRole] =
+    useState<StaffRole>("support");
+
+  const [photo, setPhoto] =
+    useState<File | null>(null);
+
+  const [photoPreview, setPhotoPreview] =
+    useState<string | null>(null);
+
+  const [loadingStaff, setLoadingStaff] =
+    useState(true);
+
+  const [creatingStaff, setCreatingStaff] =
+    useState(false);
+
+  const [editingStaff, setEditingStaff] =
+    useState<StaffWithPhoto | null>(null);
+
+  const [editFullName, setEditFullName] =
+    useState("");
+
+  const [editRole, setEditRole] =
+    useState<StaffRole>("support");
+
+  const [editPhoto, setEditPhoto] =
+    useState<File | null>(null);
+
+  const [
+    editPhotoPreview,
+    setEditPhotoPreview,
+  ] = useState<string | null>(null);
+
+  const [
+    removeExistingPhoto,
+    setRemoveExistingPhoto,
+  ] = useState(false);
+
+  const [savingStaff, setSavingStaff] =
+    useState(false);
 
   const initials = useMemo(() => {
     if (!fullName.trim()) {
@@ -85,7 +121,9 @@ export default function StaffAdminPage() {
       .trim()
       .split(/\s+/)
       .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
+      .map((part) =>
+        part.charAt(0).toUpperCase(),
+      )
       .join("");
   }, [fullName]);
 
@@ -101,52 +139,79 @@ export default function StaffAdminPage() {
         return;
       }
 
-      const { data: currentProfile, error: profileError } =
-        await supabase
-          .from("profiles")
-          .select("organisation_id")
-          .eq("id", user.id)
-          .single();
+      const {
+        data: currentProfile,
+        error: profileError,
+      } = await supabase
+        .from("profiles")
+        .select("organisation_id")
+        .eq("id", user.id)
+        .single();
 
-      if (profileError || !currentProfile?.organisation_id) {
+      if (
+        profileError ||
+        !currentProfile?.organisation_id
+      ) {
         alert("Organisation not found.");
         return;
       }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, photo_url")
-        .eq("organisation_id", currentProfile.organisation_id)
-        .order("full_name");
+      const { data, error } =
+        await supabase
+          .from("profiles")
+          .select(
+            "id, full_name, role, photo_url",
+          )
+          .eq(
+            "organisation_id",
+            currentProfile.organisation_id,
+          )
+          .order("full_name");
 
       if (error) {
         alert(error.message);
         return;
       }
 
-      setStaff((data ?? []) as StaffWithPhoto[]);
+      setStaff(
+        (data ?? []) as StaffWithPhoto[],
+      );
     } finally {
       setLoadingStaff(false);
     }
   }
 
   function handlePhotoChange(
-    event: ChangeEvent<HTMLInputElement>
+    event: ChangeEvent<HTMLInputElement>,
   ) {
-    const selectedPhoto = event.target.files?.[0];
+    const selectedPhoto =
+      event.target.files?.[0];
 
     if (!selectedPhoto) {
       return;
     }
 
-    if (!allowedPhotoTypes.includes(selectedPhoto.type)) {
-      alert("Please choose a JPG, PNG or WebP image.");
+    if (
+      !allowedPhotoTypes.includes(
+        selectedPhoto.type,
+      )
+    ) {
+      alert(
+        "Please choose a JPG, PNG or WebP image.",
+      );
+
       event.target.value = "";
       return;
     }
 
-    if (selectedPhoto.size > MAX_PHOTO_SIZE) {
-      alert("The profile photo must be smaller than 5 MB.");
+    if (
+      selectedPhoto.size >
+      MAX_PHOTO_SIZE
+    ) {
+      alert(
+        "The profile photo must be smaller than 5 MB.",
+      );
+
       event.target.value = "";
       return;
     }
@@ -156,7 +221,10 @@ export default function StaffAdminPage() {
     }
 
     setPhoto(selectedPhoto);
-    setPhotoPreview(URL.createObjectURL(selectedPhoto));
+
+    setPhotoPreview(
+      URL.createObjectURL(selectedPhoto),
+    );
   }
 
   function removePhoto() {
@@ -176,79 +244,159 @@ export default function StaffAdminPage() {
     setFullName("");
     setEmail("");
     setPassword("");
-    setRole("staff");
+    setRole("support");
     removePhoto();
   }
 
-  function startEditing(person: StaffWithPhoto) {
-    if (editPhotoPreview) URL.revokeObjectURL(editPhotoPreview);
+  function startEditing(
+    person: StaffWithPhoto,
+  ) {
+    if (editPhotoPreview) {
+      URL.revokeObjectURL(
+        editPhotoPreview,
+      );
+    }
+
     setEditingStaff(person);
-    setEditFullName(person.full_name);
-    setEditRole(person.role === "manager" ? "manager" : "staff");
+
+    setEditFullName(
+      person.full_name,
+    );
+
+    setEditRole(
+      person.role === "manager"
+        ? "manager"
+        : "support",
+    );
+
     setEditPhoto(null);
     setEditPhotoPreview(null);
     setRemoveExistingPhoto(false);
-    if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+
+    if (editPhotoInputRef.current) {
+      editPhotoInputRef.current.value =
+        "";
+    }
   }
 
   function cancelEditing() {
-    if (editPhotoPreview) URL.revokeObjectURL(editPhotoPreview);
+    if (editPhotoPreview) {
+      URL.revokeObjectURL(
+        editPhotoPreview,
+      );
+    }
+
     setEditingStaff(null);
     setEditFullName("");
-    setEditRole("staff");
+    setEditRole("support");
     setEditPhoto(null);
     setEditPhotoPreview(null);
     setRemoveExistingPhoto(false);
-    if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+
+    if (editPhotoInputRef.current) {
+      editPhotoInputRef.current.value =
+        "";
+    }
   }
 
-  function handleEditPhotoChange(event: ChangeEvent<HTMLInputElement>) {
-    const selectedPhoto = event.target.files?.[0];
-    if (!selectedPhoto) return;
-    if (!allowedPhotoTypes.includes(selectedPhoto.type)) {
-      alert("Please choose a JPG, PNG or WebP image.");
+  function handleEditPhotoChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const selectedPhoto =
+      event.target.files?.[0];
+
+    if (!selectedPhoto) {
+      return;
+    }
+
+    if (
+      !allowedPhotoTypes.includes(
+        selectedPhoto.type,
+      )
+    ) {
+      alert(
+        "Please choose a JPG, PNG or WebP image.",
+      );
+
       event.target.value = "";
       return;
     }
-    if (selectedPhoto.size > MAX_PHOTO_SIZE) {
-      alert("The profile photo must be smaller than 5 MB.");
+
+    if (
+      selectedPhoto.size >
+      MAX_PHOTO_SIZE
+    ) {
+      alert(
+        "The profile photo must be smaller than 5 MB.",
+      );
+
       event.target.value = "";
       return;
     }
-    if (editPhotoPreview) URL.revokeObjectURL(editPhotoPreview);
+
+    if (editPhotoPreview) {
+      URL.revokeObjectURL(
+        editPhotoPreview,
+      );
+    }
+
     setEditPhoto(selectedPhoto);
-    setEditPhotoPreview(URL.createObjectURL(selectedPhoto));
+
+    setEditPhotoPreview(
+      URL.createObjectURL(selectedPhoto),
+    );
+
     setRemoveExistingPhoto(false);
   }
 
   function removeEditPhoto() {
-    if (editPhotoPreview) URL.revokeObjectURL(editPhotoPreview);
+    if (editPhotoPreview) {
+      URL.revokeObjectURL(
+        editPhotoPreview,
+      );
+    }
+
     setEditPhoto(null);
     setEditPhotoPreview(null);
     setRemoveExistingPhoto(true);
-    if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+
+    if (editPhotoInputRef.current) {
+      editPhotoInputRef.current.value =
+        "";
+    }
   }
 
   async function uploadStaffPhoto(
     staffId: string,
-    selectedPhoto: File
+    selectedPhoto: File,
   ) {
     const extension =
-      selectedPhoto.name.split(".").pop()?.toLowerCase() ||
-      "jpg";
+      selectedPhoto.name
+        .split(".")
+        .pop()
+        ?.toLowerCase() || "jpg";
 
-    const filePath = `${staffId}/profile-${Date.now()}.${extension}`;
+    const filePath =
+      `${staffId}/profile-${Date.now()}.${extension}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("staff-photos")
-      .upload(filePath, selectedPhoto, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: selectedPhoto.type,
-      });
+    const { error: uploadError } =
+      await supabase.storage
+        .from("staff-photos")
+        .upload(
+          filePath,
+          selectedPhoto,
+          {
+            cacheControl: "3600",
+            upsert: true,
+            contentType:
+              selectedPhoto.type,
+          },
+        );
 
     if (uploadError) {
-      throw new Error(uploadError.message);
+      throw new Error(
+        uploadError.message,
+      );
     }
 
     const {
@@ -257,7 +405,9 @@ export default function StaffAdminPage() {
       .from("staff-photos")
       .getPublicUrl(filePath);
 
-    const { error: profileUpdateError } = await supabase
+    const {
+      error: profileUpdateError,
+    } = await supabase
       .from("profiles")
       .update({
         photo_url: publicUrl,
@@ -269,67 +419,125 @@ export default function StaffAdminPage() {
         .from("staff-photos")
         .remove([filePath]);
 
-      throw new Error(profileUpdateError.message);
+      throw new Error(
+        profileUpdateError.message,
+      );
     }
 
     return publicUrl;
   }
 
   async function saveStaffChanges() {
-    if (!editingStaff) return;
-    const trimmedName = editFullName.trim();
-    if (!trimmedName) {
-      alert("Enter the staff member's name.");
+    if (!editingStaff) {
       return;
     }
+
+    const trimmedName =
+      editFullName.trim();
+
+    if (!trimmedName) {
+      alert(
+        "Enter the staff member's name.",
+      );
+
+      return;
+    }
+
     setSavingStaff(true);
+
     try {
       const updates: {
         full_name: string;
-        role: "manager" | "staff";
+        role: StaffRole;
         photo_url?: null;
       } = {
         full_name: trimmedName,
         role: editRole,
       };
-      if (removeExistingPhoto && !editPhoto) updates.photo_url = null;
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("id", editingStaff.id);
-      if (updateError) throw new Error(updateError.message);
-      if (editPhoto) await uploadStaffPhoto(editingStaff.id, editPhoto);
+
+      if (
+        removeExistingPhoto &&
+        !editPhoto
+      ) {
+        updates.photo_url = null;
+      }
+
+      const { error: updateError } =
+        await supabase
+          .from("profiles")
+          .update(updates)
+          .eq(
+            "id",
+            editingStaff.id,
+          );
+
+      if (updateError) {
+        throw new Error(
+          updateError.message,
+        );
+      }
+
+      if (editPhoto) {
+        await uploadStaffPhoto(
+          editingStaff.id,
+          editPhoto,
+        );
+      }
+
       await loadStaff();
+
       cancelEditing();
-      alert("Staff profile updated successfully.");
+
+      alert(
+        "Staff profile updated successfully.",
+      );
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to update the staff profile.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to update the staff profile.",
+      );
     } finally {
       setSavingStaff(false);
     }
   }
 
   async function createStaff() {
-    const trimmedName = fullName.trim();
-    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName =
+      fullName.trim();
+
+    const trimmedEmail =
+      email.trim().toLowerCase();
 
     if (!trimmedName) {
-      alert("Enter the staff member's name.");
+      alert(
+        "Enter the staff member's name.",
+      );
+
       return;
     }
 
     if (!trimmedEmail) {
-      alert("Enter the staff member's email address.");
+      alert(
+        "Enter the staff member's email address.",
+      );
+
       return;
     }
 
     if (!password) {
-      alert("Enter a temporary password.");
+      alert(
+        "Enter a temporary password.",
+      );
+
       return;
     }
 
     if (password.length < 8) {
-      alert("The temporary password must contain at least 8 characters.");
+      alert(
+        "The temporary password must contain at least 8 characters.",
+      );
+
       return;
     }
 
@@ -341,29 +549,40 @@ export default function StaffAdminPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        alert("You must be logged in.");
+        alert(
+          "You must be logged in.",
+        );
+
         return;
       }
 
-      const response = await fetch("/api/admin/create-staff", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "/api/admin/create-staff",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            fullName: trimmedName,
+            email: trimmedEmail,
+            password,
+            role,
+            creatorId: user.id,
+          }),
         },
-        body: JSON.stringify({
-          fullName: trimmedName,
-          email: trimmedEmail,
-          password,
-          role,
-          creatorId: user.id,
-        }),
-      });
+      );
 
       const result =
         (await response.json()) as CreateStaffResponse;
 
       if (!response.ok) {
-        alert(result.error || "Unable to create staff member.");
+        alert(
+          result.error ||
+            "Unable to create staff member.",
+        );
+
         return;
       }
 
@@ -372,9 +591,15 @@ export default function StaffAdminPage() {
         result.userId ??
         result.user?.id;
 
-      if (photo && createdStaffId) {
+      if (
+        photo &&
+        createdStaffId
+      ) {
         try {
-          await uploadStaffPhoto(createdStaffId, photo);
+          await uploadStaffPhoto(
+            createdStaffId,
+            photo,
+          );
         } catch (photoError) {
           const message =
             photoError instanceof Error
@@ -382,19 +607,25 @@ export default function StaffAdminPage() {
               : "The profile photo could not be uploaded.";
 
           alert(
-            `The staff account was created, but the photo could not be saved: ${message}`
+            `The staff account was created, but the photo could not be saved: ${message}`,
           );
         }
-      } else if (photo && !createdStaffId) {
+      } else if (
+        photo &&
+        !createdStaffId
+      ) {
         alert(
-          "The staff account was created, but the API did not return the staff ID, so the photo could not be attached."
+          "The staff account was created, but the API did not return the staff ID, so the photo could not be attached.",
         );
       }
 
       resetForm();
+
       await loadStaff();
 
-      alert("Staff member created successfully.");
+      alert(
+        "Staff member created successfully.",
+      );
     } catch (error) {
       const message =
         error instanceof Error
@@ -414,35 +645,40 @@ export default function StaffAdminPage() {
   useEffect(() => {
     return () => {
       if (photoPreview) {
-        URL.revokeObjectURL(photoPreview);
+        URL.revokeObjectURL(
+          photoPreview,
+        );
       }
     };
   }, [photoPreview]);
 
   useEffect(() => {
     return () => {
-      if (editPhotoPreview) URL.revokeObjectURL(editPhotoPreview);
+      if (editPhotoPreview) {
+        URL.revokeObjectURL(
+          editPhotoPreview,
+        );
+      }
     };
   }, [editPhotoPreview]);
 
-return (
-  <CastodiaPageShell
-    title="Staff Management"
-    description="Create staff logins and manage staff access across your organisation."
-    maxWidth="wide"
-  >
-    <div className="mb-6">
-      <Link
-        href="/manager/staff"
-        className="inline-flex items-center gap-2 text-sm font-medium text-cyan-700 transition hover:text-cyan-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Staff Hub
-      </Link>
-    </div>
+  return (
+    <CastodiaPageShell
+      title="Staff Management"
+      description="Create staff logins and manage staff access across your organisation."
+      maxWidth="wide"
+    >
+      <div className="mb-6">
+        <Link
+          href="/manager/staff"
+          className="inline-flex items-center gap-2 text-sm font-medium text-cyan-700 transition hover:text-cyan-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Staff Hub
+        </Link>
+      </div>
 
-    <CastodiaSection title="Create Staff Login">
-      ...
+      <CastodiaSection title="Create Staff Login">
         <CastodiaCard>
           <div className="grid gap-6 xl:grid-cols-[160px_minmax(0,1fr)]">
             <div>
@@ -477,13 +713,17 @@ return (
                   ref={photoInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
-                  onChange={handlePhotoChange}
+                  onChange={
+                    handlePhotoChange
+                  }
                   className="sr-only"
                 />
 
                 <button
                   type="button"
-                  onClick={() => photoInputRef.current?.click()}
+                  onClick={() =>
+                    photoInputRef.current?.click()
+                  }
                   className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                 >
                   <Camera
@@ -491,7 +731,9 @@ return (
                     aria-hidden="true"
                   />
 
-                  {photo ? "Change photo" : "Choose photo"}
+                  {photo
+                    ? "Change photo"
+                    : "Choose photo"}
                 </button>
 
                 {photo ? (
@@ -530,7 +772,9 @@ return (
                   id="staff-name"
                   value={fullName}
                   onChange={(event) =>
-                    setFullName(event.target.value)
+                    setFullName(
+                      event.target.value,
+                    )
                   }
                   placeholder="Staff name"
                   autoComplete="name"
@@ -551,7 +795,9 @@ return (
                   id="staff-email"
                   value={email}
                   onChange={(event) =>
-                    setEmail(event.target.value)
+                    setEmail(
+                      event.target.value,
+                    )
                   }
                   placeholder="Email address"
                   type="email"
@@ -573,7 +819,9 @@ return (
                   id="staff-password"
                   value={password}
                   onChange={(event) =>
-                    setPassword(event.target.value)
+                    setPassword(
+                      event.target.value,
+                    )
                   }
                   placeholder="Temporary password"
                   type="password"
@@ -596,13 +844,14 @@ return (
                   value={role}
                   onChange={(event) =>
                     setRole(
-                      event.target.value as "manager" | "staff"
+                      event.target
+                        .value as StaffRole,
                     )
                   }
                   disabled={creatingStaff}
                   className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
                 >
-                  <option value="staff">
+                  <option value="support">
                     Support Worker
                   </option>
 
@@ -641,7 +890,9 @@ return (
           loadingStaff
             ? "Loading staff members..."
             : `${staff.length} staff member${
-                staff.length === 1 ? "" : "s"
+                staff.length === 1
+                  ? ""
+                  : "s"
               } found`
         }
       >
@@ -665,14 +916,17 @@ return (
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {staff.map((person) => {
-              const personInitials = person.full_name
-                .trim()
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((part) =>
-                  part.charAt(0).toUpperCase()
-                )
-                .join("");
+              const personInitials =
+                person.full_name
+                  .trim()
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((part) =>
+                    part
+                      .charAt(0)
+                      .toUpperCase(),
+                  )
+                  .join("");
 
               return (
                 <CastodiaCard
@@ -683,7 +937,9 @@ return (
                     <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-gradient-to-br from-blue-500 to-teal-400">
                       {person.photo_url ? (
                         <Image
-                          src={person.photo_url}
+                          src={
+                            person.photo_url
+                          }
                           alt={`${person.full_name}'s profile`}
                           fill
                           sizes="56px"
@@ -691,7 +947,8 @@ return (
                         />
                       ) : (
                         <span className="text-sm font-bold text-white">
-                          {personInitials || "?"}
+                          {personInitials ||
+                            "?"}
                         </span>
                       )}
                     </div>
@@ -700,11 +957,14 @@ return (
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h2 className="truncate text-lg font-semibold text-slate-950">
-                            {person.full_name}
+                            {
+                              person.full_name
+                            }
                           </h2>
 
                           <p className="mt-1 text-sm text-slate-500">
-                            {person.role === "manager"
+                            {person.role ===
+                            "manager"
                               ? "Manager"
                               : "Support Worker"}
                           </p>
@@ -712,23 +972,32 @@ return (
 
                         <CastodiaBadge
                           variant={
-                            person.role === "manager"
+                            person.role ===
+                            "manager"
                               ? "info"
                               : "neutral"
                           }
                         >
-                          {person.role === "manager"
+                          {person.role ===
+                          "manager"
                             ? "Manager"
-                            : "Staff"}
+                            : "Support"}
                         </CastodiaBadge>
 
                         <button
                           type="button"
-                          onClick={() => startEditing(person)}
+                          onClick={() =>
+                            startEditing(
+                              person,
+                            )
+                          }
                           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                           aria-label={`Edit ${person.full_name}`}
                         >
-                          <Pencil className="h-4 w-4" aria-hidden="true" />
+                          <Pencil
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                          />
                         </button>
                       </div>
                     </div>
@@ -740,7 +1009,6 @@ return (
         )}
       </CastodiaSection>
 
-
       {editingStaff ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
@@ -748,19 +1016,32 @@ return (
           aria-modal="true"
           aria-labelledby="edit-staff-title"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !savingStaff) cancelEditing();
+            if (
+              event.target ===
+                event.currentTarget &&
+              !savingStaff
+            ) {
+              cancelEditing();
+            }
           }}
         >
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="edit-staff-title" className="text-xl font-semibold text-slate-950">
+                <h2
+                  id="edit-staff-title"
+                  className="text-xl font-semibold text-slate-950"
+                >
                   Edit staff profile
                 </h2>
+
                 <p className="mt-1 text-sm text-slate-500">
-                  Update the staff member's name, role or profile photo.
+                  Update the staff
+                  member&apos;s name,
+                  role or profile photo.
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={cancelEditing}
@@ -768,33 +1049,104 @@ return (
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50"
                 aria-label="Close edit profile"
               >
-                <X className="h-5 w-5" aria-hidden="true" />
+                <X
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                />
               </button>
             </div>
 
             <div className="mt-6 grid gap-6 md:grid-cols-[150px_minmax(0,1fr)]">
               <div>
-                <p className="text-sm font-medium text-slate-700">Profile photo</p>
+                <p className="text-sm font-medium text-slate-700">
+                  Profile photo
+                </p>
+
                 <div className="mt-2 flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
                   <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-gradient-to-br from-blue-500 to-teal-400">
                     {editPhotoPreview ? (
-                      <Image src={editPhotoPreview} alt="New staff profile" fill sizes="96px" unoptimized className="object-cover" />
-                    ) : editingStaff.photo_url && !removeExistingPhoto ? (
-                      <Image src={editingStaff.photo_url} alt={`${editingStaff.full_name}'s profile`} fill sizes="96px" className="object-cover" />
+                      <Image
+                        src={
+                          editPhotoPreview
+                        }
+                        alt="New staff profile"
+                        fill
+                        sizes="96px"
+                        unoptimized
+                        className="object-cover"
+                      />
+                    ) : editingStaff.photo_url &&
+                      !removeExistingPhoto ? (
+                      <Image
+                        src={
+                          editingStaff.photo_url
+                        }
+                        alt={`${editingStaff.full_name}'s profile`}
+                        fill
+                        sizes="96px"
+                        className="object-cover"
+                      />
                     ) : (
                       <span className="text-xl font-bold text-white">
-                        {editFullName.trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("") || "?"}
+                        {editFullName
+                          .trim()
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((part) =>
+                            part
+                              .charAt(0)
+                              .toUpperCase(),
+                          )
+                          .join("") || "?"}
                       </span>
                     )}
                   </div>
-                  <input ref={editPhotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleEditPhotoChange} disabled={savingStaff} className="sr-only" />
-                  <button type="button" onClick={() => editPhotoInputRef.current?.click()} disabled={savingStaff} className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50">
-                    <Camera className="h-4 w-4" aria-hidden="true" />
+
+                  <input
+                    ref={
+                      editPhotoInputRef
+                    }
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={
+                      handleEditPhotoChange
+                    }
+                    disabled={savingStaff}
+                    className="sr-only"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      editPhotoInputRef.current?.click()
+                    }
+                    disabled={savingStaff}
+                    className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    <Camera
+                      className="h-4 w-4"
+                      aria-hidden="true"
+                    />
                     Choose photo
                   </button>
-                  {(editPhotoPreview || (editingStaff.photo_url && !removeExistingPhoto)) ? (
-                    <button type="button" onClick={removeEditPhoto} disabled={savingStaff} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50">
-                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+
+                  {editPhotoPreview ||
+                  (editingStaff.photo_url &&
+                    !removeExistingPhoto) ? (
+                    <button
+                      type="button"
+                      onClick={
+                        removeEditPhoto
+                      }
+                      disabled={
+                        savingStaff
+                      }
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                    >
+                      <X
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      />
                       Remove
                     </button>
                   ) : null}
@@ -803,23 +1155,93 @@ return (
 
               <div className="grid content-start gap-4">
                 <div>
-                  <label htmlFor="edit-staff-name" className="text-sm font-medium text-slate-700">Staff name</label>
-                  <input id="edit-staff-name" value={editFullName} onChange={(event) => setEditFullName(event.target.value)} disabled={savingStaff} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100" />
+                  <label
+                    htmlFor="edit-staff-name"
+                    className="text-sm font-medium text-slate-700"
+                  >
+                    Staff name
+                  </label>
+
+                  <input
+                    id="edit-staff-name"
+                    value={editFullName}
+                    onChange={(event) =>
+                      setEditFullName(
+                        event.target.value,
+                      )
+                    }
+                    disabled={savingStaff}
+                    className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100"
+                  />
                 </div>
+
                 <div>
-                  <label htmlFor="edit-staff-role" className="text-sm font-medium text-slate-700">Role</label>
-                  <select id="edit-staff-role" value={editRole} onChange={(event) => setEditRole(event.target.value as "manager" | "staff")} disabled={savingStaff} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100">
-                    <option value="staff">Support Worker</option>
-                    <option value="manager">Manager</option>
+                  <label
+                    htmlFor="edit-staff-role"
+                    className="text-sm font-medium text-slate-700"
+                  >
+                    Role
+                  </label>
+
+                  <select
+                    id="edit-staff-role"
+                    value={editRole}
+                    onChange={(event) =>
+                      setEditRole(
+                        event.target
+                          .value as StaffRole,
+                      )
+                    }
+                    disabled={savingStaff}
+                    className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100"
+                  >
+                    <option value="support">
+                      Support Worker
+                    </option>
+
+                    <option value="manager">
+                      Manager
+                    </option>
                   </select>
                 </div>
+
                 <div className="mt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                  <CastodiaButton variant="secondary" onClick={cancelEditing} disabled={savingStaff}>Cancel</CastodiaButton>
-                  <CastodiaButton onClick={saveStaffChanges} disabled={savingStaff}>
+                  <CastodiaButton
+                    variant="secondary"
+                    onClick={
+                      cancelEditing
+                    }
+                    disabled={
+                      savingStaff
+                    }
+                  >
+                    Cancel
+                  </CastodiaButton>
+
+                  <CastodiaButton
+                    onClick={
+                      saveStaffChanges
+                    }
+                    disabled={
+                      savingStaff
+                    }
+                  >
                     {savingStaff ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Saving changes...</>
+                      <>
+                        <Loader2
+                          className="h-4 w-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                        Saving changes...
+                      </>
                     ) : (
-                      <><Save className="h-4 w-4" aria-hidden="true" />Save changes</>
+                      <>
+                        <Save
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
+                        Save changes
+                      </>
                     )}
                   </CastodiaButton>
                 </div>
