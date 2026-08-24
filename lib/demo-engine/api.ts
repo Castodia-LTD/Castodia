@@ -19,7 +19,9 @@ import type {
   DemoEngineRunResult,
 } from "./types";
 
-export async function runDemoEngine(): Promise<DemoEngineRunResult> {
+export async function runDemoEngine(
+  generationWindowDays: number,
+): Promise<DemoEngineRunResult> {
   assertDemoOrganisation(
     DEMO_ORGANISATION_ID,
   );
@@ -33,7 +35,9 @@ export async function runDemoEngine(): Promise<DemoEngineRunResult> {
     await cleanupDemoTimelineEntries();
 
   const timelineResult =
-    await generateDemoTimelineEntries();
+  await generateDemoTimelineEntries(
+    generationWindowDays,
+  );
 
   warnings.push(
     ...timelineResult.warnings,

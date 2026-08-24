@@ -26,6 +26,11 @@ export default function DemoEngineRunner() {
   const [error, setError] =
     useState<string | null>(null);
 
+  const [
+    generationWindowDays,
+    setGenerationWindowDays,
+  ] = useState(3);
+
   async function handleRun() {
     setRunning(true);
     setError(null);
@@ -36,6 +41,13 @@ export default function DemoEngineRunner() {
         "/api/platform/demo-engine",
         {
           method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            generationWindowDays,
+          }),
         },
       );
 
@@ -90,6 +102,45 @@ export default function DemoEngineRunner() {
                 timeline entries before creating a fresh
                 dataset.
               </p>
+            </div>
+
+            <div className="mt-5 max-w-xs">
+              <label
+                htmlFor="generationWindowDays"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Days of timeline history
+              </label>
+
+              <p className="mt-1 text-sm leading-5 text-slate-500">
+                Generate entries backwards from today.
+              </p>
+
+              <input
+                id="generationWindowDays"
+                type="number"
+                min={1}
+                max={400}
+                value={generationWindowDays}
+                disabled={running}
+                onChange={(event) => {
+                  const value =
+                    Number(
+                      event.target.value,
+                    );
+
+                  if (
+                    Number.isInteger(value) &&
+                    value >= 1 &&
+                    value <= 400
+                  ) {
+                    setGenerationWindowDays(
+                      value,
+                    );
+                  }
+                }}
+                className="mt-3 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
             </div>
 
             <button

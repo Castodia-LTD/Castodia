@@ -1,21 +1,23 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-const allowedRoles = [
+const allowedStaffRoles = [
   "manager",
   "support",
-  "castodia_admin",
-  "castodia_owner",
 ] as const;
 
-type AllowedRole = (typeof allowedRoles)[number];
+type AllowedStaffRole =
+  (typeof allowedStaffRoles)[number];
 
-function normaliseRole(value: unknown): AllowedRole | null {
+function normaliseRole(
+  value: unknown,
+): AllowedStaffRole | null {
   if (typeof value !== "string") {
     return null;
   }
 
-  const normalised = value.trim().toLowerCase();
+  const normalised =
+    value.trim().toLowerCase();
 
   if (
     normalised === "support worker" ||
@@ -25,102 +27,286 @@ function normaliseRole(value: unknown): AllowedRole | null {
     return "support";
   }
 
-  if (allowedRoles.includes(normalised as AllowedRole)) {
-    return normalised as AllowedRole;
+  if (
+    allowedStaffRoles.includes(
+      normalised as AllowedStaffRole,
+    )
+  ) {
+    return normalised as AllowedStaffRole;
   }
 
   return null;
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+) {
   try {
     const {
       fullName,
       email,
       password,
       role: submittedRole,
-      creatorId,
     } = await request.json();
 
-    const role = normaliseRole(submittedRole);
+    const role =
+      normaliseRole(submittedRole);
 
-    if (!fullName || !email || !password || !role || !creatorId) {
+    if (
+  typeof fullName !== "string" ||
+  !fullName.trim() ||
+  typeof email !== "string" ||
+  !email.trim() ||
+  typeof password !== "string" ||
+  password.length < 8 ||
+  !role
+) {
+  return NextResponse.json(
+    {
+      error:
+        "Missing required fields, invalid role, or password is too short.",
+    },
+    { status: 400 },
+  );
+}
+    /*
+     * ------------------------------------------------
+     * 1. Read and verify the caller's access token
+     * ------------------------------------------------
+     */
+
+    const authHeader =
+      request.headers.get(
+        "authorization",
+      );
+
+    if (
+      !authHeader?.startsWith(
+        "Bearer ",
+      )
+    ) {
       return NextResponse.json(
         {
           error:
-            "Missing required fields or an invalid role was supplied.",
+            "Authentication required.",
         },
-        { status: 400 }
+        { status: 401 },
       );
     }
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
+    const accessToken =
+      authHeader.slice(7).trim();
+
+    const supabaseAuth =
+      createClient(
+        process.env
+          .NEXT_PUBLIC_SUPABASE_URL!,
+        process.env
+          .NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
         },
-      }
-    );
-
-    const { data: creatorProfile, error: creatorError } =
-      await supabaseAdmin
-        .from("profiles")
-        .select("organisation_id")
-        .eq("id", creatorId)
-        .single();
-
-    if (creatorError || !creatorProfile?.organisation_id) {
-      return NextResponse.json(
-        { error: "Creator organisation not found." },
-        { status: 400 }
       );
-    }
 
-    const { data: userData, error: userError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: email.trim().toLowerCase(),
-        password,
-        email_confirm: true,
-      });
+    const {
+      data: {
+        user: authenticatedUser,
+      },
+      error: authError,
+    } =
+      await supabaseAuth.auth.getUser(
+        accessToken,
+      );
 
-    if (userError || !userData.user) {
+    if (
+      authError ||
+      !authenticatedUser
+    ) {
       return NextResponse.json(
         {
           error:
-            userError?.message || "The staff account could not be created.",
+            "Invalid or expired session.",
         },
-        { status: 400 }
+        { status: 401 },
       );
     }
 
-    const user = userData.user;
+    /*
+     * ------------------------------------------------
+     * 2. Create privileged server client
+     * ------------------------------------------------
+     */
 
-    const { error: profileError } = await supabaseAdmin
+    const supabaseAdmin =
+      createClient(
+        process.env
+          .NEXT_PUBLIC_SUPABASE_URL!,
+        process.env
+          .SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        },
+      );
+
+    /*
+     * ------------------------------------------------
+     * 3. Look up the VERIFIED caller
+     * ------------------------------------------------
+     */
+
+    const {
+      data: creatorProfile,
+      error: creatorError,
+    } = await supabaseAdmin
+      .from("profiles")
+      .select(
+        `
+          id,
+          organisation_id,
+          role
+        `,
+      )
+      .eq(
+        "id",
+        authenticatedUser.id,
+      )
+      .single();
+
+    if (
+      creatorError ||
+      !creatorProfile
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Authenticated profile not found.",
+        },
+        { status: 403 },
+      );
+    }
+
+    /*
+     * ------------------------------------------------
+     * 4. Only managers may create organisation staff
+     * ------------------------------------------------
+     */
+
+    if (
+      creatorProfile.role !==
+      "manager"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "You do not have permission to create staff accounts.",
+        },
+        { status: 403 },
+      );
+    }
+
+    if (
+      !creatorProfile.organisation_id
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Your account is not attached to an organisation.",
+        },
+        { status: 403 },
+      );
+    }
+
+    /*
+     * ------------------------------------------------
+     * 5. Create Auth account
+     * ------------------------------------------------
+     */
+
+    const {
+      data: userData,
+      error: userError,
+    } =
+      await supabaseAdmin.auth.admin.createUser(
+        {
+          email: email
+            .trim()
+            .toLowerCase(),
+          password,
+          email_confirm: true,
+        },
+      );
+
+    if (
+      userError ||
+      !userData.user
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            userError?.message ||
+            "The staff account could not be created.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const newUser =
+      userData.user;
+
+    /*
+     * ------------------------------------------------
+     * 6. Create profile using organisation from
+     *    VERIFIED manager profile
+     * ------------------------------------------------
+     */
+
+    const {
+      error: profileError,
+    } = await supabaseAdmin
       .from("profiles")
       .insert({
-        id: user.id,
-        full_name: fullName.trim(),
+        id: newUser.id,
+        full_name:
+          fullName.trim(),
         role,
-        organisation_id: creatorProfile.organisation_id,
+        organisation_id:
+          creatorProfile.organisation_id,
       });
 
+    /*
+     * Roll back the Auth user if profile creation fails.
+     */
+
     if (profileError) {
-      await supabaseAdmin.auth.admin.deleteUser(user.id);
+      await supabaseAdmin.auth.admin.deleteUser(
+        newUser.id,
+      );
 
       return NextResponse.json(
-        { error: profileError.message },
-        { status: 400 }
+        {
+          error:
+            profileError.message,
+        },
+        { status: 400 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      userId: user.id,
+      userId: newUser.id,
     });
   } catch (error) {
+    console.error(
+      "Create staff error:",
+      error,
+    );
+
     return NextResponse.json(
       {
         error:
@@ -128,7 +314,7 @@ export async function POST(request: Request) {
             ? error.message
             : "Unable to create the staff account.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

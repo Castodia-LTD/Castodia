@@ -8,7 +8,9 @@ const ALLOWED_ROLES = [
   "castodia_admin",
 ];
 
-export async function POST() {
+export async function POST(
+  request: Request,
+) {
   try {
     const supabase = await createClient();
 
@@ -59,9 +61,28 @@ export async function POST() {
         },
       );
     }
+const body =
+  await request.json().catch(
+    () => ({}),
+  );
 
+const requestedDays =
+  Number(
+    body.generationWindowDays,
+  );
+
+const generationWindowDays =
+  Number.isInteger(
+    requestedDays,
+  ) &&
+  requestedDays >= 1 &&
+  requestedDays <= 400
+    ? requestedDays
+    : 3;
     const result =
-      await runDemoEngine();
+  await runDemoEngine(
+    generationWindowDays,
+  );
 
     return NextResponse.json({
       success: true,

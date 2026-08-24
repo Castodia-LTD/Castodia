@@ -2,7 +2,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 import {
   DEMO_ENGINE_VERSION,
-  DEMO_GENERATION_WINDOW_DAYS,
   DEMO_ORGANISATION_ID,
   assertDemoOrganisation,
 } from "./config";
@@ -364,7 +363,9 @@ function chooseStaffUserId(
   ];
 }
 
-function getGenerationDays() {
+function getGenerationDays(
+  generationWindowDays: number,
+) {
   const days: Date[] = [];
 
   const today =
@@ -372,7 +373,7 @@ function getGenerationDays() {
 
   for (
     let index =
-      DEMO_GENERATION_WINDOW_DAYS - 1;
+      generationWindowDays - 1;
     index >= 0;
     index -= 1
   ) {
@@ -550,7 +551,9 @@ function createEntriesForDay(
   return entries;
 }
 
-export async function generateDemoTimelineEntries(): Promise<GenerateTimelineResult> {
+export async function generateDemoTimelineEntries(
+  generationWindowDays: number,
+): Promise<GenerateTimelineResult> {
   assertDemoOrganisation(
     DEMO_ORGANISATION_ID,
   );
@@ -587,7 +590,9 @@ export async function generateDemoTimelineEntries(): Promise<GenerateTimelineRes
   }
 
   const days =
-    getGenerationDays();
+  getGenerationDays(
+    generationWindowDays,
+  );
 
   const rows:
     DemoTimelineEntryInsert[] = [];
