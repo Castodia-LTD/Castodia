@@ -2,7 +2,7 @@ import type { AppShellLink } from "@/components/layout";
 
 export const managerNavigation: AppShellLink[] = [
   {
-    href: "/manager/dashboard",
+    href: "/manager/insights",
     label: "Insights",
     icon: "home",
     exact: true,

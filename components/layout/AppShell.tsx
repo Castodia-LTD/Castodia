@@ -1,30 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  ArrowLeftRight,
-  BarChart3,
-  Bug,
-  Building2,
-  CalendarDays,
-  ChevronRight,
-  ClipboardList,
-  Clock3,
-  HeartPulse,
-  Home,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  MoreHorizontal,
-  Pill,
-  Settings,
-  UserRound,
-  Users,
-  X,
-  type LucideIcon,
-} from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -32,74 +7,45 @@ import {
   type ReactNode,
 } from "react";
 
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
+
 import { ReportIssueModal } from "@/components/issues/ReportIssueModal";
+import { IOSAppShell } from "@/components/native/ios/IOSAppShell";
+
+import { useNativePlatform } from "@/hooks/native/useNativePlatform";
 import { supabase } from "@/lib/supabase";
 
-export type AppShellIcon =
-  | "dashboard"
-  | "home"
-  | "calendar"
-  | "service-users"
-  | "staff"
-  | "emar"
-  | "safeguarding"
-  | "compliance"
-  | "settings"
-  | "timelines"
-  | "handovers"
-  | "organisations"
-  | "issues"
-  | "admin-users";
+import { AppShellDesktopSidebar } from "./app-shell/AppShellDesktopSidebar";
+import { AppShellMobile } from "./app-shell/AppShellMobile";
 
-export type AppShellLink = {
-  href: string;
-  label: string;
-  icon: AppShellIcon;
-  exact?: boolean;
-};
+import {
+  getRoleLabel,
+  portalHomes,
+  portalNames,
+  SIDEBAR_STORAGE_KEY,
+} from "./app-shell/appShellConfig";
 
-export type AppShellPortal =
-  | "manager"
-  | "support"
-  | "platform";
+import { useAppShellProfile } from "./app-shell/useAppShellProfile";
+
+import type {
+  AppShellLink,
+  AppShellPortal,
+} from "./app-shell/appShellTypes";
+
+export type {
+  AppShellIcon,
+  AppShellLink,
+  AppShellPortal,
+} from "./app-shell/appShellTypes";
 
 type AppShellProps = {
   children: ReactNode;
   links?: AppShellLink[];
   portal?: AppShellPortal;
 };
-
-const iconMap: Record<AppShellIcon, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  home: Home,
-  calendar: CalendarDays,
-  "service-users": UserRound,
-  staff: Users,
-  emar: Pill,
-  safeguarding: HeartPulse,
-  compliance: BarChart3,
-  settings: Settings,
-  timelines: Clock3,
-  handovers: ClipboardList,
-  organisations: Building2,
-  issues: Bug,
-  "admin-users": Users,
-};
-
-const portalNames: Record<AppShellPortal, string> = {
-  manager: "Manager",
-  support: "Support Worker",
-  platform: "Platform Admin",
-};
-
-const portalHomes: Record<AppShellPortal, string> = {
-  manager: "/manager/dashboard",
-  support: "/support/dashboard",
-  platform: "/platform/dashboard",
-};
-
-const MOBILE_NAV_LIMIT = 4;
-const SIDEBAR_STORAGE_KEY = "castodia-sidebar-collapsed";
 
 export function AppShell({
   children,
@@ -109,93 +55,62 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [role, setRole] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [reportIssueOpen, setReportIssueOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const [sidebarCollapsed, setSidebarCollapsed] =
-    useState(false);
-
-  const [sidebarPreferenceLoaded, setSidebarPreferenceLoaded] =
-    useState(false);
+  const {
+    isIOS,
+    platformLoaded,
+  } = useNativePlatform();
 
   const isAuthenticatedShell =
-    Boolean(portal) && links.length > 0;
+    Boolean(portal) &&
+    links.length > 0;
+
+  const {
+    name,
+    role,
+    photoUrl,
+  } = useAppShellProfile(
+    isAuthenticatedShell,
+  );
+
+  const [
+    loggingOut,
+    setLoggingOut,
+  ] = useState(false);
+
+  const [
+    reportIssueOpen,
+    setReportIssueOpen,
+  ] = useState(false);
+
+  const [
+    mobileMenuOpen,
+    setMobileMenuOpen,
+  ] = useState(false);
+
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    sidebarPreferenceLoaded,
+    setSidebarPreferenceLoaded,
+  ] = useState(false);
 
   useEffect(() => {
-    const savedValue = window.localStorage.getItem(
-      SIDEBAR_STORAGE_KEY,
+    const savedValue =
+      window.localStorage.getItem(
+        SIDEBAR_STORAGE_KEY,
+      );
+
+    setSidebarCollapsed(
+      savedValue === "true",
     );
 
-    setSidebarCollapsed(savedValue === "true");
-    setSidebarPreferenceLoaded(true);
+    setSidebarPreferenceLoaded(
+      true,
+    );
   }, []);
-
-  useEffect(() => {
-    if (!isAuthenticatedShell) {
-      setName("");
-      setRole(null);
-      setPhotoUrl(null);
-      return;
-    }
-
-    let mounted = true;
-
-    async function loadProfile() {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (!mounted) {
-        return;
-      }
-
-      if (userError) {
-        console.error(
-          "Unable to load authenticated user:",
-          userError.message,
-        );
-        return;
-      }
-
-      if (!user) {
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("full_name, role, photo_url")
-        .eq("id", user.id)
-        .single();
-
-      if (!mounted) {
-        return;
-      }
-
-      if (error) {
-        console.error(
-          "Unable to load profile:",
-          error.message,
-        );
-        return;
-      }
-
-      setName(profile?.full_name ?? "");
-      setRole(profile?.role ?? null);
-      setPhotoUrl(profile?.photo_url ?? null);
-    }
-
-    void loadProfile();
-
-    return () => {
-      mounted = false;
-    };
-  }, [isAuthenticatedShell]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -206,64 +121,81 @@ export function AppShell({
       return;
     }
 
-    const previousOverflow = document.body.style.overflow;
+    const previousOverflow =
+      document.body.style.overflow;
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+      "hidden";
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow =
+        previousOverflow;
     };
   }, [mobileMenuOpen]);
 
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
+  const greeting =
+    useMemo(() => {
+      const hour =
+        new Date().getHours();
 
-    if (hour < 12) {
-      return "Good morning";
-    }
+      if (hour < 12) {
+        return "Good morning";
+      }
 
-    if (hour < 17) {
-      return "Good afternoon";
-    }
+      if (hour < 17) {
+        return "Good afternoon";
+      }
 
-    return "Good evening";
-  }, []);
+      return "Good evening";
+    }, []);
 
-  const initials = useMemo(() => {
-    if (!name.trim()) {
-      return "?";
-    }
+  const initials =
+    useMemo(() => {
+      if (!name.trim()) {
+        return "?";
+      }
 
-    return name
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("");
-  }, [name]);
+      return name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) =>
+          part
+            .charAt(0)
+            .toUpperCase(),
+        )
+        .join("");
+    }, [name]);
 
-  function isLinkActive(link: AppShellLink) {
+  function isLinkActive(
+    link: AppShellLink,
+  ) {
     if (link.exact) {
       return pathname === link.href;
     }
 
     return (
       pathname === link.href ||
-      pathname.startsWith(`${link.href}/`)
+      pathname.startsWith(
+        `${link.href}/`,
+      )
     );
   }
 
   function toggleSidebar() {
-    setSidebarCollapsed((currentValue) => {
-      const nextValue = !currentValue;
+    setSidebarCollapsed(
+      (currentValue) => {
+        const nextValue =
+          !currentValue;
 
-      window.localStorage.setItem(
-        SIDEBAR_STORAGE_KEY,
-        String(nextValue),
-      );
+        window.localStorage.setItem(
+          SIDEBAR_STORAGE_KEY,
+          String(nextValue),
+        );
 
-      return nextValue;
-    });
+        return nextValue;
+      },
+    );
   }
 
   async function handleLogout() {
@@ -273,7 +205,8 @@ export function AppShell({
 
     setLoggingOut(true);
 
-    const { error } = await supabase.auth.signOut();
+    const { error } =
+      await supabase.auth.signOut();
 
     if (error) {
       console.error(
@@ -286,26 +219,43 @@ export function AppShell({
     }
 
     setMobileMenuOpen(false);
+
     router.replace("/");
     router.refresh();
   }
 
-  function handleOpenIssueModal() {
-    setMobileMenuOpen(false);
-    setReportIssueOpen(true);
+  if (!platformLoaded) {
+    return null;
   }
 
-  const portalHome = portal ? portalHomes[portal] : "/";
-  const portalName = portal ? portalNames[portal] : "";
+  if (!isAuthenticatedShell) {
+    return (
+      <div className="min-h-dvh w-full">
+        {children}
+      </div>
+    );
+  }
+
+  const portalHome =
+    portal
+      ? portalHomes[portal]
+      : "/";
+
+  const portalName =
+    portal
+      ? portalNames[portal]
+      : "";
+
+  const roleLabel =
+    getRoleLabel(role);
 
   const canSwitchPortal =
-    isAuthenticatedShell &&
     portal !== "platform" &&
     role === "manager";
 
   const canReportIssue =
-    isAuthenticatedShell &&
-    (portal === "manager" || portal === "support");
+    portal === "manager" ||
+    portal === "support";
 
   const switchPortalHref =
     portal === "manager"
@@ -322,912 +272,215 @@ export function AppShell({
       ? "Switch to Support"
       : "Return to Manager";
 
-  const mobileLinks = links.slice(0, MOBILE_NAV_LIMIT);
-
-  const hasAdditionalMobileLinks =
-    links.length > MOBILE_NAV_LIMIT;
-
-  const hiddenMobileLinksAreActive = links
-    .slice(MOBILE_NAV_LIMIT)
-    .some(isLinkActive);
+  /*
+   * Native iOS shell
+   *
+   * Dashboard:
+   * - no Back/Home controls
+   *
+   * Subpages:
+   * - Back
+   * - Home → current portal dashboard
+   *
+   * Web navigation is never rendered inside
+   * the native iOS application.
+   */
+  if (isIOS) {
+  const isPortalDashboard =
+    pathname === portalHome;
 
   return (
-    <div className="flex min-h-dvh w-full bg-[#f7f9fb] text-slate-950">
-      {/* Desktop sidebar */}
-      {isAuthenticatedShell ? (
-        <aside
-          className={[
-            "sticky top-0 hidden h-dvh shrink-0 overflow-hidden",
-            "border-r border-slate-200",
-            "bg-gradient-to-b from-[#f8fcfc] via-[#f4fbfb] to-[#eaf7f7]",
-            "transition-[width] duration-300 ease-out",
-            "lg:flex lg:flex-col",
-            sidebarPreferenceLoaded && sidebarCollapsed
-              ? "w-[76px]"
-              : "w-[270px]",
-          ].join(" ")}
-        >
-          <div
-            className={[
-              "shrink-0 pb-3 pt-4",
-              sidebarCollapsed ? "px-2" : "px-4",
-            ].join(" ")}
-          >
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label={
-                sidebarCollapsed
-                  ? "Expand navigation menu"
-                  : "Collapse navigation menu"
-              }
-              aria-expanded={!sidebarCollapsed}
-              title={
-                sidebarCollapsed
-                  ? "Expand navigation"
-                  : "Collapse navigation"
-              }
-              className={[
-                "flex rounded-xl outline-none transition-all duration-200",
-                "hover:bg-white/60",
-                "focus-visible:ring-2 focus-visible:ring-teal-500",
-                sidebarCollapsed
-                  ? "mx-auto h-12 w-12 items-center justify-center p-1"
-                  : "w-full items-center justify-start px-1 py-1",
-              ].join(" ")}
-            >
-              <Image
-                src={
-                  sidebarCollapsed
-                    ? "/castodia-mark.png"
-                    : "/logo.png"
-                }
-                alt=""
-                width={sidebarCollapsed ? 44 : 185}
-                height={sidebarCollapsed ? 44 : 62}
-                priority
-                className={
-                  sidebarCollapsed
-                    ? "h-11 w-11 object-contain"
-                    : "h-auto w-[185px] object-contain"
-                }
-              />
-            </button>
-
-            <div
-              title={
-                sidebarCollapsed
-                  ? `${greeting}, ${name || "Welcome"} — ${portalName}`
-                  : undefined
-              }
-              className={[
-                "mt-4 border border-slate-200 bg-white",
-                "shadow-[0_6px_18px_rgba(15,23,42,0.04)]",
-                "transition-all duration-200",
-                sidebarCollapsed
-                  ? "flex justify-center rounded-2xl px-2 py-3"
-                  : "rounded-[18px] px-3.5 py-3",
-              ].join(" ")}
-            >
-              <div
-                className={[
-                  "flex items-center",
-                  sidebarCollapsed
-                    ? "justify-center"
-                    : "gap-3",
-                ].join(" ")}
-              >
-                <ProfileAvatar
-                  photoUrl={photoUrl}
-                  name={name}
-                  initials={initials}
-                  size="large"
-                />
-
-                {!sidebarCollapsed ? (
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-slate-500">
-                      {greeting}
-                    </p>
-
-                    <p className="mt-0.5 truncate text-base font-semibold leading-tight text-slate-950">
-                      {name || "Welcome"}
-                    </p>
-
-                    <p className="mt-0.5 text-xs font-medium text-teal-600">
-                      {portalName}
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          <nav
-            aria-label="Main navigation"
-            className={[
-              "min-h-0 flex-1 overflow-y-auto pb-3 pt-1",
-              sidebarCollapsed ? "px-2" : "px-4",
-            ].join(" ")}
-          >
-            <div className="space-y-1">
-              {links.map((link) => {
-                const Icon = iconMap[link.icon];
-                const active = isLinkActive(link);
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    aria-current={
-                      active ? "page" : undefined
-                    }
-                    aria-label={
-                      sidebarCollapsed
-                        ? link.label
-                        : undefined
-                    }
-                    title={
-                      sidebarCollapsed
-                        ? link.label
-                        : undefined
-                    }
-                    className={[
-                      "group flex min-h-11 rounded-[16px]",
-                      "text-[15px] font-medium",
-                      "transition-all duration-200",
-                      "focus-visible:outline-none focus-visible:ring-2",
-                      "focus-visible:ring-teal-500 focus-visible:ring-offset-2",
-                      sidebarCollapsed
-                        ? "items-center justify-center px-2"
-                        : "items-center gap-3 px-4",
-                      active
-                        ? [
-                            "bg-gradient-to-r from-[#079c9c] to-[#6ed6ce]",
-                            "text-white",
-                            "shadow-[0_7px_18px_rgba(13,148,136,0.18)]",
-                          ].join(" ")
-                        : [
-                            "text-slate-600",
-                            "hover:bg-white/80",
-                            "hover:text-slate-950",
-                          ].join(" "),
-                    ].join(" ")}
-                  >
-                    <Icon
-                      size={20}
-                      strokeWidth={1.9}
-                      className={[
-                        "shrink-0",
-                        active
-                          ? "text-white"
-                          : "text-slate-500 group-hover:text-slate-700",
-                      ].join(" ")}
-                      aria-hidden="true"
-                    />
-
-                    {!sidebarCollapsed ? (
-                      <span className="min-w-0 truncate">
-                        {link.label}
-                      </span>
-                    ) : null}
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-
-          <div
-            className={[
-              "shrink-0 border-t border-slate-200 bg-white/20 py-3",
-              sidebarCollapsed ? "px-2" : "px-4",
-            ].join(" ")}
-          >
-            <div className="space-y-1.5">
-              {canSwitchPortal ? (
-                <Link
-                  href={switchPortalHref}
-                  aria-label={switchPortalLabel}
-                  title={
-                    sidebarCollapsed
-                      ? switchPortalLabel
-                      : undefined
-                  }
-                  className={[
-                    "flex min-h-10 items-center rounded-xl",
-                    "border border-slate-200 bg-white",
-                    "text-xs font-semibold text-teal-700",
-                    "shadow-sm transition-colors",
-                    "hover:border-teal-200 hover:bg-teal-50",
-                    "focus-visible:outline-none focus-visible:ring-2",
-                    "focus-visible:ring-teal-500",
-                    sidebarCollapsed
-                      ? "justify-center px-2"
-                      : "justify-center px-3 py-2 text-center",
-                  ].join(" ")}
-                >
-                  {sidebarCollapsed ? (
-                    <ArrowLeftRight
-                      size={18}
-                      strokeWidth={1.9}
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    switchPortalLabel
-                  )}
-                </Link>
-              ) : null}
-
-              {canReportIssue ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setReportIssueOpen(true)
-                  }
-                  aria-label="Report an issue"
-                  title={
-                    sidebarCollapsed
-                      ? "Report an issue"
-                      : undefined
-                  }
-                  className={[
-                    "flex min-h-10 w-full items-center",
-                    "rounded-xl border border-teal-200 bg-teal-50",
-                    "text-xs font-semibold text-teal-700",
-                    "transition-colors",
-                    "hover:border-teal-300 hover:bg-teal-100",
-                    "focus-visible:outline-none focus-visible:ring-2",
-                    "focus-visible:ring-teal-500",
-                    sidebarCollapsed
-                      ? "justify-center px-2"
-                      : "justify-center gap-2 px-3 py-2",
-                  ].join(" ")}
-                >
-                  <Bug
-                    size={16}
-                    aria-hidden="true"
-                  />
-
-                  {!sidebarCollapsed ? (
-                    <span>Report an issue</span>
-                  ) : null}
-                </button>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() =>
-                  void handleLogout()
-                }
-                disabled={loggingOut}
-                aria-label={
-                  loggingOut
-                    ? "Logging out"
-                    : "Log out"
-                }
-                title={
-                  sidebarCollapsed
-                    ? loggingOut
-                      ? "Logging out"
-                      : "Log out"
-                    : undefined
-                }
-                className={[
-                  "flex min-h-10 w-full items-center rounded-xl",
-                  "text-sm font-medium text-slate-600",
-                  "transition-colors",
-                  "hover:bg-white hover:text-slate-950",
-                  "focus-visible:outline-none focus-visible:ring-2",
-                  "focus-visible:ring-teal-500",
-                  "disabled:cursor-not-allowed disabled:opacity-60",
-                  sidebarCollapsed
-                    ? "justify-center px-2"
-                    : "gap-3 px-4",
-                ].join(" ")}
-              >
-                <LogOut
-                  size={19}
-                  strokeWidth={1.9}
-                  aria-hidden="true"
-                />
-
-                {!sidebarCollapsed ? (
-                  <span>
-                    {loggingOut
-                      ? "Logging out..."
-                      : "Log out"}
-                  </span>
-                ) : null}
-              </button>
-            </div>
-          </div>
-        </aside>
-      ) : null}
-
-      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
-        {/* Mobile header */}
-        {isAuthenticatedShell ? (
-          <header
-            className={[
-              "sticky top-0 z-40 border-b border-slate-200/80",
-              "bg-white/95 shadow-[0_8px_24px_rgba(15,23,42,0.04)]",
-              "backdrop-blur-xl lg:hidden",
-            ].join(" ")}
-            style={{
-              paddingTop:
-                "env(safe-area-inset-top)",
-            }}
-          >
-            <div className="px-4 pb-3 pt-3 sm:px-5">
-              <div className="flex items-center justify-between gap-3">
-                <Link
-                  href={portalHome}
-                  className="min-w-0 shrink"
-                  aria-label="Castodia home"
-                >
-                  <Image
-                    src="/logo.png"
-                    alt="Castodia"
-                    width={150}
-                    height={50}
-                    priority
-                    className="h-auto w-[136px] object-contain sm:w-[150px]"
-                  />
-                </Link>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  {canSwitchPortal ? (
-                    <Link
-                      href={switchPortalHref}
-                      className={[
-                        "hidden min-h-10 items-center rounded-xl",
-                        "border border-teal-200 bg-teal-50 px-3",
-                        "text-xs font-semibold text-teal-700",
-                        "transition-colors hover:bg-teal-100",
-                        "min-[390px]:inline-flex",
-                      ].join(" ")}
-                    >
-                      {switchPortalShortLabel}
-                    </Link>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMobileMenuOpen(true)
-                    }
-                    aria-label="Open navigation menu"
-                    aria-expanded={mobileMenuOpen}
-                    aria-controls="mobile-app-menu"
-                    className={[
-                      "inline-flex h-11 w-11 items-center justify-center",
-                      "rounded-2xl border border-slate-200 bg-white",
-                      "text-slate-700 shadow-sm",
-                      "transition-colors hover:bg-slate-50",
-                      "focus-visible:outline-none focus-visible:ring-2",
-                      "focus-visible:ring-teal-500",
-                    ].join(" ")}
-                  >
-                    <Menu
-                      size={22}
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                  </button>
-                </div>
-              </div>
-
-              <div
-                className={[
-                  "mt-3 flex items-center justify-between gap-3",
-                  "rounded-[18px] border border-slate-200/80",
-                  "bg-gradient-to-r from-white to-teal-50/60",
-                  "px-3 py-3",
-                ].join(" ")}
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <ProfileAvatar
-                    photoUrl={photoUrl}
-                    name={name}
-                    initials={initials}
-                    size="small"
-                  />
-
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-950">
-                      {greeting}
-                      {name
-                        ? `, ${name.split(/\s+/)[0]}`
-                        : ""}
-                    </p>
-
-                    <p className="mt-0.5 text-xs font-medium text-teal-600">
-                      {portalName} Portal
-                    </p>
-                  </div>
-                </div>
-
-                {canSwitchPortal ? (
-                  <Link
-                    href={switchPortalHref}
-                    aria-label={switchPortalLabel}
-                    className={[
-                      "inline-flex h-9 w-9 shrink-0 items-center justify-center",
-                      "rounded-xl border border-teal-200 bg-white",
-                      "text-teal-700 shadow-sm",
-                      "min-[390px]:hidden",
-                    ].join(" ")}
-                  >
-                    <ChevronRight
-                      size={18}
-                      aria-hidden="true"
-                    />
-                  </Link>
-                ) : null}
-              </div>
-            </div>
-          </header>
-        ) : null}
-
-        <main
-  className={[
-    "min-h-0 min-w-0 flex-1 overflow-x-hidden bg-[#fbfcfd]",
-    isAuthenticatedShell
-      ? [
-          "px-4 sm:px-6 lg:px-8 xl:px-10",
-          "pb-[calc(82px+env(safe-area-inset-bottom))] lg:pb-0",
-        ].join(" ")
-      : "",
-  ].join(" ")}
->
-  {children}
-</main>
-      </div>
-
-      {/* Mobile report issue button */}
-      {canReportIssue ? (
-        <button
-          type="button"
-          onClick={() =>
-            setReportIssueOpen(true)
-          }
-          className={[
-            "fixed right-4 z-30",
-            "inline-flex h-11 items-center gap-2 rounded-full",
-            "bg-gradient-to-r from-[#079c9c] to-[#6ed6ce]",
-            "px-4 text-sm font-semibold text-white",
-            "shadow-[0_10px_25px_rgba(13,148,136,0.25)]",
-            "transition-transform active:scale-[0.98]",
-            "lg:hidden",
-          ].join(" ")}
-          style={{
-            bottom:
-              "calc(76px + env(safe-area-inset-bottom))",
-          }}
-        >
-          <Bug
-            size={17}
-            aria-hidden="true"
-          />
-
-          <span className="hidden min-[390px]:inline">
-            Report issue
-          </span>
-        </button>
-      ) : null}
-
-      {/* Mobile bottom navigation */}
-      {isAuthenticatedShell ? (
-        <nav
-          aria-label="Mobile navigation"
-          className={[
-            "fixed inset-x-0 bottom-0 z-40",
-            "border-t border-slate-200 bg-white/95",
-            "shadow-[0_-8px_24px_rgba(15,23,42,0.06)]",
-            "backdrop-blur-xl lg:hidden",
-          ].join(" ")}
-          style={{
-            paddingBottom:
-              "env(safe-area-inset-bottom)",
-          }}
-        >
-          <div
-            className="grid min-h-[66px]"
-            style={{
-              gridTemplateColumns: `repeat(${
-                mobileLinks.length +
-                (hasAdditionalMobileLinks ? 1 : 0)
-              }, minmax(0, 1fr))`,
-            }}
-          >
-            {mobileLinks.map((link) => {
-              const Icon = iconMap[link.icon];
-              const active =
-                isLinkActive(link);
-
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  aria-current={
-                    active ? "page" : undefined
-                  }
-                  className={[
-                    "relative flex min-w-0 flex-col items-center justify-center",
-                    "gap-1 px-1 py-2 text-[10px] font-semibold",
-                    "transition-colors",
-                    active
-                      ? "text-teal-600"
-                      : "text-slate-400 hover:text-slate-700",
-                  ].join(" ")}
-                >
-                  {active ? (
-                    <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-teal-500" />
-                  ) : null}
-
-                  <Icon
-                    size={20}
-                    strokeWidth={
-                      active ? 2.2 : 1.9
-                    }
-                    className="shrink-0"
-                    aria-hidden="true"
-                  />
-
-                  <span className="max-w-full truncate px-0.5">
-                    {link.label}
-                  </span>
-                </Link>
-              );
-            })}
-
-            {hasAdditionalMobileLinks ? (
-              <button
-                type="button"
-                onClick={() =>
-                  setMobileMenuOpen(true)
-                }
-                aria-label="Open more navigation options"
-                className={[
-                  "relative flex min-w-0 flex-col items-center justify-center",
-                  "gap-1 px-1 py-2 text-[10px] font-semibold",
-                  "transition-colors",
-                  hiddenMobileLinksAreActive ||
-                  mobileMenuOpen
-                    ? "text-teal-600"
-                    : "text-slate-400 hover:text-slate-700",
-                ].join(" ")}
-              >
-                {hiddenMobileLinksAreActive ||
-                mobileMenuOpen ? (
-                  <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-teal-500" />
-                ) : null}
-
-                <MoreHorizontal
-                  size={21}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-
-                <span>More</span>
-              </button>
-            ) : null}
-          </div>
-        </nav>
-      ) : null}
-
-      {/* Mobile drawer */}
-      {isAuthenticatedShell ? (
-        <div
-          className={[
-            "fixed inset-0 z-[70] lg:hidden",
-            mobileMenuOpen
-              ? "pointer-events-auto"
-              : "pointer-events-none",
-          ].join(" ")}
-          aria-hidden={!mobileMenuOpen}
-        >
-          <button
-            type="button"
-            aria-label="Close navigation menu"
-            onClick={() =>
-              setMobileMenuOpen(false)
-            }
-            className={[
-              "absolute inset-0 bg-slate-950/35 backdrop-blur-[2px]",
-              "transition-opacity duration-200",
-              mobileMenuOpen
-                ? "opacity-100"
-                : "opacity-0",
-            ].join(" ")}
-          />
-
-          <aside
-            id="mobile-app-menu"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Navigation menu"
-            className={[
-              "absolute bottom-0 right-0 top-0",
-              "flex w-[min(88vw,380px)] flex-col",
-              "border-l border-slate-200",
-              "bg-gradient-to-b from-[#f8fcfc] via-[#f4fbfb] to-[#eaf7f7]",
-              "shadow-[-20px_0_45px_rgba(15,23,42,0.16)]",
-              "transition-transform duration-300 ease-out",
-              mobileMenuOpen
-                ? "translate-x-0"
-                : "translate-x-full",
-            ].join(" ")}
-            style={{
-              paddingTop:
-                "env(safe-area-inset-top)",
-              paddingBottom:
-                "env(safe-area-inset-bottom)",
-            }}
-          >
-            <div className="shrink-0 border-b border-slate-200/80 px-5 pb-4 pt-4">
-              <div className="flex items-center justify-between gap-4">
-                <Image
-                  src="/logo.png"
-                  alt="Castodia"
-                  width={145}
-                  height={48}
-                  className="h-auto w-[140px] object-contain"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMobileMenuOpen(false)
-                  }
-                  aria-label="Close navigation menu"
-                  className={[
-                    "inline-flex h-10 w-10 items-center justify-center",
-                    "rounded-xl border border-slate-200 bg-white",
-                    "text-slate-600 shadow-sm",
-                  ].join(" ")}
-                >
-                  <X
-                    size={21}
-                    aria-hidden="true"
-                  />
-                </button>
-              </div>
-
-              <div
-                className={[
-                  "mt-4 flex items-center gap-3 rounded-[18px]",
-                  "border border-slate-200 bg-white px-3.5 py-3",
-                  "shadow-[0_6px_18px_rgba(15,23,42,0.04)]",
-                ].join(" ")}
-              >
-                <ProfileAvatar
-                  photoUrl={photoUrl}
-                  name={name}
-                  initials={initials}
-                  size="large"
-                />
-
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-slate-500">
-                    {greeting}
-                  </p>
-
-                  <p className="truncate text-base font-semibold text-slate-950">
-                    {name || "Welcome"}
-                  </p>
-
-                  <p className="mt-0.5 text-xs font-medium text-teal-600">
-                    {portalName} Portal
-                  </p>
-                </div>
-              </div>
-
-              {canSwitchPortal ? (
-                <Link
-                  href={switchPortalHref}
-                  className={[
-                    "mt-3 flex min-h-10 items-center justify-between",
-                    "rounded-xl border border-teal-200 bg-teal-50",
-                    "px-4 text-xs font-semibold text-teal-700",
-                  ].join(" ")}
-                >
-                  <span>{switchPortalLabel}</span>
-
-                  <ChevronRight
-                    size={17}
-                    aria-hidden="true"
-                  />
-                </Link>
-              ) : null}
-            </div>
-
-            <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-              <p className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                Navigation
-              </p>
-
-              <div className="space-y-1">
-                {links.map((link) => {
-                  const Icon =
-                    iconMap[link.icon];
-
-                  const active =
-                    isLinkActive(link);
-
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      aria-current={
-                        active
-                          ? "page"
-                          : undefined
-                      }
-                      className={[
-                        "group flex min-h-11 items-center gap-3",
-                        "rounded-[16px] px-4 py-2",
-                        "text-[15px] font-semibold",
-                        "transition-all",
-                        active
-                          ? [
-                              "bg-gradient-to-r from-[#079c9c] to-[#6ed6ce]",
-                              "text-white",
-                              "shadow-[0_7px_18px_rgba(13,148,136,0.18)]",
-                            ].join(" ")
-                          : [
-                              "text-slate-600",
-                              "hover:bg-white/80",
-                              "hover:text-slate-950",
-                            ].join(" "),
-                      ].join(" ")}
-                    >
-                      <Icon
-                        size={20}
-                        strokeWidth={1.9}
-                        className={[
-                          "shrink-0",
-                          active
-                            ? "text-white"
-                            : "text-slate-500",
-                        ].join(" ")}
-                        aria-hidden="true"
-                      />
-
-                      <span className="min-w-0 flex-1 truncate">
-                        {link.label}
-                      </span>
-
-                      <ChevronRight
-                        size={16}
-                        className={[
-                          "shrink-0",
-                          active
-                            ? "text-white/80"
-                            : "text-slate-300",
-                        ].join(" ")}
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  );
-                })}
-              </div>
-            </nav>
-
-            <div className="shrink-0 border-t border-slate-200/80 bg-white/35 px-4 py-3">
-              <div className="space-y-1.5">
-                {canReportIssue ? (
-                  <button
-                    type="button"
-                    onClick={
-                      handleOpenIssueModal
-                    }
-                    className={[
-                      "flex min-h-10 w-full items-center justify-center gap-2",
-                      "rounded-xl border border-teal-200 bg-teal-50",
-                      "px-4 text-xs font-semibold text-teal-700",
-                    ].join(" ")}
-                  >
-                    <Bug
-                      size={17}
-                      aria-hidden="true"
-                    />
-
-                    Report an issue
-                  </button>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleLogout()
-                  }
-                  disabled={loggingOut}
-                  className={[
-                    "flex min-h-10 w-full items-center gap-3",
-                    "rounded-xl px-4",
-                    "text-sm font-semibold text-slate-600",
-                    "transition-colors hover:bg-white",
-                    "disabled:cursor-not-allowed disabled:opacity-60",
-                  ].join(" ")}
-                >
-                  <LogOut
-                    size={19}
-                    aria-hidden="true"
-                  />
-
-                  {loggingOut
-                    ? "Logging out..."
-                    : "Log out"}
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      ) : null}
+    <>
+      <IOSAppShell
+        portalHome={portalHome}
+        portalName={portalName}
+        isDashboard={
+          isPortalDashboard
+        }
+        canSwitchPortal={
+          canSwitchPortal
+        }
+        canReportIssue={
+          canReportIssue
+        }
+        switchPortalHref={
+          switchPortalHref
+        }
+        switchPortalLabel={
+          switchPortalLabel
+        }
+        loggingOut={
+          loggingOut
+        }
+        onOpenIssue={() =>
+          setReportIssueOpen(
+            true,
+          )
+        }
+        onLogout={() =>
+          void handleLogout()
+        }
+      >
+        {children}
+      </IOSAppShell>
 
       {canReportIssue ? (
         <ReportIssueModal
-          open={reportIssueOpen}
+          open={
+            reportIssueOpen
+          }
           onClose={() =>
-            setReportIssueOpen(false)
+            setReportIssueOpen(
+              false,
+            )
           }
         />
       ) : null}
-    </div>
+    </>
   );
 }
 
-type ProfileAvatarProps = {
-  photoUrl: string | null;
-  name: string;
-  initials: string;
-  size: "small" | "large";
-};
-
-function ProfileAvatar({
-  photoUrl,
-  name,
-  initials,
-  size,
-}: ProfileAvatarProps) {
-  const isLarge = size === "large";
-
+  /*
+   * Web / browser shell
+   */
   return (
-    <div
-      className={[
-        "relative flex shrink-0 items-center justify-center overflow-hidden",
-        "rounded-full border-2 border-teal-500",
-        "bg-gradient-to-br from-teal-500 to-cyan-400",
-        isLarge
-          ? "h-12 w-12"
-          : "h-10 w-10",
-      ].join(" ")}
-    >
-      {photoUrl ? (
-        <Image
-          src={photoUrl}
-          alt={
-            name
-              ? `${name}'s profile photo`
-              : "Profile photo"
+    <div className="flex min-h-dvh w-full bg-[#f7f9fb] text-slate-950">
+      <AppShellDesktopSidebar
+        links={links}
+        name={name}
+        photoUrl={photoUrl}
+        initials={initials}
+        greeting={greeting}
+        roleLabel={roleLabel}
+        portalName={portalName}
+        sidebarCollapsed={
+          sidebarCollapsed
+        }
+        sidebarPreferenceLoaded={
+          sidebarPreferenceLoaded
+        }
+        canSwitchPortal={
+          canSwitchPortal
+        }
+        canReportIssue={
+          canReportIssue
+        }
+        switchPortalHref={
+          switchPortalHref
+        }
+        switchPortalLabel={
+          switchPortalLabel
+        }
+        loggingOut={
+          loggingOut
+        }
+        onToggleSidebar={
+          toggleSidebar
+        }
+        onOpenIssue={() =>
+          setReportIssueOpen(
+            true,
+          )
+        }
+        onLogout={() =>
+          void handleLogout()
+        }
+        isLinkActive={
+          isLinkActive
+        }
+      />
+
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
+        <AppShellMobile
+          links={links}
+          portalHome={
+            portalHome
           }
-          fill
-          sizes={isLarge ? "48px" : "40px"}
-          className="object-cover"
+          portalName={
+            portalName
+          }
+          name={name}
+          photoUrl={
+            photoUrl
+          }
+          initials={
+            initials
+          }
+          greeting={
+            greeting
+          }
+          roleLabel={
+            roleLabel
+          }
+          canSwitchPortal={
+            canSwitchPortal
+          }
+          canReportIssue={
+            canReportIssue
+          }
+          switchPortalHref={
+            switchPortalHref
+          }
+          switchPortalLabel={
+            switchPortalLabel
+          }
+          switchPortalShortLabel={
+            switchPortalShortLabel
+          }
+          loggingOut={
+            loggingOut
+          }
+          mobileMenuOpen={
+            mobileMenuOpen
+          }
+          onOpenMenu={() =>
+            setMobileMenuOpen(
+              true,
+            )
+          }
+          onCloseMenu={() =>
+            setMobileMenuOpen(
+              false,
+            )
+          }
+          onOpenIssue={() => {
+            setMobileMenuOpen(
+              false,
+            );
+
+            setReportIssueOpen(
+              true,
+            );
+          }}
+          onLogout={() =>
+            void handleLogout()
+          }
+          isLinkActive={
+            isLinkActive
+          }
         />
-      ) : (
-        <span
+
+        <main
           className={[
-            "font-bold text-white",
-            isLarge
-              ? "text-sm"
-              : "text-xs",
+            "min-h-0 min-w-0 flex-1 overflow-x-hidden bg-[#fbfcfd]",
+            "px-4 sm:px-6 lg:px-8 xl:px-10",
+            "pb-[calc(82px+env(safe-area-inset-bottom))] lg:pb-0",
           ].join(" ")}
         >
-          {initials}
-        </span>
-      )}
+          {children}
+        </main>
+      </div>
+
+      <ReportIssueModal
+        open={
+          reportIssueOpen
+        }
+        onClose={() =>
+          setReportIssueOpen(
+            false,
+          )
+        }
+      />
     </div>
   );
 }
