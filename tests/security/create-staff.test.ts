@@ -13,7 +13,7 @@ vi.mock(
   }),
 );
 
-import { POST } from "../../app/api/admin/create-staff/route";
+import { POST } from "../../app/api/care/admin/create-staff/route";
 
 type Profile = {
   id: string;
@@ -26,7 +26,7 @@ function makeRequest(
   token?: string,
 ) {
   return new Request(
-    "http://localhost/api/admin/create-staff",
+    "http://localhost/api/care/admin/create-staff",
     {
       method: "POST",
       headers: {
@@ -154,7 +154,7 @@ const validBody = {
 };
 
 describe(
-  "POST /api/admin/create-staff",
+  "POST /api/care/admin/create-staff",
   () => {
     beforeEach(() => {
       createClientMock.mockReset();
@@ -248,7 +248,7 @@ describe(
     );
 
     test(
-      "rejects platform-level roles",
+      "rejects CastodiaCore-level roles",
       async () => {
         const response = await POST(
           makeRequest({

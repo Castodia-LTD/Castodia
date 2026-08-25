@@ -94,7 +94,7 @@ export function ReportIssueModal({ open, onClose }: Props) {
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div className="flex items-start gap-3">
             <div className="rounded-2xl bg-cyan-100 p-3 text-cyan-700"><Bug className="h-5 w-5" /></div>
-            <div><h2 className="text-xl font-semibold text-slate-950">Report an issue</h2><p className="mt-1 text-sm text-slate-500">Send a problem or request to the Castodia platform team.</p></div>
+            <div><h2 className="text-xl font-semibold text-slate-950">Report an issue</h2><p className="mt-1 text-sm text-slate-500">Send a problem or request to the CastodiaCore team.</p></div>
           </div>
           <button type="button" onClick={close} disabled={submitting} className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"><X className="h-5 w-5" /></button>
         </div>
@@ -102,7 +102,7 @@ export function ReportIssueModal({ open, onClose }: Props) {
         {ticketNumber ? (
           <div className="p-6">
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-              <div className="flex items-start gap-3"><Send className="mt-0.5 h-5 w-5 text-emerald-700" /><div><h3 className="font-semibold text-emerald-950">Ticket #{ticketNumber} submitted</h3><p className="mt-2 text-sm text-emerald-800">The Castodia platform team can now investigate the issue.</p></div></div>
+              <div className="flex items-start gap-3"><Send className="mt-0.5 h-5 w-5 text-emerald-700" /><div><h3 className="font-semibold text-emerald-950">Ticket #{ticketNumber} submitted</h3><p className="mt-2 text-sm text-emerald-800">The CastodiaCore team can now investigate the issue.</p></div></div>
             </div>
             <div className="mt-6 flex justify-end"><CastodiaButton onClick={close}>Done</CastodiaButton></div>
           </div>

@@ -24,7 +24,7 @@ async function main() {
   }
 
   const { runDemoEngine } =
-    await import("@/lib/demo-engine/api");
+    await import("@/lib/core/demo-engine/api");
 
   const result =
     await runDemoEngine();

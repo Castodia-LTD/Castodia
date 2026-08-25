@@ -14,6 +14,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { CASTODIA_PRODUCTS } from "@/config/products";
+
 import type {
   AppShellPortal,
   IconMap,
@@ -40,18 +42,18 @@ export const portalNames: Record<
   AppShellPortal,
   string
 > = {
-  manager: "Manager Portal",
-  support: "Support Portal",
-  platform: "Platform Admin",
+  "care-manager": "Manager Portal",
+  "care-support": "Support Portal",
+  core: "CastodiaCore",
 };
 
 export const portalHomes: Record<
   AppShellPortal,
   string
 > = {
-  manager: "/manager/dashboard",
-  support: "/support/dashboard",
-  platform: "/platform/dashboard",
+  "care-manager": CASTODIA_PRODUCTS.care.managerHome,
+  "care-support": CASTODIA_PRODUCTS.care.supportHome,
+  core: CASTODIA_PRODUCTS.core.home,
 };
 
 export const MOBILE_NAV_LIMIT = 4;
@@ -70,7 +72,7 @@ export function getRoleLabel(
       return "Support Worker";
 
     case "castodia_admin":
-      return "Castodia Admin";
+      return "CastodiaCore Admin";
 
     case "castodia_owner":
       return "Castodia Owner";

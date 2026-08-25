@@ -57,7 +57,7 @@ export default function FamilyWelcome({
           />
 
           <span>
-            Castodia Family
+            CastodiaFamily
           </span>
         </div>
 

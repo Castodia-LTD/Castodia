@@ -1,6 +1,4 @@
-import type {
-  LucideIcon,
-} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export type AppShellIcon =
   | "dashboard"
@@ -26,9 +24,9 @@ export type AppShellLink = {
 };
 
 export type AppShellPortal =
-  | "manager"
-  | "support"
-  | "platform";
+  | "care-manager"
+  | "care-support"
+  | "core";
 
 export type AppShellProfile = {
   name: string;
@@ -36,7 +34,4 @@ export type AppShellProfile = {
   photoUrl: string | null;
 };
 
-export type IconMap = Record<
-  AppShellIcon,
-  LucideIcon
->;
+export type IconMap = Record<AppShellIcon, LucideIcon>;

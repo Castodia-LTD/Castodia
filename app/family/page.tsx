@@ -1,5 +1,3 @@
-import FamilyHome from "@/components/family/home/FamilyHome";
+import FamilyHomePage from "@/features/family/home/FamilyHomePage";
 
-export default function FamilyPage() {
-  return <FamilyHome />;
-}
+export default FamilyHomePage;

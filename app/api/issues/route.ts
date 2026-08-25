@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!categories.includes(body.category)) return NextResponse.json({ error: "Invalid issue category." }, { status: 400 });
     if (!urgencies.includes(body.urgency)) return NextResponse.json({ error: "Invalid urgency." }, { status: 400 });
 
-    const { data: ticket, error } = await admin.from("platform_issues").insert({
+    const { data: ticket, error } = await admin.from("core_issues").insert({
       title,
       description,
       category: body.category,
