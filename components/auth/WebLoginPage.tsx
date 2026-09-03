@@ -6,6 +6,7 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from "lucide-react";
+import { LoginLegalLinks } from "@/components/auth/LoginLegalLinks";
 
 type WebLoginPageProps = {
   email: string;
@@ -248,7 +249,9 @@ export function WebLoginPage({
         </div>
 
         <footer className="pt-8 text-center text-sm text-slate-500">
-          <p>© 2026 Castodia LTD</p>
+          <LoginLegalLinks />
+
+          <p className="mt-4">© 2026 Castodia LTD</p>
 
           <p className="mt-1 text-xs text-slate-400">
             Care records. Protected.
@@ -258,3 +261,4 @@ export function WebLoginPage({
     </main>
   );
 }
+
