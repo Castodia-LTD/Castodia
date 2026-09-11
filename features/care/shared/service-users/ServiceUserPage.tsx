@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { CastodiaCard } from "@/components/castodia";
 import ServiceUserHubHeader from "@/features/care/manager/service-users/components/ServiceUserHubHeader";
@@ -16,8 +15,6 @@ type Props = {
 type ServiceUser = {
   id: string;
   full_name: string;
-  first_name: string | null;
-  surname: string | null;
   photo_path: string | null;
   house_name: string | null;
 };
@@ -45,15 +42,12 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return "An unexpected error occurred while loading service users.";
+  return "An unexpected error occurred while loading people.";
 }
 
 export default function ServiceUserPage({ portal }: Props) {
-  const router = useRouter();
-
   const [serviceUsers, setServiceUsers] = useState<ServiceUser[]>([]);
-  const [selectedServiceUserId, setSelectedServiceUserId] =
-    useState<string>("");
+  const [selectedServiceUserId, setSelectedServiceUserId] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,139 +56,115 @@ export default function ServiceUserPage({ portal }: Props) {
   const requestIdRef = useRef(0);
   const mountedRef = useRef(false);
 
-  const loadServiceUsers = useCallback(
-    async (showFullLoader = true) => {
-      const requestId = ++requestIdRef.current;
+  const loadServiceUsers = useCallback(async (showFullLoader = true) => {
+    const requestId = ++requestIdRef.current;
 
-      if (showFullLoader) {
-        setLoading(true);
-      } else {
-        setRefreshing(true);
+    if (showFullLoader) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
+    setErrorMessage(null);
+
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw new Error(sessionError.message);
       }
 
-      setErrorMessage(null);
+      if (!session?.user) {
+        throw new Error(
+          "Your login session could not be confirmed. Please refresh the page or sign in again."
+        );
+      }
 
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+      let loadedServiceUsers: ServiceUser[] | null = null;
+      let finalErrorMessage = "The people query could not be completed.";
 
-        if (sessionError) {
-          throw new Error(sessionError.message);
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+        const { data, error } = await supabase
+          .from("service_users")
+          .select(
+            `
+              id,
+              full_name,
+              photo_path,
+              house_name
+            `
+          )
+          .order("full_name", { ascending: true });
+
+        if (!error) {
+          loadedServiceUsers = (data ?? []) as ServiceUser[];
+          break;
         }
 
-        if (!session?.user) {
-          throw new Error(
-            "Your login session could not be confirmed. Please refresh the page or sign in again."
-          );
-        }
+        finalErrorMessage = error.message || "The people query failed.";
 
-        let loadedServiceUsers: ServiceUser[] | null = null;
-        let finalErrorMessage =
-          "The service-user query could not be completed.";
+        console.error(
+          `People query attempt ${attempt + 1} failed:`,
+          JSON.stringify(
+            {
+              message: error.message ?? null,
+              code: error.code ?? null,
+              details: error.details ?? null,
+              hint: error.hint ?? null,
+            },
+            null,
+            2
+          )
+        );
 
-        for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
-          /*
-           * Only fields already known to exist are selected here.
-           *
-           * The previous query also selected `dob` and `active`.
-           * If either field does not exist in your table, Supabase rejects
-           * the entire request and the page incorrectly appears empty.
-           */
-          const { data, error } = await supabase
-            .from("service_users")
-            .select(
-              `
-                id,
-                full_name,
-                first_name,
-                surname,
-                photo_path,
-                house_name
-              `
-            )
-            .order("full_name", { ascending: true });
-
-          if (!error) {
-            loadedServiceUsers = (data ?? []) as ServiceUser[];
-            break;
-          }
-
-          finalErrorMessage =
-            error.message || "The service-user query failed.";
-
-          console.error(
-            `Service-user query attempt ${attempt + 1} failed:`,
-            JSON.stringify(
-              {
-                message: error.message ?? null,
-                code: error.code ?? null,
-                details: error.details ?? null,
-                hint: error.hint ?? null,
-              },
-              null,
-              2
-            )
-          );
-
-          if (attempt < MAX_RETRIES) {
-            await wait(RETRY_DELAY_MS * (attempt + 1));
-          }
-        }
-
-        if (loadedServiceUsers === null) {
-          throw new Error(finalErrorMessage);
-        }
-
-        if (
-          !mountedRef.current ||
-          requestId !== requestIdRef.current
-        ) {
-          return;
-        }
-
-        setServiceUsers(loadedServiceUsers);
-
-        setSelectedServiceUserId((currentId) => {
-          const currentSelectionStillExists =
-            loadedServiceUsers.some(
-              (serviceUser) => serviceUser.id === currentId
-            );
-
-          if (currentSelectionStillExists) {
-            return currentId;
-          }
-
-          return loadedServiceUsers[0]?.id ?? "";
-        });
-      } catch (error) {
-        if (
-          !mountedRef.current ||
-          requestId !== requestIdRef.current
-        ) {
-          return;
-        }
-
-        const message = getErrorMessage(error);
-
-        console.error("Unable to load service users:", message);
-
-        setErrorMessage(message);
-        setServiceUsers([]);
-        setSelectedServiceUserId("");
-      } finally {
-        if (
-          mountedRef.current &&
-          requestId === requestIdRef.current
-        ) {
-          setLoading(false);
-          setRefreshing(false);
+        if (attempt < MAX_RETRIES) {
+          await wait(RETRY_DELAY_MS * (attempt + 1));
         }
       }
-    },
-    []
-  );
+
+      if (loadedServiceUsers === null) {
+        throw new Error(finalErrorMessage);
+      }
+
+      if (!mountedRef.current || requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setServiceUsers(loadedServiceUsers);
+
+      setSelectedServiceUserId((currentId) => {
+        const currentSelectionStillExists = loadedServiceUsers.some(
+          (serviceUser) => serviceUser.id === currentId
+        );
+
+        if (currentSelectionStillExists) {
+          return currentId;
+        }
+
+        return loadedServiceUsers[0]?.id ?? "";
+      });
+    } catch (error) {
+      if (!mountedRef.current || requestId !== requestIdRef.current) {
+        return;
+      }
+
+      const message = getErrorMessage(error);
+
+      console.error("Unable to load people:", message);
+
+      setErrorMessage(message);
+      setServiceUsers([]);
+      setSelectedServiceUserId("");
+    } finally {
+      if (mountedRef.current && requestId === requestIdRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -213,21 +183,11 @@ export default function ServiceUserPage({ portal }: Props) {
     }
 
     setSelectedServiceUserId(serviceUserId);
-
-    function handleServiceUserChange(serviceUserId: string) {
-  if (!serviceUserId) {
-    return;
-  }
-
-  setSelectedServiceUserId(serviceUserId);
-}
   }
 
   const selectedServiceUser =
-    serviceUsers.find(
-      (serviceUser) =>
-        serviceUser.id === selectedServiceUserId
-    ) ?? serviceUsers[0];
+    serviceUsers.find((serviceUser) => serviceUser.id === selectedServiceUserId) ??
+    serviceUsers[0];
 
   if (loading) {
     return (
@@ -254,20 +214,18 @@ export default function ServiceUserPage({ portal }: Props) {
             </div>
 
             <div className="flex flex-wrap justify-center gap-3">
-              {Array.from({ length: 6 }).map(
-                (_, index) => (
-                  <div
-                    key={index}
-                    className="h-11 w-32 animate-pulse rounded-xl bg-slate-100"
-                  />
-                )
-              )}
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-11 w-32 animate-pulse rounded-xl bg-slate-100"
+                />
+              ))}
             </div>
           </div>
         </CastodiaCard>
 
         <p className="text-center text-sm font-medium text-slate-500">
-          Loading service users...
+          Loading people...
         </p>
       </div>
     );
@@ -282,13 +240,12 @@ export default function ServiceUserPage({ portal }: Props) {
           </div>
 
           <h1 className="mt-5 text-2xl font-bold text-slate-950">
-            Service users could not be loaded
+            People could not be loaded
           </h1>
 
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-            Castodia could not retrieve the service-user
-            records. This may be caused by a temporary
-            connection, session or permissions issue.
+            Castodia could not retrieve the person records. This may be caused by a
+            temporary connection, session or permissions issue.
           </p>
 
           <div className="mx-auto mt-5 max-w-xl rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -316,13 +273,12 @@ export default function ServiceUserPage({ portal }: Props) {
           </div>
 
           <h1 className="mt-5 text-2xl font-bold text-slate-950">
-            No service users available
+            No people available
           </h1>
 
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-            The database request completed successfully, but
-            no service users are currently available to your
-            account.
+            The database request completed successfully, but no people are currently
+            available to your account.
           </p>
 
           <button
@@ -356,7 +312,7 @@ export default function ServiceUserPage({ portal }: Props) {
 
       {refreshing && (
         <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-center text-sm font-medium text-cyan-800">
-          Refreshing service-user information...
+          Refreshing person information...
         </div>
       )}
     </div>
