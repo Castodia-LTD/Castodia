@@ -50,9 +50,16 @@ export async function saveContinenceCare(
   }
 
   const urinaryConcern =
-    data.urinaryObservations?.some((item) => item !== "No concerns") ?? false;
+    data.urinaryObservations?.some(
+      (item: string) => item !== "No concerns",
+    ) ?? false;
 
-  if (hasUrinaryCare && data.urinePassed === true && urinaryConcern && !data.urinaryNotes?.trim()) {
+  if (
+    hasUrinaryCare &&
+    data.urinePassed === true &&
+    urinaryConcern &&
+    !data.urinaryNotes?.trim()
+  ) {
     alert("Please add details for the urinary concern.");
     return false;
   }
@@ -73,9 +80,16 @@ export async function saveContinenceCare(
   }
 
   const bowelConcern =
-    data.bowelObservations?.some((item) => item !== "No concerns") ?? false;
+    data.bowelObservations?.some(
+      (item: string) => item !== "No concerns",
+    ) ?? false;
 
-  if (hasBowelCare && data.bowelOpened === true && bowelConcern && !data.bowelNotes?.trim()) {
+  if (
+    hasBowelCare &&
+    data.bowelOpened === true &&
+    bowelConcern &&
+    !data.bowelNotes?.trim()
+  ) {
     alert("Please add details for the bowel concern.");
     return false;
   }
@@ -138,7 +152,9 @@ export async function saveContinenceCare(
   }
 
   if (data.urinaryObservations?.length) {
-    detailLines.push(`Urinary observations: ${data.urinaryObservations.join(", ")}`);
+    detailLines.push(
+      `Urinary observations: ${data.urinaryObservations.join(", ")}`,
+    );
   }
 
   if (data.urinaryNotes?.trim()) {
@@ -149,11 +165,18 @@ export async function saveContinenceCare(
     detailLines.push(`Bowels opened: ${data.bowelOpened ? "Yes" : "No"}`);
   }
 
-  if (data.bristolType) detailLines.push(`Bristol stool type: ${data.bristolType}`);
-  if (data.bowelAmount) detailLines.push(`Bowel amount: ${data.bowelAmount}`);
+  if (data.bristolType) {
+    detailLines.push(`Bristol stool type: ${data.bristolType}`);
+  }
+
+  if (data.bowelAmount) {
+    detailLines.push(`Bowel amount: ${data.bowelAmount}`);
+  }
 
   if (data.bowelObservations?.length) {
-    detailLines.push(`Bowel observations: ${data.bowelObservations.join(", ")}`);
+    detailLines.push(
+      `Bowel observations: ${data.bowelObservations.join(", ")}`,
+    );
   }
 
   if (data.bowelNotes?.trim()) {
@@ -171,15 +194,21 @@ export async function saveContinenceCare(
   }
 
   if (data.catheterObservations?.length) {
-    detailLines.push(`Catheter observations: ${data.catheterObservations.join(", ")}`);
+    detailLines.push(
+      `Catheter observations: ${data.catheterObservations.join(", ")}`,
+    );
   }
 
   if (data.stomaCareProvided !== null) {
-    detailLines.push(`Stoma care provided: ${data.stomaCareProvided ? "Yes" : "No"}`);
+    detailLines.push(
+      `Stoma care provided: ${data.stomaCareProvided ? "Yes" : "No"}`,
+    );
   }
 
   if (data.stomaObservations?.length) {
-    detailLines.push(`Stoma observations: ${data.stomaObservations.join(", ")}`);
+    detailLines.push(
+      `Stoma observations: ${data.stomaObservations.join(", ")}`,
+    );
   }
 
   if (data.bowelIntervention) {
@@ -196,11 +225,25 @@ export async function saveContinenceCare(
     detailLines.push(`Intervention outcome: ${data.interventionOutcome}`);
   }
 
-  if (data.skinCondition) detailLines.push(`Skin condition: ${data.skinCondition}`);
-  if (data.skinNotes?.trim()) detailLines.push(`Skin observations: ${data.skinNotes.trim()}`);
-  if (data.concerns?.length) detailLines.push(`Concerns: ${data.concerns.join(", ")}`);
-  if (data.escalation?.length) detailLines.push(`Action / escalation: ${data.escalation.join(", ")}`);
-  if (data.notes?.trim()) detailLines.push(`Notes: ${data.notes.trim()}`);
+  if (data.skinCondition) {
+    detailLines.push(`Skin condition: ${data.skinCondition}`);
+  }
+
+  if (data.skinNotes?.trim()) {
+    detailLines.push(`Skin observations: ${data.skinNotes.trim()}`);
+  }
+
+  if (data.concerns?.length) {
+    detailLines.push(`Concerns: ${data.concerns.join(", ")}`);
+  }
+
+  if (data.escalation?.length) {
+    detailLines.push(`Action / escalation: ${data.escalation.join(", ")}`);
+  }
+
+  if (data.notes?.trim()) {
+    detailLines.push(`Notes: ${data.notes.trim()}`);
+  }
 
   if (medicationIntervention && !data.linkedMedicationAdministrationId?.trim()) {
     detailLines.push(
