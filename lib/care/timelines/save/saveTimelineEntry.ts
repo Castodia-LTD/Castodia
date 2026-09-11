@@ -7,11 +7,9 @@ type TimelineEntryPayload = {
 };
 
 /**
- * Single persistence boundary for registry-driven timeline entries.
- *
- * This function deliberately performs no panel reset, navigation or refresh.
- * UI lifecycle is owned by TimelineEntryPanel so every entry type follows the
- * same save -> success/error -> refresh -> close behaviour.
+ * Single persistence and post-save lifecycle for registry-driven timeline entries.
+ * Entry-specific handlers validate/build content; this boundary writes the record,
+ * resets the composer and refreshes the visible timeline consistently.
  */
 export async function saveTimelineEntry(
   ctx: SaveContext,
@@ -34,6 +32,10 @@ export async function saveTimelineEntry(
     });
     return false;
   }
+
+  ctx.resetEntryPanel();
+  ctx.setEntryPanelOpen(false);
+  await ctx.loadEntries();
 
   return true;
 }
