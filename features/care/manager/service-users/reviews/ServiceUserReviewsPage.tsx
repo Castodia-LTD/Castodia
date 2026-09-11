@@ -182,7 +182,7 @@ export default function ServiceUserReviewsPage() {
   const params = useParams<{ id: string }>();
   const serviceUserId = params.id;
 
-  const [serviceUserName, setServiceUserName] = useState("Service user");
+  const [serviceUserName, setServiceUserName] = useState("Person");
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -215,7 +215,7 @@ export default function ServiceUserReviewsPage() {
 
     if (person?.full_name) setServiceUserName(person.full_name);
     if (reviewError) {
-      console.error("Unable to load monthly reviews", reviewError);
+      console.error("Unable to load monthly check-ins", reviewError);
       setReviews([]);
     } else {
       setReviews((reviewRows ?? []) as ReviewRow[]);
@@ -264,7 +264,7 @@ export default function ServiceUserReviewsPage() {
   async function saveReview() {
     if (saving) return;
     if (answeredCount < 9) {
-      setSaveError("Please complete all nine monthly review questions before saving.");
+      setSaveError("Please complete all nine monthly check-in questions before saving.");
       return;
     }
 
@@ -277,7 +277,7 @@ export default function ServiceUserReviewsPage() {
         error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError || !user) throw new Error("You must be logged in to save this review.");
+      if (userError || !user) throw new Error("You must be logged in to save this check-in.");
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -320,7 +320,7 @@ export default function ServiceUserReviewsPage() {
       resetForm();
       await loadPage();
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : "Unable to save the monthly review.");
+      setSaveError(error instanceof Error ? error.message : "Unable to save the monthly check-in.");
     } finally {
       setSaving(false);
     }
@@ -328,29 +328,30 @@ export default function ServiceUserReviewsPage() {
 
   return (
     <CastodiaPageShell
-      title="Monthly Reviews"
-      description={`Person-centred monthly meetings for ${serviceUserName}.`}
+      title="Reviews"
+      description={`Monthly check-ins and formal reviews for ${serviceUserName}.`}
       maxWidth="wide"
     >
       {!editing ? (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">Keep the person's voice, choices and lived experience visible month by month.</p>
+              <h2 className="text-xl font-semibold text-slate-950">Monthly Check-Ins</h2>
+              <p className="mt-1 text-sm text-slate-500">Keep the person's voice, choices and lived experience visible month by month.</p>
             </div>
             <CastodiaButton onClick={() => setEditing(true)}>
-              <span className="inline-flex items-center gap-2"><Plus size={17} /> New monthly review</span>
+              <span className="inline-flex items-center gap-2"><Plus size={17} /> New monthly check-in</span>
             </CastodiaButton>
           </div>
 
           {loading ? (
-            <CastodiaCard><p className="text-sm text-slate-500">Loading monthly reviews...</p></CastodiaCard>
+            <CastodiaCard><p className="text-sm text-slate-500">Loading monthly check-ins...</p></CastodiaCard>
           ) : reviews.length === 0 ? (
             <CastodiaCard>
               <div className="py-8 text-center">
                 <CalendarDays className="mx-auto text-teal-600" size={34} />
-                <h2 className="mt-3 text-lg font-semibold text-slate-950">No monthly reviews yet</h2>
-                <p className="mt-1 text-sm text-slate-500">Create the first review to begin a monthly record of the person's views and agreed actions.</p>
+                <h2 className="mt-3 text-lg font-semibold text-slate-950">No monthly check-ins yet</h2>
+                <p className="mt-1 text-sm text-slate-500">Create the first check-in to begin a monthly record of the person's views and agreed actions.</p>
               </div>
             </CastodiaCard>
           ) : (
@@ -359,7 +360,7 @@ export default function ServiceUserReviewsPage() {
                 <CastodiaCard key={review.id} interactive>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-600">Monthly review</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-600">Monthly check-in</p>
                       <h2 className="mt-1 text-lg font-semibold text-slate-950">{formatMonth(review.review_month)}</h2>
                     </div>
                     <CastodiaBadge variant={review.completed_at ? "success" : "warning"}>
@@ -380,7 +381,7 @@ export default function ServiceUserReviewsPage() {
           <CastodiaCard padding="md">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-600">Monthly meeting</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-600">Monthly check-in</p>
                 <h2 className="mt-1 text-2xl font-semibold text-slate-950">{serviceUserName}</h2>
                 <p className="mt-1 text-sm text-slate-500">Ask the questions directly wherever possible and record the person's own words when they add meaning.</p>
               </div>
@@ -388,7 +389,7 @@ export default function ServiceUserReviewsPage() {
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-semibold text-slate-700">
-                Review month
+                Check-in month
                 <input type="month" value={reviewMonth.slice(0, 7)} onChange={(event) => setReviewMonth(`${event.target.value}-01`)} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15" />
               </label>
               <label className="text-sm font-semibold text-slate-700">
@@ -418,7 +419,7 @@ export default function ServiceUserReviewsPage() {
 
           <CastodiaCard padding="md">
             <h2 className="text-lg font-semibold text-slate-950">Consent review</h2>
-            <p className="mt-1 text-sm text-slate-500">Review the consent areas used in the current monthly meeting form.</p>
+            <p className="mt-1 text-sm text-slate-500">Review the consent areas used in the monthly check-in.</p>
             <div className="mt-5 space-y-5">
               {([
                 ["personalCare", "Personal care"],
@@ -469,7 +470,7 @@ export default function ServiceUserReviewsPage() {
             <textarea value={actions} onChange={(event) => setActions(event.target.value)} rows={5} className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15" placeholder={"Example: Arrange visit to local music group\nReview transport support for college"} />
             <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               <input type="checkbox" checked={serviceUserConfirmed} onChange={(event) => setServiceUserConfirmed(event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
-              <span><strong className="font-semibold text-slate-900">Person involved in the review</strong><br />Confirm that the person's views were sought and the review was discussed with them, or with their representative where appropriate.</span>
+              <span><strong className="font-semibold text-slate-900">Person involved in the check-in</strong><br />Confirm that the person's views were sought and the check-in was discussed with them, or with their representative where appropriate.</span>
             </label>
           </CastodiaCard>
 
@@ -477,9 +478,9 @@ export default function ServiceUserReviewsPage() {
 
           <div className="sticky bottom-0 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-slate-500">{answeredCount}/9 monthly questions completed</p>
+              <p className="text-sm text-slate-500">{answeredCount}/9 monthly check-in questions completed</p>
               <CastodiaButton onClick={saveReview} disabled={saving || !serviceUserConfirmed}>
-                <span className="inline-flex items-center gap-2"><Save size={17} /> {saving ? "Saving review..." : "Save monthly review"}</span>
+                <span className="inline-flex items-center gap-2"><Save size={17} /> {saving ? "Saving check-in..." : "Save monthly check-in"}</span>
               </CastodiaButton>
             </div>
           </div>
