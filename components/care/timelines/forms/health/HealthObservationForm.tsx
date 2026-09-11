@@ -22,7 +22,7 @@ type Section =
   | "blood_glucose"
   | "other";
 
-const sectionOptions = [
+const sectionOptions: Array<{ value: Section; label: string }> = [
   { value: "vital_signs", label: "Vital signs" },
   { value: "general_observation", label: "General observation" },
   { value: "weight", label: "Weight" },
@@ -95,23 +95,28 @@ export default function HealthObservationForm({ onChange }: Props) {
     return warnings;
   }, [temperature, oxygenSaturation, pulse]);
 
+  function currentVitalSigns(overrides: Record<string, any> = {}) {
+    return {
+      temperature: temperature ? Number(temperature) : null,
+      bloodPressure:
+        systolic || diastolic
+          ? {
+              systolic: systolic ? Number(systolic) : null,
+              diastolic: diastolic ? Number(diastolic) : null,
+            }
+          : null,
+      pulse: pulse ? Number(pulse) : null,
+      respiratoryRate: respiratoryRate ? Number(respiratoryRate) : null,
+      oxygenSaturation: oxygenSaturation ? Number(oxygenSaturation) : null,
+      painScore: painScore ? Number(painScore) : null,
+      ...overrides,
+    };
+  }
+
   function snapshot(overrides: any = {}) {
     return {
       sections,
-      vitalSigns: {
-        temperature: temperature ? Number(temperature) : null,
-        bloodPressure:
-          systolic || diastolic
-            ? {
-                systolic: systolic ? Number(systolic) : null,
-                diastolic: diastolic ? Number(diastolic) : null,
-              }
-            : null,
-        pulse: pulse ? Number(pulse) : null,
-        respiratoryRate: respiratoryRate ? Number(respiratoryRate) : null,
-        oxygenSaturation: oxygenSaturation ? Number(oxygenSaturation) : null,
-        painScore: painScore ? Number(painScore) : null,
-      },
+      vitalSigns: currentVitalSigns(),
       generalObservation: { appearance, mood, skinColour, breathing, alertness },
       weight: { kg: weightKg ? Number(weightKg) : null },
       bloodGlucose: {
@@ -129,10 +134,9 @@ export default function HealthObservationForm({ onChange }: Props) {
     onChange(snapshot(overrides));
   }
 
-  function setSelectedSections(next: string[]) {
-    const typed = next as Section[];
-    setSections(typed);
-    update({ sections: typed });
+  function setSelectedSections(next: Section[]) {
+    setSections(next);
+    update({ sections: next });
   }
 
   function setActions(next: string[]) {
@@ -188,7 +192,7 @@ export default function HealthObservationForm({ onChange }: Props) {
       </div>
 
       <FormSection title="What are you recording?">
-        <FormMultiSelect
+        <FormMultiSelect<Section>
           label="Observation sections"
           value={sections}
           options={sectionOptions}
@@ -201,11 +205,11 @@ export default function HealthObservationForm({ onChange }: Props) {
       {sections.includes("vital_signs") && (
         <FormSection title="Vital signs">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Metric label="Temperature" suffix="°C" value={temperature} setValue={(value) => { setTemperature(value); update({ vitalSigns: { ...snapshot().vitalSigns, temperature: value ? Number(value) : null } }); }} />
-            <Metric label="Pulse" suffix="bpm" value={pulse} setValue={(value) => { setPulse(value); update({ vitalSigns: { ...snapshot().vitalSigns, pulse: value ? Number(value) : null } }); }} />
-            <Metric label="Respiratory rate" suffix="/min" value={respiratoryRate} setValue={(value) => { setRespiratoryRate(value); update({ vitalSigns: { ...snapshot().vitalSigns, respiratoryRate: value ? Number(value) : null } }); }} />
-            <Metric label="Oxygen saturation" suffix="%" value={oxygenSaturation} setValue={(value) => { setOxygenSaturation(value); update({ vitalSigns: { ...snapshot().vitalSigns, oxygenSaturation: value ? Number(value) : null } }); }} />
-            <Metric label="Pain score" suffix="/10" value={painScore} setValue={(value) => { setPainScore(value); update({ vitalSigns: { ...snapshot().vitalSigns, painScore: value ? Number(value) : null } }); }} />
+            <Metric label="Temperature" suffix="°C" value={temperature} setValue={(value) => { setTemperature(value); update({ vitalSigns: currentVitalSigns({ temperature: value ? Number(value) : null }) }); }} />
+            <Metric label="Pulse" suffix="bpm" value={pulse} setValue={(value) => { setPulse(value); update({ vitalSigns: currentVitalSigns({ pulse: value ? Number(value) : null }) }); }} />
+            <Metric label="Respiratory rate" suffix="/min" value={respiratoryRate} setValue={(value) => { setRespiratoryRate(value); update({ vitalSigns: currentVitalSigns({ respiratoryRate: value ? Number(value) : null }) }); }} />
+            <Metric label="Oxygen saturation" suffix="%" value={oxygenSaturation} setValue={(value) => { setOxygenSaturation(value); update({ vitalSigns: currentVitalSigns({ oxygenSaturation: value ? Number(value) : null }) }); }} />
+            <Metric label="Pain score" suffix="/10" value={painScore} setValue={(value) => { setPainScore(value); update({ vitalSigns: currentVitalSigns({ painScore: value ? Number(value) : null }) }); }} />
           </div>
 
           <FormField label="Blood pressure">
@@ -219,13 +223,12 @@ export default function HealthObservationForm({ onChange }: Props) {
                   const value = event.target.value;
                   setSystolic(value);
                   update({
-                    vitalSigns: {
-                      ...snapshot().vitalSigns,
+                    vitalSigns: currentVitalSigns({
                       bloodPressure: {
                         systolic: value ? Number(value) : null,
                         diastolic: diastolic ? Number(diastolic) : null,
                       },
-                    },
+                    }),
                   });
                 }}
               />
@@ -238,13 +241,12 @@ export default function HealthObservationForm({ onChange }: Props) {
                   const value = event.target.value;
                   setDiastolic(value);
                   update({
-                    vitalSigns: {
-                      ...snapshot().vitalSigns,
+                    vitalSigns: currentVitalSigns({
                       bloodPressure: {
                         systolic: systolic ? Number(systolic) : null,
                         diastolic: value ? Number(value) : null,
                       },
-                    },
+                    }),
                   });
                 }}
               />
