@@ -20,7 +20,6 @@ export default function ServiceUserHubPage() {
     { label: "Documents", href: "#" },
     { label: "Medication", href: `/care/manager/service-users/${serviceUserId}/medication` },
     { label: "Reviews", href: `/care/manager/service-users/${serviceUserId}/reviews` },
-    { label: "Behaviour Incidents", href: "#" },
     { label: "Timeline", href: "#" },
   ];
 
