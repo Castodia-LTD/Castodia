@@ -22,13 +22,19 @@ export type NearMissData = {
   otherNearMissType: string;
   location: string;
   description: string;
-  potentialHarm: string;
+  preventionDetails: string;
+  peopleAtRisk: string[];
+  otherPersonAtRisk: string;
+  hazardStatus: "removed" | "controlled" | "remains" | "";
+  riskLevel: string;
+  controlMeasures: string;
   immediateActions: string[];
   otherImmediateAction: string;
-  involvedAnotherPerson: boolean;
-  otherPersonDetails: string;
-  reportedTo: string[];
-  otherReportedTo: string;
+  peopleInformed: string[];
+  otherPersonInformed: string;
+  externalReportRequired: boolean | null;
+  externalReportDetails: string;
+  externalReference: string;
   followUpActions: string[];
   notes: string;
 };
@@ -36,38 +42,51 @@ export type NearMissData = {
 const toOptions = (values: string[]) => values.map((value) => ({ value, label: value }));
 
 const nearMissTypeOptions = toOptions([
-  "Medication",
-  "Fall",
-  "Moving and Handling",
+  "Fall Prevented",
+  "Medication Error Prevented",
+  "Choking Prevented",
+  "Equipment Failure",
   "Environmental Hazard",
-  "Equipment",
-  "Food / Choking",
-  "Community Safety",
-  "Behaviour",
-  "Security",
+  "Fire Safety",
+  "Vehicle / Transport",
+  "Security Concern",
+  "Infection Control",
+  "Communication Breakdown",
   "Other",
 ]);
 
-const potentialHarmOptions = toOptions([
-  "Low",
-  "Moderate",
-  "High",
-  "Potentially Serious",
+const peopleAtRiskOptions = toOptions([
+  "Service User",
+  "Another Service User",
+  "Staff Member",
+  "Visitor",
+  "Member of the Public",
+  "Other",
 ]);
+
+const hazardStatusOptions = [
+  { value: "removed", label: "Hazard removed" },
+  { value: "controlled", label: "Hazard controlled" },
+  { value: "remains", label: "Hazard remains" },
+];
+
+const riskLevelOptions = toOptions(["Low", "Medium", "High", "Immediate"]);
 
 const immediateActionOptions = toOptions([
   "Hazard Removed",
-  "Equipment Removed from Use",
+  "Area Made Safe",
+  "Equipment Taken Out of Use",
   "Medication Secured",
+  "Staff Intervention",
   "Person Reassured",
   "Manager Informed",
   "Maintenance Informed",
-  "Risk Reduced",
-  "No Further Action Required",
+  "Monitoring Commenced",
+  "No Immediate Action Required",
   "Other",
 ]);
 
-const reportedToOptions = toOptions([
+const peopleInformedOptions = toOptions([
   "Manager",
   "On-call Manager",
   "Maintenance",
@@ -77,13 +96,15 @@ const reportedToOptions = toOptions([
 ]);
 
 const followUpOptions = toOptions([
+  "Manager Review Required",
   "Risk Assessment Review",
   "Care Plan Review",
-  "Equipment Review",
-  "Medication Review",
+  "Equipment Check",
+  "Maintenance Follow-up",
+  "Medication Audit",
   "Staff Discussion",
-  "Manager Review",
-  "Incident Review",
+  "Staff Competency Review",
+  "Incident Investigation Required",
   "Safeguarding Considered",
 ]);
 
@@ -92,13 +113,19 @@ const initialData: NearMissData = {
   otherNearMissType: "",
   location: "",
   description: "",
-  potentialHarm: "",
+  preventionDetails: "",
+  peopleAtRisk: [],
+  otherPersonAtRisk: "",
+  hazardStatus: "",
+  riskLevel: "",
+  controlMeasures: "",
   immediateActions: [],
   otherImmediateAction: "",
-  involvedAnotherPerson: false,
-  otherPersonDetails: "",
-  reportedTo: [],
-  otherReportedTo: "",
+  peopleInformed: [],
+  otherPersonInformed: "",
+  externalReportRequired: null,
+  externalReportDetails: "",
+  externalReference: "",
   followUpActions: [],
   notes: "",
 };
@@ -108,10 +135,17 @@ export default function NearMissForm({ onChange }: Props) {
 
   const notesRecommended = useMemo(
     () =>
-      data.potentialHarm === "High" ||
-      data.potentialHarm === "Potentially Serious" ||
+      data.hazardStatus === "remains" ||
+      data.riskLevel === "High" ||
+      data.riskLevel === "Immediate" ||
+      data.externalReportRequired === true ||
       data.followUpActions.includes("Safeguarding Considered"),
-    [data.potentialHarm, data.followUpActions],
+    [
+      data.hazardStatus,
+      data.riskLevel,
+      data.externalReportRequired,
+      data.followUpActions,
+    ],
   );
 
   function update(changes: Partial<NearMissData>) {
@@ -122,13 +156,15 @@ export default function NearMissForm({ onChange }: Props) {
 
   function updateImmediateActions(next: string[]) {
     let normalized = next;
-    if (next.includes("No Further Action Required") && next.length > 1) {
+
+    if (next.includes("No Immediate Action Required") && next.length > 1) {
       const selectedNoneNow =
-        !data.immediateActions.includes("No Further Action Required") &&
-        next.includes("No Further Action Required");
+        !data.immediateActions.includes("No Immediate Action Required") &&
+        next.includes("No Immediate Action Required");
+
       normalized = selectedNoneNow
-        ? ["No Further Action Required"]
-        : next.filter((item) => item !== "No Further Action Required");
+        ? ["No Immediate Action Required"]
+        : next.filter((item) => item !== "No Immediate Action Required");
     }
 
     update({
@@ -137,24 +173,46 @@ export default function NearMissForm({ onChange }: Props) {
     });
   }
 
+  function selectHazardStatus(value: NearMissData["hazardStatus"]) {
+    if (value !== "remains") {
+      update({ hazardStatus: value, riskLevel: "", controlMeasures: "" });
+      return;
+    }
+
+    update({ hazardStatus: value });
+  }
+
   const typeComplete =
     data.nearMissType &&
     (data.nearMissType !== "Other" || data.otherNearMissType.trim());
 
-  const actionComplete =
+  const peopleAtRiskComplete =
+    data.peopleAtRisk.length > 0 &&
+    (!data.peopleAtRisk.includes("Other") || data.otherPersonAtRisk.trim());
+
+  const hazardComplete =
+    data.hazardStatus &&
+    (data.hazardStatus !== "remains" ||
+      (data.riskLevel && data.controlMeasures.trim()));
+
+  const actionsComplete =
     data.immediateActions.length > 0 &&
     (!data.immediateActions.includes("Other") || data.otherImmediateAction.trim());
+
+  const informedComplete =
+    data.peopleInformed.length > 0 &&
+    (!data.peopleInformed.includes("Other") || data.otherPersonInformed.trim());
 
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-slate-950">Near Miss</h3>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          Record what almost happened, the potential harm and what was done to prevent recurrence.
+          Record what nearly happened, what prevented harm and whether any risk remains.
         </p>
       </div>
 
-      <FormSection title="What almost happened?">
+      <FormSection title="What nearly happened?">
         <FormChoiceGroup
           label="Near miss type"
           value={data.nearMissType}
@@ -190,35 +248,93 @@ export default function NearMissForm({ onChange }: Props) {
         )}
 
         {data.location.trim() && (
-          <FormField
-            label="What happened?"
-            description="Record the factual sequence and how harm was avoided."
-            required
-          >
+          <FormField label="What nearly happened?" required>
             <FormTextarea
               value={data.description}
               onChange={(event) => update({ description: event.target.value })}
-              placeholder="Describe what almost happened..."
-              rows={5}
+              placeholder="Describe the factual sequence..."
+              rows={4}
+            />
+          </FormField>
+        )}
+
+        {data.description.trim() && (
+          <FormField label="What prevented harm?" required>
+            <FormTextarea
+              value={data.preventionDetails}
+              onChange={(event) => update({ preventionDetails: event.target.value })}
+              placeholder="Describe the intervention, circumstance or control that prevented harm..."
+              rows={4}
             />
           </FormField>
         )}
       </FormSection>
 
-      {data.description.trim() && (
-        <FormSection title="Potential harm">
-          <FormChoiceGroup
-            label="Potential severity if harm had occurred"
-            value={data.potentialHarm}
-            options={potentialHarmOptions}
-            onChange={(value) => update({ potentialHarm: value })}
+      {data.preventionDetails.trim() && (
+        <FormSection title="Who was at risk?">
+          <FormMultiSelect
+            label="People at risk"
+            value={data.peopleAtRisk}
+            options={peopleAtRiskOptions}
+            onChange={(next) =>
+              update({
+                peopleAtRisk: next,
+                otherPersonAtRisk: next.includes("Other") ? data.otherPersonAtRisk : "",
+              })
+            }
             required
             columns={2}
           />
+
+          {data.peopleAtRisk.includes("Other") && (
+            <FormField label="Other person at risk" required>
+              <FormInput
+                value={data.otherPersonAtRisk}
+                onChange={(event) => update({ otherPersonAtRisk: event.target.value })}
+                placeholder="Describe who else was at risk"
+              />
+            </FormField>
+          )}
         </FormSection>
       )}
 
-      {data.potentialHarm && (
+      {peopleAtRiskComplete && (
+        <FormSection title="Current hazard status">
+          <FormChoiceGroup
+            label="What is the current status of the hazard?"
+            value={data.hazardStatus}
+            options={hazardStatusOptions}
+            onChange={(value) => selectHazardStatus(value as NearMissData["hazardStatus"])}
+            required
+            columns={3}
+          />
+
+          {data.hazardStatus === "remains" && (
+            <>
+              <FormChoiceGroup
+                label="Current risk level"
+                value={data.riskLevel}
+                options={riskLevelOptions}
+                onChange={(value) => update({ riskLevel: value })}
+                required
+                columns={2}
+              />
+              {data.riskLevel && (
+                <FormField label="Control measures" required>
+                  <FormTextarea
+                    value={data.controlMeasures}
+                    onChange={(event) => update({ controlMeasures: event.target.value })}
+                    placeholder="What is in place to reduce the remaining risk?"
+                    rows={4}
+                  />
+                </FormField>
+              )}
+            </>
+          )}
+        </FormSection>
+      )}
+
+      {hazardComplete && (
         <FormSection title="Immediate response">
           <FormMultiSelect
             label="Immediate actions"
@@ -241,68 +357,77 @@ export default function NearMissForm({ onChange }: Props) {
         </FormSection>
       )}
 
-      {actionComplete && (
+      {actionsComplete && (
         <FormSection title="Reporting">
           <FormMultiSelect
             label="Who was informed?"
-            value={data.reportedTo}
-            options={reportedToOptions}
+            value={data.peopleInformed}
+            options={peopleInformedOptions}
             onChange={(next) =>
               update({
-                reportedTo: next,
-                otherReportedTo: next.includes("Other") ? data.otherReportedTo : "",
+                peopleInformed: next,
+                otherPersonInformed: next.includes("Other") ? data.otherPersonInformed : "",
               })
             }
             required
             columns={2}
           />
 
-          {data.reportedTo.includes("Other") && (
+          {data.peopleInformed.includes("Other") && (
             <FormField label="Other person or service informed" required>
               <FormInput
-                value={data.otherReportedTo}
-                onChange={(event) => update({ otherReportedTo: event.target.value })}
+                value={data.otherPersonInformed}
+                onChange={(event) => update({ otherPersonInformed: event.target.value })}
                 placeholder="Who else was informed?"
               />
             </FormField>
           )}
+
+          {informedComplete && (
+            <FormYesNo
+              label="Is external reporting required?"
+              value={data.externalReportRequired}
+              onChange={(value) =>
+                update({
+                  externalReportRequired: value,
+                  externalReportDetails: value ? data.externalReportDetails : "",
+                  externalReference: value ? data.externalReference : "",
+                })
+              }
+              required
+            />
+          )}
+
+          {data.externalReportRequired === true && (
+            <>
+              <FormField label="External reporting details" required>
+                <FormTextarea
+                  value={data.externalReportDetails}
+                  onChange={(event) => update({ externalReportDetails: event.target.value })}
+                  placeholder="Who must be notified and what action is required?"
+                  rows={4}
+                />
+              </FormField>
+              <FormField label="Reference number">
+                <FormInput
+                  value={data.externalReference}
+                  onChange={(event) => update({ externalReference: event.target.value })}
+                  placeholder="Optional external reference"
+                />
+              </FormField>
+            </>
+          )}
         </FormSection>
       )}
 
-      {data.reportedTo.length > 0 &&
-        (!data.reportedTo.includes("Other") || data.otherReportedTo.trim()) && (
+      {data.externalReportRequired !== null &&
+        (!data.externalReportRequired || data.externalReportDetails.trim()) && (
           <FormSection
-            title="People and follow-up"
-            description="Add these only when they are relevant to the event."
+            title="Follow-up actions"
             collapsible
             defaultOpen={false}
-            summary={
-              data.involvedAnotherPerson || data.followUpActions.length
-                ? "Additional follow-up recorded"
-                : "Optional"
-            }
+            summary={data.followUpActions.length ? `${data.followUpActions.length} selected` : "Optional"}
           >
-            <FormYesNo
-              label="Was another person involved?"
-              value={data.involvedAnotherPerson}
-              onChange={(value) =>
-                update({
-                  involvedAnotherPerson: value,
-                  otherPersonDetails: value ? data.otherPersonDetails : "",
-                })
-              }
-            />
-
-            {data.involvedAnotherPerson && (
-              <FormField label="Other person involved" required>
-                <FormInput
-                  value={data.otherPersonDetails}
-                  onChange={(event) => update({ otherPersonDetails: event.target.value })}
-                  placeholder="Name and relationship or role"
-                />
-              </FormField>
-            )}
-
             <FormMultiSelect
               label="Follow-up actions"
               value={data.followUpActions}
@@ -313,12 +438,12 @@ export default function NearMissForm({ onChange }: Props) {
           </FormSection>
         )}
 
-      {data.reportedTo.length > 0 &&
-        (!data.reportedTo.includes("Other") || data.otherReportedTo.trim()) &&
+      {data.externalReportRequired !== null &&
+        (!data.externalReportRequired || data.externalReportDetails.trim()) &&
         (notesRecommended ? (
           <FormSection title="Additional detail">
             <FormAlert variant="warning" title="Additional detail recommended">
-              Add relevant information for a high-potential-harm event or safeguarding consideration.
+              Add relevant information where risk remains high, external reporting is required or safeguarding was considered.
             </FormAlert>
             <FormField label="Notes">
               <FormTextarea
