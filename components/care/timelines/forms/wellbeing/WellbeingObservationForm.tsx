@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { combineDateAndTime } from "@/lib/shared/date";
 import {
   defaultObservedIndicators,
   overallPresentationOptions,
@@ -22,6 +23,7 @@ import {
 type Props = {
   serviceUserId: string;
   serviceUserName: string;
+  entryTime?: string;
   onSaved?: () => void | Promise<void>;
   saving?: boolean;
   setSaving?: (saving: boolean) => void;
@@ -31,6 +33,7 @@ type Props = {
 export default function WellbeingObservationForm({
   serviceUserId,
   serviceUserName,
+  entryTime,
   onSaved,
   saving: sharedSaving,
   setSaving: setSharedSaving,
@@ -100,6 +103,10 @@ export default function WellbeingObservationForm({
         return;
       }
 
+      const eventTime = entryTime
+        ? combineDateAndTime(new Date(), entryTime)
+        : new Date().toISOString();
+
       await createWellbeingObservation({
         serviceUserId,
         serviceUserName,
@@ -108,6 +115,7 @@ export default function WellbeingObservationForm({
         observedIndicators: selectedIndicators,
         notes,
         recordedBy: user.id,
+        eventTime,
       });
 
       setSelectedScore(null);
