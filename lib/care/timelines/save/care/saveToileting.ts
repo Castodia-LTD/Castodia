@@ -1,15 +1,9 @@
 import type { SaveHandler } from "../types";
+import { saveTimelineEntry } from "../saveTimelineEntry";
 
-export const saveToileting: SaveHandler = async ({
-  supabase,
-  serviceUserId,
-  userId,
-  eventTime,
-  toiletingData,
-  resetEntryPanel,
-  setEntryPanelOpen,
-  loadEntries,
-}) => {
+export const saveToileting: SaveHandler = async (ctx) => {
+  const toiletingData = ctx.toiletingData;
+
   if (!toiletingData) {
     alert("Toileting information is missing.");
     return false;
@@ -37,60 +31,30 @@ export const saveToileting: SaveHandler = async ({
   ];
 
   if (assistanceRequired.trim()) {
-    summaryParts.push(
-      `Assistance: ${assistanceRequired.trim()}`,
-    );
+    summaryParts.push(`Assistance: ${assistanceRequired.trim()}`);
   }
 
   if (padChanged.trim()) {
-    summaryParts.push(
-      `Pad changed: ${padChanged.trim()}`,
-    );
+    summaryParts.push(`Pad changed: ${padChanged.trim()}`);
   }
 
   if (passedBowel && bristolType.trim()) {
-    summaryParts.push(
-      `Bristol Stool Scale: Type ${bristolType.trim()}`,
-    );
+    summaryParts.push(`Bristol Stool Scale: Type ${bristolType.trim()}`);
   }
 
   if (toiletingNotes.trim()) {
-    summaryParts.push(
-      `Notes: ${toiletingNotes.trim()}`,
-    );
+    summaryParts.push(`Notes: ${toiletingNotes.trim()}`);
   }
 
-  const content = summaryParts.join("\n");
-
-  const { error } = await supabase
-    .from("timeline_entries")
-    .insert({
-      service_user_id: serviceUserId,
-      created_by: userId,
-      entry_type: "Toileting",
-      content,
-      event_time: eventTime,
-    });
-
-  if (error) {
-    console.error("Failed to save toileting entry:", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    });
-
-    alert(
-      error.message ||
-        "The toileting entry could not be saved.",
-    );
-
-    return false;
-  }
-
-  resetEntryPanel();
-  setEntryPanelOpen(false);
-  await loadEntries();
-
-  return true;
+  return saveTimelineEntry(ctx, {
+    entryType: "Toileting",
+    content: summaryParts.join("\n"),
+    metadata: {
+      outcome: toiletingOutcome,
+      assistanceRequired: assistanceRequired.trim() || null,
+      padChanged: padChanged.trim() || null,
+      bristolType: passedBowel && bristolType.trim() ? bristolType.trim() : null,
+      notes: toiletingNotes.trim() || null,
+    },
+  });
 };
