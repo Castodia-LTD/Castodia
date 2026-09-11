@@ -84,6 +84,7 @@ export function IOSLoginForm({
   return (
     <form
       className="space-y-4"
+      autoComplete="on"
       onSubmit={(event) => {
         event.preventDefault();
         void onLogin();
@@ -102,11 +103,13 @@ export function IOSLoginForm({
 
         <input
           id={`ios-email-${variant}`}
+          name="username"
           type="email"
           inputMode="email"
-          autoComplete="email"
+          autoComplete="username"
           autoCapitalize="none"
           autoCorrect="off"
+          spellCheck={false}
           required
           value={email}
           onChange={(event) =>
@@ -143,6 +146,7 @@ export function IOSLoginForm({
 
         <input
           id={`ios-password-${variant}`}
+          name="password"
           type="password"
           autoComplete="current-password"
           required
