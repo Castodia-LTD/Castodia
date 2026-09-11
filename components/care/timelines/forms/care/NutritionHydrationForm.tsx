@@ -94,21 +94,17 @@ const concernOptions = [
 
 export default function NutritionHydrationForm({ onChange }: Props) {
   const [type, setType] = useState<EntryType | "">("");
-
   const [meal, setMeal] = useState("");
   const [foodDescription, setFoodDescription] = useState("");
   const [preparedBy, setPreparedBy] = useState("");
   const [amountEaten, setAmountEaten] = useState("");
   const [dietaryRequirements, setDietaryRequirements] = useState<string[]>([]);
-
   const [drinkType, setDrinkType] = useState("");
   const [amountMl, setAmountMl] = useState("");
   const [assistance, setAssistance] = useState("");
-
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([
     "no_concerns",
   ]);
-
   const [notes, setNotes] = useState("");
 
   const notesRequired = useMemo(
@@ -140,14 +136,7 @@ export default function NutritionHydrationForm({ onChange }: Props) {
       setDrinkType("");
       setAmountMl("");
       setAssistance("");
-
-      update({
-        type: value,
-        drinkType: "",
-        amountMl: null,
-        assistance: "",
-      });
-
+      update({ type: value, drinkType: "", amountMl: null, assistance: "" });
       return;
     }
 
@@ -156,7 +145,6 @@ export default function NutritionHydrationForm({ onChange }: Props) {
     setPreparedBy("");
     setAmountEaten("");
     setDietaryRequirements([]);
-
     update({
       type: value,
       meal: "",
@@ -174,9 +162,7 @@ export default function NutritionHydrationForm({ onChange }: Props) {
       normalized = normalized.filter((item) => item !== "no_concerns");
     }
 
-    if (normalized.length === 0) {
-      normalized = ["no_concerns"];
-    }
+    if (normalized.length === 0) normalized = ["no_concerns"];
 
     setSelectedConcerns(normalized);
     update({ concerns: normalized });
@@ -185,133 +171,95 @@ export default function NutritionHydrationForm({ onChange }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-slate-950">
-          Nutrition &amp; Hydration
-        </h3>
-
+        <h3 className="text-lg font-semibold text-slate-950">Nutrition &amp; Hydration</h3>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          Record food or fluid intake.
+          Record the essential intake first. Add extra context only when it is useful.
         </p>
       </div>
 
-      <FormSection
-        title="Entry type"
-        description="Choose whether you are recording food or drink."
-      >
+      <FormSection title="What are you recording?">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FormOptionCard
             selected={type === "food"}
-            title={
-              <span className="flex flex-col gap-2">
-                <span className="text-3xl" aria-hidden="true">
-                  🍽
-                </span>
-                <span>Food</span>
-              </span>
-            }
-            description="Record a meal, snack or food intake."
+            title={<span className="flex flex-col gap-2"><span className="text-3xl" aria-hidden="true">🍽</span><span>Food</span></span>}
+            description="Meal, snack or food intake"
             onClick={() => selectType("food")}
           />
-
           <FormOptionCard
             selected={type === "drink"}
-            title={
-              <span className="flex flex-col gap-2">
-                <span className="text-3xl" aria-hidden="true">
-                  🥤
-                </span>
-                <span>Drink</span>
-              </span>
-            }
-            description="Record fluid intake."
+            title={<span className="flex flex-col gap-2"><span className="text-3xl" aria-hidden="true">🥤</span><span>Drink</span></span>}
+            description="Fluid intake"
             onClick={() => selectType("drink")}
           />
         </div>
       </FormSection>
 
       {type === "food" && (
-        <FormSection
-          title="Food"
-          description="Record what was offered and how much was eaten."
-        >
-          <FormChoiceGroup
-            label="Meal"
-            value={meal}
-            options={mealOptions}
-            onChange={(value) => {
-              setMeal(value);
-              update({ meal: value });
-            }}
-          />
-
-          <FormField
-            label="Food description"
-            htmlFor="food-description"
-          >
-            <FormInput
-              id="food-description"
-              value={foodDescription}
-              placeholder="Chicken curry, beans on toast, soup..."
-              onChange={(event) => {
-                const value = event.target.value;
-                setFoodDescription(value);
-                update({ foodDescription: value });
-              }}
+        <>
+          <FormSection title="Food intake" description="Complete the fields needed for a useful care record.">
+            <FormChoiceGroup
+              label="Meal"
+              value={meal}
+              options={mealOptions}
+              onChange={(value) => { setMeal(value); update({ meal: value }); }}
+              required
             />
-          </FormField>
+            <FormField label="What was eaten?" htmlFor="food-description" required>
+              <FormInput
+                id="food-description"
+                value={foodDescription}
+                placeholder="For example: chicken curry and rice"
+                onChange={(event) => { const value = event.target.value; setFoodDescription(value); update({ foodDescription: value }); }}
+              />
+            </FormField>
+            <FormChoiceGroup
+              label="How was it prepared?"
+              value={preparedBy}
+              options={preparedByOptions}
+              onChange={(value) => { setPreparedBy(value); update({ preparedBy: value }); }}
+              required
+            />
+            <FormChoiceGroup
+              label="How much was eaten?"
+              value={amountEaten}
+              options={amountEatenOptions}
+              onChange={(value) => { setAmountEaten(value); update({ amountEaten: value }); }}
+              required
+            />
+          </FormSection>
 
-          <FormChoiceGroup
-            label="Prepared by"
-            value={preparedBy}
-            options={preparedByOptions}
-            onChange={(value) => {
-              setPreparedBy(value);
-              update({ preparedBy: value });
-            }}
-          />
-
-          <FormChoiceGroup
-            label="Amount eaten"
-            value={amountEaten}
-            options={amountEatenOptions}
-            onChange={(value) => {
-              setAmountEaten(value);
-              update({ amountEaten: value });
-            }}
-          />
-
-          <FormMultiSelect
-            label="Dietary requirements"
-            description="Select all that apply."
-            value={dietaryRequirements}
-            options={dietaryRequirementOptions}
-            onChange={(next) => {
-              setDietaryRequirements(next);
-              update({ dietaryRequirements: next });
-            }}
-          />
-        </FormSection>
+          <FormSection
+            title="Dietary context"
+            description="Only add this when it helps explain the record."
+            collapsible
+            defaultOpen={false}
+            summary={dietaryRequirements.length ? dietaryRequirements.join(", ") : "Optional"}
+          >
+            <FormMultiSelect
+              label="Dietary requirements"
+              description="Select all that apply."
+              value={dietaryRequirements}
+              options={dietaryRequirementOptions}
+              onChange={(next) => { setDietaryRequirements(next); update({ dietaryRequirements: next }); }}
+            />
+          </FormSection>
+        </>
       )}
 
       {type === "drink" && (
-        <FormSection
-          title="Drink"
-          description="Record the drink, amount and support provided."
-        >
+        <FormSection title="Drink intake" description="Record the drink, amount and support provided.">
           <FormChoiceGroup
             label="Drink"
             value={drinkType}
             options={drinkOptions}
-            onChange={(value) => {
-              setDrinkType(value);
-              update({ drinkType: value });
-            }}
+            onChange={(value) => { setDrinkType(value); update({ drinkType: value }); }}
+            required
           />
-
           <FormField
             label="Amount"
             description="Choose a common amount or enter a custom amount in millilitres."
             htmlFor="custom-drink-amount"
+            required
           >
             <div className="flex flex-wrap gap-2">
               {drinkAmountOptions.map((amount) => (
@@ -319,21 +267,15 @@ export default function NutritionHydrationForm({ onChange }: Props) {
                   key={amount}
                   type="button"
                   aria-pressed={amountMl === amount}
-                  onClick={() => {
-                    setAmountMl(amount);
-                    update({ amountMl: Number(amount) });
-                  }}
-                  className={
-                    amountMl === amount
-                      ? "rounded-full border border-teal-500 bg-gradient-to-r from-teal-50 to-cyan-50 px-4 py-2 text-sm font-medium text-teal-800 transition focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                      : "rounded-full border border-teal-100 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-teal-300 hover:bg-teal-50/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                  }
+                  onClick={() => { setAmountMl(amount); update({ amountMl: Number(amount) }); }}
+                  className={amountMl === amount
+                    ? "rounded-full border border-teal-500 bg-gradient-to-r from-teal-50 to-cyan-50 px-4 py-2 text-sm font-medium text-teal-800 transition focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    : "rounded-full border border-teal-100 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-teal-300 hover:bg-teal-50/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"}
                 >
                   {amount} ml
                 </button>
               ))}
             </div>
-
             <FormInput
               id="custom-drink-amount"
               type="number"
@@ -342,32 +284,26 @@ export default function NutritionHydrationForm({ onChange }: Props) {
               placeholder="Custom amount in ml"
               value={amountMl}
               className="mt-3"
-              onChange={(event) => {
-                const value = event.target.value;
-                setAmountMl(value);
-                update({
-                  amountMl: value ? Number(value) : null,
-                });
-              }}
+              onChange={(event) => { const value = event.target.value; setAmountMl(value); update({ amountMl: value ? Number(value) : null }); }}
             />
           </FormField>
-
           <FormChoiceGroup
             label="Assistance"
             value={assistance}
             options={assistanceOptions}
-            onChange={(value) => {
-              setAssistance(value);
-              update({ assistance: value });
-            }}
+            onChange={(value) => { setAssistance(value); update({ assistance: value }); }}
+            required
           />
         </FormSection>
       )}
 
       {type && (
         <FormSection
-          title="Concerns and notes"
-          description="Record any concerns associated with this entry."
+          title="Concerns or additional notes"
+          description={notesRequired ? "A concern has been recorded, so some detail is required." : "Open this only when there is something else worth recording."}
+          collapsible={!notesRequired}
+          defaultOpen={notesRequired}
+          summary={notesRequired ? "Detail required" : "No concerns recorded"}
         >
           <FormMultiSelect
             label="Concerns"
@@ -376,16 +312,11 @@ export default function NutritionHydrationForm({ onChange }: Props) {
             options={concernOptions}
             onChange={setConcerns}
           />
-
           {notesRequired && (
-            <FormAlert
-              variant="warning"
-              title="Additional detail required"
-            >
+            <FormAlert variant="warning" title="Additional detail required">
               Please add notes when a concern is recorded.
             </FormAlert>
           )}
-
           <FormField
             label={notesRequired ? "Tell us more" : "Notes"}
             htmlFor="nutrition-hydration-notes"
@@ -396,16 +327,8 @@ export default function NutritionHydrationForm({ onChange }: Props) {
               value={notes}
               rows={3}
               required={notesRequired}
-              placeholder={
-                notesRequired
-                  ? "Describe the concern..."
-                  : "Optional notes..."
-              }
-              onChange={(event) => {
-                const value = event.target.value;
-                setNotes(value);
-                update({ notes: value });
-              }}
+              placeholder={notesRequired ? "Describe the concern..." : "Optional notes..."}
+              onChange={(event) => { const value = event.target.value; setNotes(value); update({ notes: value }); }}
             />
           </FormField>
         </FormSection>

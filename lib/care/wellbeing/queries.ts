@@ -9,6 +9,7 @@ export async function createWellbeingObservation({
   observedIndicators,
   notes,
   recordedBy,
+  eventTime,
 }: {
   serviceUserId: string;
   serviceUserName: string;
@@ -17,10 +18,11 @@ export async function createWellbeingObservation({
   observedIndicators: string[];
   notes: string;
   recordedBy: string;
+  eventTime?: string;
 }) {
   const narrative = generateWellbeingNarrative(
     serviceUserName,
-    observedIndicators
+    observedIndicators,
   );
 
   const { error: observationError } = await supabase
@@ -55,14 +57,13 @@ export async function createWellbeingObservation({
       created_by: recordedBy,
       entry_type: "Wellbeing Observation",
       content: timelineContent,
-      event_time: new Date().toISOString(),
+      event_time: eventTime ?? new Date().toISOString(),
     });
 
   if (timelineError) throw timelineError;
 }
 
 export async function getServiceUserWellbeingIndicators(serviceUserId: string) {
-  
   const { data, error } = await supabase
     .from("service_user_wellbeing_indicators")
     .select("*")
@@ -78,10 +79,8 @@ export async function getServiceUserWellbeingIndicators(serviceUserId: string) {
 export async function createServiceUserWellbeingIndicator(
   serviceUserId: string,
   label: string,
-  userId: string
+  userId: string,
 ) {
-  
-
   const { data, error } = await supabase
     .from("service_user_wellbeing_indicators")
     .insert({
@@ -98,8 +97,6 @@ export async function createServiceUserWellbeingIndicator(
 }
 
 export async function deactivateServiceUserWellbeingIndicator(id: string) {
-  
-
   const { error } = await supabase
     .from("service_user_wellbeing_indicators")
     .update({ is_active: false })

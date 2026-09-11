@@ -1,13 +1,17 @@
 "use client";
 
 import BodyMapCanvas from "@/components/care/body-maps/BodyMapCanvas";
+import {
+  FormField,
+  FormSection,
+  FormTextarea,
+} from "@/components/care/timelines/forms/shared";
 
 type Marker = {
   markerNumber: number;
   bodyView: "front" | "back";
   xPosition: number;
   yPosition: number;
-
   bodyArea: string;
   injuryType: string;
   description: string;
@@ -17,10 +21,8 @@ type Marker = {
 type Props = {
   bodyMapMarkers: Marker[];
   setBodyMapMarkers: (markers: Marker[]) => void;
-
   bodyMapNotes: string;
   setBodyMapNotes: (value: string) => void;
-
   serviceUserGender?: string | null;
 };
 
@@ -33,34 +35,35 @@ export default function BodyMapForm({
 }: Props) {
   return (
     <div className="space-y-5">
-      <div>
-        <h3 className="text-lg font-semibold text-slate-900">
-          Body Map
-        </h3>
-
-        <p className="text-sm text-slate-600">
-          Record injuries, bruising, marks or other observations using a body map.
-        </p>
-      </div>
-
-      <BodyMapCanvas
-  markers={bodyMapMarkers}
-  setMarkers={setBodyMapMarkers}
-  serviceUserGender={serviceUserGender}
-/>
-      <div>
-        <label className="block text-sm font-medium text-slate-800 mb-2">
-          Additional Notes
-        </label>
-
-        <textarea
-          className="w-full rounded-lg border p-3 text-sm"
-          rows={4}
-          value={bodyMapNotes}
-          onChange={(e) => setBodyMapNotes(e.target.value)}
-          placeholder="Add any additional information..."
+      <FormSection
+        title="Body map"
+        description="Add a marker for each injury, bruise, mark or other physical observation."
+      >
+        <BodyMapCanvas
+          markers={bodyMapMarkers}
+          setMarkers={setBodyMapMarkers}
+          serviceUserGender={serviceUserGender}
         />
-      </div>
+      </FormSection>
+
+      {bodyMapMarkers.length > 0 && (
+        <FormSection
+          title="Additional information"
+          description="Optional context that applies to the body map as a whole."
+          collapsible
+          defaultOpen={false}
+          summary={bodyMapNotes ? "Notes added" : `${bodyMapMarkers.length} marker${bodyMapMarkers.length === 1 ? "" : "s"} recorded`}
+        >
+          <FormField label="Notes">
+            <FormTextarea
+              rows={4}
+              value={bodyMapNotes}
+              onChange={(event) => setBodyMapNotes(event.target.value)}
+              placeholder="Add any additional information..."
+            />
+          </FormField>
+        </FormSection>
+      )}
     </div>
   );
 }
