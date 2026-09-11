@@ -14,7 +14,7 @@ export const careManagerNavigation: AppShellLink[] = [
   },
   {
     href: "/care/manager/service-users",
-    label: "Service Users",
+    label: "People",
     icon: "service-users",
   },
   {
