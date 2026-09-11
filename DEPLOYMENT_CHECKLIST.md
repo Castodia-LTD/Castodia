@@ -25,7 +25,7 @@ This refactor changes application routes and renames live Supabase objects. Use 
     - Display name: `CastodiaCare`
     - Bundle ID: `uk.co.castodia.care`
 11. Test the native Care login to confirm Core-only/Family-only accounts are refused rather than routed into another product.
-12. Configure the production environment variable `APPLE_DEVELOPER_TEAM_ID` with the 10-character Team ID from Apple Developer.
+12. Confirm the deployed Apple association contains Team ID `4C4AT5B42L`.
 13. Confirm `https://app.castodia.co.uk/.well-known/apple-app-site-association` returns HTTP 200, `application/json`, and both production bundle identifiers.
 14. In Apple Developer, enable Associated Domains for:
     - `uk.co.castodia.care`
