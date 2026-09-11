@@ -24,7 +24,7 @@ export const managerDashboardTiles: readonly IOSDashboardTile[] = [
     icon: CalendarDays,
   },
   {
-    label: "Service Users",
+    label: "People",
     description: "Access people, records and care information.",
     href: "/care/manager/service-users",
     icon: UserRound,
