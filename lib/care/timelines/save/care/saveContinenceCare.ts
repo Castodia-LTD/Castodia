@@ -21,6 +21,90 @@ export async function saveContinenceCare(
     return false;
   }
 
+  const hasProductCare = data.careTypes.includes("Continence product");
+  const hasUrinaryCare =
+    data.careTypes.includes("Toilet support") ||
+    data.careTypes.includes("Commode") ||
+    data.careTypes.includes("Bedpan / urinal");
+  const hasBowelCare = data.careTypes.includes("Bowel care");
+  const hasCatheterCare = data.careTypes.includes("Catheter care");
+  const hasStomaCare = data.careTypes.includes("Stoma care");
+
+  if (hasProductCare && !data.continenceProductStatus) {
+    alert("Please record the continence product status.");
+    return false;
+  }
+
+  if (
+    hasProductCare &&
+    data.continenceProductStatus !== "Dry" &&
+    data.continenceProductChanged === null
+  ) {
+    alert("Please confirm whether the continence product was changed.");
+    return false;
+  }
+
+  if (hasUrinaryCare && data.urinePassed === null) {
+    alert("Please confirm whether urine was passed.");
+    return false;
+  }
+
+  const urinaryConcern =
+    data.urinaryObservations?.some((item) => item !== "No concerns") ?? false;
+
+  if (hasUrinaryCare && data.urinePassed === true && urinaryConcern && !data.urinaryNotes?.trim()) {
+    alert("Please add details for the urinary concern.");
+    return false;
+  }
+
+  if (hasBowelCare && data.bowelOpened === null) {
+    alert("Please confirm whether the bowels were opened.");
+    return false;
+  }
+
+  if (hasBowelCare && data.bowelOpened === true && !data.bristolType) {
+    alert("Please select the Bristol stool type.");
+    return false;
+  }
+
+  if (hasBowelCare && data.bowelOpened === true && !data.bowelAmount) {
+    alert("Please select the approximate bowel amount.");
+    return false;
+  }
+
+  const bowelConcern =
+    data.bowelObservations?.some((item) => item !== "No concerns") ?? false;
+
+  if (hasBowelCare && data.bowelOpened === true && bowelConcern && !data.bowelNotes?.trim()) {
+    alert("Please add details for the bowel concern.");
+    return false;
+  }
+
+  if (hasBowelCare && !data.bowelIntervention) {
+    alert("Please confirm whether a bowel intervention was provided.");
+    return false;
+  }
+
+  const medicationIntervention =
+    data.bowelIntervention === "Suppository" ||
+    data.bowelIntervention === "Enema" ||
+    data.bowelIntervention === "Other prescribed intervention";
+
+  if (medicationIntervention && !data.interventionOutcome) {
+    alert("Please record the bowel intervention outcome.");
+    return false;
+  }
+
+  if (hasCatheterCare && data.catheterCareProvided === null) {
+    alert("Please confirm whether catheter care was provided.");
+    return false;
+  }
+
+  if (hasStomaCare && data.stomaCareProvided === null) {
+    alert("Please confirm whether stoma care was provided.");
+    return false;
+  }
+
   if (
     data.skinCondition &&
     data.skinCondition !== "Intact" &&
@@ -29,11 +113,6 @@ export async function saveContinenceCare(
     alert("Please describe the skin concern.");
     return false;
   }
-
-  const medicationIntervention =
-    data.bowelIntervention === "Suppository" ||
-    data.bowelIntervention === "Enema" ||
-    data.bowelIntervention === "Other prescribed intervention";
 
   const initials = getInitials(ctx.serviceUserName);
   const summary = buildSummary(initials, data);
