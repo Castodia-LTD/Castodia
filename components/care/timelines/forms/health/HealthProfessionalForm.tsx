@@ -2,9 +2,16 @@
 
 import { useMemo, useState } from "react";
 
-type Props = {
-  onChange: (data: HealthProfessionalData) => void;
-};
+import {
+  FormAlert,
+  FormChoiceGroup,
+  FormField,
+  FormInput,
+  FormMultiSelect,
+  FormSection,
+  FormTextarea,
+  FormYesNo,
+} from "@/components/care/timelines/forms/shared";
 
 export type HealthProfessionalData = {
   contactUrgency: string;
@@ -24,87 +31,31 @@ export type HealthProfessionalData = {
   notes: string;
 };
 
+type Props = {
+  onChange: (data: HealthProfessionalData) => void;
+};
+
 const contactUrgencyOptions = [
-  {
-    value: "Planned Appointment",
-    label: "Planned Appointment",
-    icon: "📅",
-  },
-  {
-    value: "Routine Contact",
-    label: "Routine Contact",
-    icon: "📞",
-  },
-  {
-    value: "Urgent Contact",
-    label: "Urgent Contact",
-    icon: "⚠️",
-  },
-  {
-    value: "Emergency Attendance",
-    label: "Emergency Attendance",
-    icon: "🚑",
-  },
-];
+  "Planned Appointment",
+  "Routine Contact",
+  "Urgent Contact",
+  "Emergency Attendance",
+].map((value) => ({ value, label: value }));
 
 const professionalOptions = [
-  { value: "GP", label: "GP", icon: "🩺" },
-  {
-    value: "Hospital Doctor",
-    label: "Hospital Doctor",
-    icon: "🏥",
-  },
-  {
-    value: "District Nurse",
-    label: "District Nurse",
-    icon: "👩‍⚕️",
-  },
-  {
-    value: "Pharmacist",
-    label: "Pharmacist",
-    icon: "💊",
-  },
-  {
-    value: "Mental Health Team",
-    label: "Mental Health Team",
-    icon: "🧠",
-  },
-  {
-    value: "Speech & Language Therapist",
-    label: "Speech & Language Therapist",
-    icon: "🗣",
-  },
-  {
-    value: "Physiotherapist",
-    label: "Physiotherapist",
-    icon: "🦴",
-  },
-  {
-    value: "Occupational Therapist",
-    label: "Occupational Therapist",
-    icon: "🏡",
-  },
-  {
-    value: "Dentist",
-    label: "Dentist",
-    icon: "🦷",
-  },
-  {
-    value: "Optician",
-    label: "Optician",
-    icon: "👁",
-  },
-  {
-    value: "Paramedic",
-    label: "Paramedic",
-    icon: "🚑",
-  },
-  {
-    value: "Other",
-    label: "Other",
-    icon: "➕",
-  },
-];
+  "GP",
+  "Hospital Doctor",
+  "District Nurse",
+  "Pharmacist",
+  "Mental Health Team",
+  "Speech & Language Therapist",
+  "Physiotherapist",
+  "Occupational Therapist",
+  "Dentist",
+  "Optician",
+  "Paramedic",
+  "Other",
+].map((value) => ({ value, label: value }));
 
 const contactMethodOptions = [
   "Telephone",
@@ -114,7 +65,7 @@ const contactMethodOptions = [
   "Video Consultation",
   "Email",
   "Other",
-];
+].map((value) => ({ value, label: value }));
 
 const actionOptions = [
   "No Further Action",
@@ -129,7 +80,7 @@ const actionOptions = [
   "Care Plan Updated",
   "Risk Assessment Updated",
   "Other",
-];
+].map((value) => ({ value, label: value }));
 
 const documentOptions = [
   "None",
@@ -139,7 +90,7 @@ const documentOptions = [
   "Care Plan",
   "Assessment Report",
   "Other",
-];
+].map((value) => ({ value, label: value }));
 
 const initialData: HealthProfessionalData = {
   contactUrgency: "",
@@ -160,552 +111,254 @@ const initialData: HealthProfessionalData = {
 };
 
 export default function HealthProfessionalForm({ onChange }: Props) {
-  const [data, setData] =
-    useState<HealthProfessionalData>(initialData);
+  const [data, setData] = useState<HealthProfessionalData>(initialData);
 
-  const notesRecommended = useMemo(() => {
-    return (
+  const notesRecommended = useMemo(
+    () =>
       data.followUpRequired === true ||
-      data.documentsReceived.some(
-        (document) => document !== "None"
-      ) ||
+      data.documentsReceived.some((document) => document !== "None") ||
       data.actionsRequired.includes("Other") ||
       data.professionalType === "Other" ||
-      data.contactMethod === "Other"
-    );
-
-  }, [data]);
+      data.contactMethod === "Other",
+    [data],
+  );
 
   function update(changes: Partial<HealthProfessionalData>) {
-  const next = {
-    ...data,
-    ...changes,
-  };
+    const next = { ...data, ...changes };
+    setData(next);
+    onChange(next);
+  }
 
-  setData(next);
-  onChange(next);
-}
+  function setActions(next: string[]) {
+    let normalized = next;
 
-  function toggleAction(value: string) {
-    let next: string[];
-
-    if (value === "No Further Action") {
-      next = ["No Further Action"];
-    } else {
-      const withoutNoAction =
-        data.actionsRequired.filter(
-          (action) => action !== "No Further Action"
-        );
-
-      next = withoutNoAction.includes(value)
-        ? withoutNoAction.filter(
-            (action) => action !== value
-          )
-        : [...withoutNoAction, value];
-
-      if (next.length === 0) {
-        next = ["No Further Action"];
-      }
+    if (normalized.includes("No Further Action") && normalized.length > 1) {
+      normalized = normalized.filter((item) => item !== "No Further Action");
     }
 
+    if (normalized.length === 0) normalized = ["No Further Action"];
+
     update({
-      actionsRequired: next,
-      otherAction: next.includes("Other")
-        ? data.otherAction
-        : "",
+      actionsRequired: normalized,
+      otherAction: normalized.includes("Other") ? data.otherAction : "",
     });
   }
 
-  function toggleDocument(value: string) {
-    let next: string[];
+  function setDocuments(next: string[]) {
+    let normalized = next;
 
-    if (value === "None") {
-      next = ["None"];
-    } else {
-      const withoutNone =
-        data.documentsReceived.filter(
-          (document) => document !== "None"
-        );
-
-      next = withoutNone.includes(value)
-        ? withoutNone.filter(
-            (document) => document !== value
-          )
-        : [...withoutNone, value];
-
-      if (next.length === 0) {
-        next = ["None"];
-      }
+    if (normalized.includes("None") && normalized.length > 1) {
+      normalized = normalized.filter((item) => item !== "None");
     }
 
+    if (normalized.length === 0) normalized = ["None"];
+
     update({
-      documentsReceived: next,
-      otherDocument: next.includes("Other")
-        ? data.otherDocument
-        : "",
+      documentsReceived: normalized,
+      otherDocument: normalized.includes("Other") ? data.otherDocument : "",
     });
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-slate-900">
-          Health Professional
-        </h3>
+    <div className="space-y-5">
+      <FormSection
+        title="Contact details"
+        description="Record the type of contact and the healthcare professional involved."
+      >
+        <FormChoiceGroup
+          label="Contact type"
+          value={data.contactUrgency}
+          options={contactUrgencyOptions}
+          onChange={(value) => update({ contactUrgency: value })}
+          required
+        />
 
-        <p className="text-sm text-slate-500">
-          Record contact with a healthcare professional
-          and any advice, treatment or actions resulting
-          from the interaction.
-        </p>
-      </div>
-
-      <div>
-        <FieldLabel>
-          What type of contact was this?
-        </FieldLabel>
-
-        <div className="grid grid-cols-2 gap-3">
-          {contactUrgencyOptions.map((option) => (
-            <SelectionCard
-              key={option.value}
-              label={option.label}
-              icon={option.icon}
-              selected={
-                data.contactUrgency === option.value
-              }
-              onClick={() =>
-                update({
-                  contactUrgency: option.value,
-                })
-              }
-            />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <FieldLabel>
-          Which professional was involved?
-        </FieldLabel>
-
-        <div className="grid grid-cols-2 gap-3">
-          {professionalOptions.map((option) => (
-            <SelectionCard
-              key={option.value}
-              label={option.label}
-              icon={option.icon}
-              selected={
-                data.professionalType === option.value
-              }
-              onClick={() =>
-                update({
-                  professionalType: option.value,
-                  otherProfessionalType:
-                    option.value === "Other"
-                      ? data.otherProfessionalType
-                      : "",
-                })
-              }
-            />
-          ))}
-        </div>
-      </div>
-
-      {data.professionalType === "Other" && (
-        <SectionCard title="➕ Other Professional">
-          <TextInput
-            label="Professional Type"
-            value={data.otherProfessionalType}
+        {data.contactUrgency && (
+          <FormChoiceGroup
+            label="Professional"
+            value={data.professionalType}
+            options={professionalOptions}
             onChange={(value) =>
               update({
-                otherProfessionalType: value,
+                professionalType: value,
+                otherProfessionalType:
+                  value === "Other" ? data.otherProfessionalType : "",
               })
             }
-            placeholder="For example, podiatrist"
+            required
           />
-        </SectionCard>
-      )}
+        )}
 
-      {data.professionalType && (
-        <TextInput
-          label="Professional Name (optional)"
-          value={data.professionalName}
-          onChange={(value) =>
-            update({ professionalName: value })
-          }
-          placeholder="For example, Dr Patel"
-        />
-      )}
+        {data.professionalType === "Other" && (
+          <FormField label="Professional type" required>
+            <FormInput
+              value={data.otherProfessionalType}
+              onChange={(event) => update({ otherProfessionalType: event.target.value })}
+              placeholder="For example, podiatrist"
+            />
+          </FormField>
+        )}
 
-      <SelectBlock
-        label="How did the contact take place?"
-        value={data.contactMethod}
-        options={contactMethodOptions}
-        onChange={(value) =>
-          update({
-            contactMethod: value,
-            otherContactMethod:
-              value === "Other"
-                ? data.otherContactMethod
-                : "",
-          })
-        }
-      />
+        {data.professionalType && (
+          <FormField label="Professional name" description="Optional if not known.">
+            <FormInput
+              value={data.professionalName}
+              onChange={(event) => update({ professionalName: event.target.value })}
+              placeholder="For example, Dr Patel"
+            />
+          </FormField>
+        )}
 
-      {data.contactMethod === "Other" && (
-        <TextInput
-          label="Describe the Contact Method"
-          value={data.otherContactMethod}
-          onChange={(value) =>
-            update({
-              otherContactMethod: value,
-            })
-          }
-          placeholder="Describe how the contact took place"
-        />
-      )}
-
-      <TextArea
-        label="Reason for Contact or Appointment"
-        value={data.reason}
-        onChange={(value) =>
-          update({ reason: value })
-        }
-        placeholder="For example, medication review, annual health check or assessment following a fall..."
-        rows={4}
-      />
-
-      <TextArea
-        label="Advice, Assessment or Outcome"
-        value={data.outcome}
-        onChange={(value) =>
-          update({ outcome: value })
-        }
-        placeholder="Record the advice given, assessment completed, treatment provided or outcome of the contact..."
-        rows={5}
-      />
-
-      <CheckboxGroup
-        label="Actions Required"
-        values={data.actionsRequired}
-        options={actionOptions}
-        onToggle={toggleAction}
-      />
-
-      {data.actionsRequired.includes("Other") && (
-        <TextArea
-          label="Describe the Other Action"
-          value={data.otherAction}
-          onChange={(value) =>
-            update({ otherAction: value })
-          }
-          placeholder="Describe the action required..."
-          rows={3}
-        />
-      )}
-
-      <div>
-        <FieldLabel>
-          Is follow-up required?
-        </FieldLabel>
-
-        <div className="grid grid-cols-2 gap-3">
-          <OptionButton
-            label="No"
-            selected={
-              data.followUpRequired === false
-            }
-            onClick={() =>
+        {data.professionalType && (
+          <FormChoiceGroup
+            label="Contact method"
+            value={data.contactMethod}
+            options={contactMethodOptions}
+            onChange={(value) =>
               update({
-                followUpRequired: false,
-                followUpDate: "",
+                contactMethod: value,
+                otherContactMethod:
+                  value === "Other" ? data.otherContactMethod : "",
               })
             }
+            required
           />
+        )}
 
-          <OptionButton
-            label="Yes"
-            selected={
-              data.followUpRequired === true
-            }
-            onClick={() =>
-              update({
-                followUpRequired: true,
-              })
-            }
-          />
-        </div>
-      </div>
+        {data.contactMethod === "Other" && (
+          <FormField label="Describe the contact method" required>
+            <FormInput
+              value={data.otherContactMethod}
+              onChange={(event) => update({ otherContactMethod: event.target.value })}
+              placeholder="Describe how the contact took place"
+            />
+          </FormField>
+        )}
+      </FormSection>
 
-      {data.followUpRequired === true && (
-        <div>
-          <FieldLabel>Follow-up Date</FieldLabel>
+      {data.contactMethod && (
+        <FormSection
+          title="Reason and outcome"
+          description="Record why contact took place and what was advised, assessed or decided."
+        >
+          <FormField label="Reason for contact or appointment" required>
+            <FormTextarea
+              value={data.reason}
+              onChange={(event) => update({ reason: event.target.value })}
+              rows={4}
+              placeholder="For example, medication review or assessment following a fall..."
+            />
+          </FormField>
 
-          <input
-            type="date"
-            value={data.followUpDate}
-            onChange={(event) =>
-              update({
-                followUpDate: event.target.value,
-              })
-            }
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700"
-          />
-        </div>
+          {data.reason.trim() && (
+            <FormField label="Advice, assessment or outcome" required>
+              <FormTextarea
+                value={data.outcome}
+                onChange={(event) => update({ outcome: event.target.value })}
+                rows={5}
+                placeholder="Record the advice, treatment, assessment or outcome..."
+              />
+            </FormField>
+          )}
+        </FormSection>
       )}
 
-      <CheckboxGroup
-        label="Documents Received"
-        values={data.documentsReceived}
-        options={documentOptions}
-        onToggle={toggleDocument}
-      />
+      {data.outcome.trim() && (
+        <FormSection
+          title="Actions and follow-up"
+          description="Record any actions required and whether follow-up is needed."
+        >
+          <FormMultiSelect
+            label="Actions required"
+            value={data.actionsRequired}
+            options={actionOptions}
+            onChange={setActions}
+            columns={2}
+            required
+          />
 
-      {data.documentsReceived.includes("Other") && (
-        <TextInput
-          label="Describe the Document"
-          value={data.otherDocument}
-          onChange={(value) =>
-            update({ otherDocument: value })
+          {data.actionsRequired.includes("Other") && (
+            <FormField label="Other action" required>
+              <FormTextarea
+                value={data.otherAction}
+                onChange={(event) => update({ otherAction: event.target.value })}
+                rows={3}
+                placeholder="Describe the action required..."
+              />
+            </FormField>
+          )}
+
+          <FormYesNo
+            label="Is follow-up required?"
+            value={data.followUpRequired}
+            onChange={(value) =>
+              update({
+                followUpRequired: value,
+                followUpDate: value ? data.followUpDate : "",
+              })
+            }
+            required
+          />
+
+          {data.followUpRequired === true && (
+            <FormField label="Follow-up date" required>
+              <FormInput
+                type="date"
+                value={data.followUpDate}
+                onChange={(event) => update({ followUpDate: event.target.value })}
+              />
+            </FormField>
+          )}
+        </FormSection>
+      )}
+
+      {data.followUpRequired !== null && (
+        <FormSection
+          title="Documents and notes"
+          description="Record any documents received and add optional context where useful."
+          collapsible={!notesRecommended}
+          defaultOpen={notesRecommended}
+          summary={
+            !notesRecommended && data.documentsReceived.includes("None")
+              ? "No documents received"
+              : undefined
           }
-          placeholder="Enter the document type"
-        />
+        >
+          <FormMultiSelect
+            label="Documents received"
+            value={data.documentsReceived}
+            options={documentOptions}
+            onChange={setDocuments}
+            columns={2}
+            required
+          />
+
+          {data.documentsReceived.includes("Other") && (
+            <FormField label="Describe the document" required>
+              <FormInput
+                value={data.otherDocument}
+                onChange={(event) => update({ otherDocument: event.target.value })}
+                placeholder="Enter the document type"
+              />
+            </FormField>
+          )}
+
+          {notesRecommended && (
+            <FormAlert variant="info" title="Useful context">
+              Add any information needed to explain follow-up, documents or additional actions.
+            </FormAlert>
+          )}
+
+          <FormField label="Notes">
+            <FormTextarea
+              value={data.notes}
+              onChange={(event) => update({ notes: event.target.value })}
+              rows={4}
+              placeholder="Optional additional information..."
+            />
+          </FormField>
+        </FormSection>
       )}
-
-      {notesRecommended && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Add any relevant details needed to explain
-          follow-up, documents or additional actions.
-        </div>
-      )}
-
-      <TextArea
-        label="Notes"
-        value={data.notes}
-        onChange={(value) =>
-          update({ notes: value })
-        }
-        placeholder="Optional additional information..."
-        rows={4}
-      />
-    </div>
-  );
-}
-
-function FieldLabel({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="mb-2 block text-sm font-medium text-slate-700">
-      {children}
-    </label>
-  );
-}
-
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <h4 className="font-semibold text-slate-900">
-        {title}
-      </h4>
-
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
-function SelectionCard({
-  label,
-  icon,
-  selected,
-  onClick,
-}: {
-  label: string;
-  icon: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-2xl border p-4 text-left transition ${
-        selected
-          ? "border-cyan-500 bg-cyan-50"
-          : "border-slate-200 bg-white"
-      }`}
-    >
-      <div className="text-2xl">{icon}</div>
-
-      <div className="mt-2 text-sm font-semibold text-slate-900">
-        {label}
-      </div>
-    </button>
-  );
-}
-
-function OptionButton({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-xl border px-4 py-3 text-left text-sm ${
-        selected
-          ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-          : "border-slate-200 bg-white text-slate-700"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function TextInput({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <input
-        type="text"
-        value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  placeholder,
-  rows = 3,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <textarea
-        value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        placeholder={placeholder}
-        rows={rows}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function SelectBlock({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange(option)}
-            className={`rounded-xl border px-3 py-3 text-left text-sm ${
-              value === option
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CheckboxGroup({
-  label,
-  values,
-  options,
-  onToggle,
-}: {
-  label: string;
-  values: string[];
-  options: string[];
-  onToggle: (value: string) => void;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <div className="space-y-2">
-        {options.map((option) => {
-          const selected = values.includes(option);
-
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onToggle(option)}
-              className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm ${
-                selected
-                  ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                  : "border-slate-200 bg-white text-slate-700"
-              }`}
-            >
-              <span>{option}</span>
-              <span>{selected ? "✓" : ""}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }

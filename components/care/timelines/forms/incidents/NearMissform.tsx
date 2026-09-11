@@ -2,6 +2,17 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  FormAlert,
+  FormChoiceGroup,
+  FormField,
+  FormInput,
+  FormMultiSelect,
+  FormSection,
+  FormTextarea,
+  FormYesNo,
+} from "@/components/care/timelines/forms/shared";
+
 type Props = {
   onChange: (data: NearMissData) => void;
 };
@@ -9,34 +20,28 @@ type Props = {
 export type NearMissData = {
   nearMissType: string;
   otherNearMissType: string;
-
   location: string;
   description: string;
   preventionDetails: string;
-
   peopleAtRisk: string[];
   otherPersonAtRisk: string;
-
   hazardStatus: "removed" | "controlled" | "remains" | "";
   riskLevel: string;
   controlMeasures: string;
-
   immediateActions: string[];
   otherImmediateAction: string;
-
   peopleInformed: string[];
   otherPersonInformed: string;
-
   externalReportRequired: boolean | null;
   externalReportDetails: string;
   externalReference: string;
-
   followUpActions: string[];
-
   notes: string;
 };
 
-const nearMissTypeOptions = [
+const toOptions = (values: string[]) => values.map((value) => ({ value, label: value }));
+
+const nearMissTypeOptions = toOptions([
   "Fall Prevented",
   "Medication Error Prevented",
   "Choking Prevented",
@@ -48,40 +53,26 @@ const nearMissTypeOptions = [
   "Infection Control",
   "Communication Breakdown",
   "Other",
-];
+]);
 
-const peopleAtRiskOptions = [
+const peopleAtRiskOptions = toOptions([
   "Service User",
   "Another Service User",
   "Staff Member",
   "Visitor",
   "Member of the Public",
   "Other",
-];
+]);
 
 const hazardStatusOptions = [
-  {
-    value: "removed",
-    label: "Hazard Removed",
-  },
-  {
-    value: "controlled",
-    label: "Hazard Controlled",
-  },
-  {
-    value: "remains",
-    label: "Hazard Remains",
-  },
+  { value: "removed", label: "Hazard removed" },
+  { value: "controlled", label: "Hazard controlled" },
+  { value: "remains", label: "Hazard remains" },
 ];
 
-const riskLevelOptions = [
-  "Low",
-  "Medium",
-  "High",
-  "Immediate",
-];
+const riskLevelOptions = toOptions(["Low", "Medium", "High", "Immediate"]);
 
-const immediateActionOptions = [
+const immediateActionOptions = toOptions([
   "Hazard Removed",
   "Area Made Safe",
   "Equipment Taken Out of Use",
@@ -93,18 +84,18 @@ const immediateActionOptions = [
   "Monitoring Commenced",
   "No Immediate Action Required",
   "Other",
-];
+]);
 
-const peopleInformedOptions = [
+const peopleInformedOptions = toOptions([
   "Manager",
   "On-call Manager",
   "Maintenance",
   "Health Professional",
   "Family / Representative",
   "Other",
-];
+]);
 
-const followUpOptions = [
+const followUpOptions = toOptions([
   "Manager Review Required",
   "Risk Assessment Review",
   "Care Plan Review",
@@ -115,619 +106,374 @@ const followUpOptions = [
   "Staff Competency Review",
   "Incident Investigation Required",
   "Safeguarding Considered",
-];
+]);
 
 const initialData: NearMissData = {
   nearMissType: "",
   otherNearMissType: "",
-
   location: "",
   description: "",
   preventionDetails: "",
-
   peopleAtRisk: [],
   otherPersonAtRisk: "",
-
   hazardStatus: "",
   riskLevel: "",
   controlMeasures: "",
-
   immediateActions: [],
   otherImmediateAction: "",
-
   peopleInformed: [],
   otherPersonInformed: "",
-
   externalReportRequired: null,
   externalReportDetails: "",
   externalReference: "",
-
   followUpActions: [],
-
   notes: "",
 };
 
-export default function NearMissForm({
-  onChange,
-}: Props) {
-  const [data, setData] =
-    useState<NearMissData>(initialData);
+export default function NearMissForm({ onChange }: Props) {
+  const [data, setData] = useState<NearMissData>(initialData);
 
-  const notesRecommended = useMemo(() => {
-    return (
+  const notesRecommended = useMemo(
+    () =>
       data.hazardStatus === "remains" ||
       data.riskLevel === "High" ||
       data.riskLevel === "Immediate" ||
       data.externalReportRequired === true ||
-      data.followUpActions.includes("Safeguarding Considered")
-    );
-  }, [
-    data.hazardStatus,
-    data.riskLevel,
-    data.externalReportRequired,
-    data.followUpActions,
-  ]);
+      data.followUpActions.includes("Safeguarding Considered"),
+    [data],
+  );
 
-  function update(
-    changes: Partial<NearMissData>
-  ) {
-    const next = {
-      ...data,
-      ...changes,
-    };
-
+  function update(changes: Partial<NearMissData>) {
+    const next = { ...data, ...changes };
     setData(next);
     onChange(next);
   }
 
-  function togglePersonAtRisk(value: string) {
-    const next = data.peopleAtRisk.includes(value)
-      ? data.peopleAtRisk.filter(
-          (item) => item !== value
-        )
-      : [...data.peopleAtRisk, value];
+  function updateImmediateActions(next: string[]) {
+    let normalized = next;
 
-    update({
-      peopleAtRisk: next,
-      otherPersonAtRisk: next.includes("Other")
-        ? data.otherPersonAtRisk
-        : "",
-    });
-  }
+    if (next.includes("No Immediate Action Required") && next.length > 1) {
+      const selectedNoneNow =
+        !data.immediateActions.includes("No Immediate Action Required") &&
+        next.includes("No Immediate Action Required");
 
-  function toggleImmediateAction(value: string) {
-    let next: string[];
-
-    if (value === "No Immediate Action Required") {
-      next = ["No Immediate Action Required"];
-    } else {
-      const withoutNone =
-        data.immediateActions.filter(
-          (item) =>
-            item !== "No Immediate Action Required"
-        );
-
-      next = withoutNone.includes(value)
-        ? withoutNone.filter(
-            (item) => item !== value
-          )
-        : [...withoutNone, value];
+      normalized = selectedNoneNow
+        ? ["No Immediate Action Required"]
+        : next.filter((item) => item !== "No Immediate Action Required");
     }
 
     update({
-      immediateActions: next,
-      otherImmediateAction: next.includes("Other")
-        ? data.otherImmediateAction
-        : "",
+      immediateActions: normalized,
+      otherImmediateAction: normalized.includes("Other") ? data.otherImmediateAction : "",
     });
   }
 
-  function togglePersonInformed(value: string) {
-    const next = data.peopleInformed.includes(value)
-      ? data.peopleInformed.filter(
-          (item) => item !== value
-        )
-      : [...data.peopleInformed, value];
-
-    update({
-      peopleInformed: next,
-      otherPersonInformed: next.includes("Other")
-        ? data.otherPersonInformed
-        : "",
-    });
+  function selectHazardStatus(value: NearMissData["hazardStatus"]) {
+    update(
+      value === "remains"
+        ? { hazardStatus: value }
+        : { hazardStatus: value, riskLevel: "", controlMeasures: "" },
+    );
   }
 
-  function toggleFollowUp(value: string) {
-    const next = data.followUpActions.includes(value)
-      ? data.followUpActions.filter(
-          (item) => item !== value
-        )
-      : [...data.followUpActions, value];
+  const typeComplete = Boolean(
+    data.nearMissType &&
+      (data.nearMissType !== "Other" || data.otherNearMissType.trim()),
+  );
 
-    update({
-      followUpActions: next,
-    });
-  }
+  const peopleAtRiskComplete = Boolean(
+    data.peopleAtRisk.length > 0 &&
+      (!data.peopleAtRisk.includes("Other") || data.otherPersonAtRisk.trim()),
+  );
 
-  function selectHazardStatus(
-    value: NearMissData["hazardStatus"]
-  ) {
-    if (value !== "remains") {
-      update({
-        hazardStatus: value,
-        riskLevel: "",
-        controlMeasures: "",
-      });
+  const hazardComplete = Boolean(
+    data.hazardStatus &&
+      (data.hazardStatus !== "remains" ||
+        (data.riskLevel && data.controlMeasures.trim())),
+  );
 
-      return;
-    }
+  const actionsComplete = Boolean(
+    data.immediateActions.length > 0 &&
+      (!data.immediateActions.includes("Other") || data.otherImmediateAction.trim()),
+  );
 
-    update({
-      hazardStatus: value,
-    });
-  }
+  const informedComplete = Boolean(
+    data.peopleInformed.length > 0 &&
+      (!data.peopleInformed.includes("Other") || data.otherPersonInformed.trim()),
+  );
+
+  const reportingComplete = Boolean(
+    data.externalReportRequired === false ||
+      (data.externalReportRequired === true && data.externalReportDetails.trim()),
+  );
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">
-          Near Miss
-        </h3>
-
-        <p className="text-sm text-slate-500">
-          Record an event where harm was avoided and the
-          action taken to prevent recurrence.
+        <h3 className="text-lg font-semibold text-slate-950">Near Miss</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          Record what nearly happened, what prevented harm and whether any risk remains.
         </p>
       </div>
 
-      <SelectBlock
-        label="Near Miss Type"
-        value={data.nearMissType}
-        options={nearMissTypeOptions}
-        onChange={(value) =>
-          update({
-            nearMissType: value,
-            otherNearMissType:
-              value === "Other"
-                ? data.otherNearMissType
-                : "",
-          })
-        }
-      />
-
-      {data.nearMissType === "Other" && (
-        <TextInput
-          label="Describe the Near Miss Type"
-          value={data.otherNearMissType}
+      <FormSection title="What nearly happened?">
+        <FormChoiceGroup
+          label="Near miss type"
+          value={data.nearMissType}
+          options={nearMissTypeOptions}
           onChange={(value) =>
             update({
-              otherNearMissType: value,
+              nearMissType: value,
+              otherNearMissType: value === "Other" ? data.otherNearMissType : "",
             })
           }
-          placeholder="Describe the type of near miss"
+          required
+          columns={2}
         />
-      )}
 
-      <TextInput
-        label="Location"
-        value={data.location}
-        onChange={(value) =>
-          update({
-            location: value,
-          })
-        }
-        placeholder="For example, kitchen, bedroom, community or vehicle"
-      />
-
-      <TextArea
-        label="What Nearly Happened?"
-        value={data.description}
-        onChange={(value) =>
-          update({
-            description: value,
-          })
-        }
-        placeholder="Record the factual sequence of events..."
-        rows={5}
-      />
-
-      <TextArea
-        label="What Prevented Harm?"
-        value={data.preventionDetails}
-        onChange={(value) =>
-          update({
-            preventionDetails: value,
-          })
-        }
-        placeholder="Describe what stopped the incident from causing harm..."
-        rows={4}
-      />
-
-      <CheckboxGroup
-        label="Who Was at Risk?"
-        values={data.peopleAtRisk}
-        options={peopleAtRiskOptions}
-        onToggle={togglePersonAtRisk}
-      />
-
-      {data.peopleAtRisk.includes("Other") && (
-        <TextInput
-          label="Other Person at Risk"
-          value={data.otherPersonAtRisk}
-          onChange={(value) =>
-            update({
-              otherPersonAtRisk: value,
-            })
-          }
-          placeholder="Describe who else was at risk"
-        />
-      )}
-
-      <div>
-        <FieldLabel>
-          What is the current hazard status?
-        </FieldLabel>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {hazardStatusOptions.map((option) => (
-            <OptionButton
-              key={option.value}
-              label={option.label}
-              selected={
-                data.hazardStatus === option.value
-              }
-              onClick={() =>
-                selectHazardStatus(
-                  option.value as NearMissData["hazardStatus"]
-                )
-              }
+        {data.nearMissType === "Other" && (
+          <FormField label="Describe the near miss type" required>
+            <FormInput
+              value={data.otherNearMissType}
+              onChange={(event) => update({ otherNearMissType: event.target.value })}
+              placeholder="Describe the type of near miss"
             />
-          ))}
-        </div>
-      </div>
+          </FormField>
+        )}
 
-      {data.hazardStatus === "remains" && (
-        <SectionCard title="⚠️ Ongoing Hazard">
-          <SelectBlock
-            label="Current Risk Level"
-            value={data.riskLevel}
-            options={riskLevelOptions}
-            onChange={(value) =>
+        {typeComplete && (
+          <FormField label="Location" required>
+            <FormInput
+              value={data.location}
+              onChange={(event) => update({ location: event.target.value })}
+              placeholder="Where did this happen?"
+            />
+          </FormField>
+        )}
+
+        {data.location.trim() && (
+          <FormField label="What nearly happened?" required>
+            <FormTextarea
+              value={data.description}
+              onChange={(event) => update({ description: event.target.value })}
+              placeholder="Describe the factual sequence..."
+              rows={4}
+            />
+          </FormField>
+        )}
+
+        {data.description.trim() && (
+          <FormField label="What prevented harm?" required>
+            <FormTextarea
+              value={data.preventionDetails}
+              onChange={(event) => update({ preventionDetails: event.target.value })}
+              placeholder="Describe the intervention, circumstance or control that prevented harm..."
+              rows={4}
+            />
+          </FormField>
+        )}
+      </FormSection>
+
+      {data.preventionDetails.trim() && (
+        <FormSection title="Who was at risk?">
+          <FormMultiSelect
+            label="People at risk"
+            value={data.peopleAtRisk}
+            options={peopleAtRiskOptions}
+            onChange={(next) =>
               update({
-                riskLevel: value,
+                peopleAtRisk: next,
+                otherPersonAtRisk: next.includes("Other") ? data.otherPersonAtRisk : "",
               })
             }
+            required
+            columns={2}
           />
 
-          <TextArea
-            label="Control Measures"
-            value={data.controlMeasures}
-            onChange={(value) =>
-              update({
-                controlMeasures: value,
-              })
-            }
-            placeholder="Record how the risk is being controlled until it is resolved..."
-            rows={4}
-          />
-        </SectionCard>
+          {data.peopleAtRisk.includes("Other") && (
+            <FormField label="Other person at risk" required>
+              <FormInput
+                value={data.otherPersonAtRisk}
+                onChange={(event) => update({ otherPersonAtRisk: event.target.value })}
+                placeholder="Describe who else was at risk"
+              />
+            </FormField>
+          )}
+        </FormSection>
       )}
 
-      <CheckboxGroup
-        label="Immediate Actions"
-        values={data.immediateActions}
-        options={immediateActionOptions}
-        onToggle={toggleImmediateAction}
-      />
-
-      {data.immediateActions.includes("Other") && (
-        <TextArea
-          label="Describe the Other Immediate Action"
-          value={data.otherImmediateAction}
-          onChange={(value) =>
-            update({
-              otherImmediateAction: value,
-            })
-          }
-          placeholder="Describe the action taken"
-          rows={3}
-        />
-      )}
-
-      <CheckboxGroup
-        label="People Informed"
-        values={data.peopleInformed}
-        options={peopleInformedOptions}
-        onToggle={togglePersonInformed}
-      />
-
-      {data.peopleInformed.includes("Other") && (
-        <TextInput
-          label="Other Person or Service Informed"
-          value={data.otherPersonInformed}
-          onChange={(value) =>
-            update({
-              otherPersonInformed: value,
-            })
-          }
-          placeholder="Enter who was informed"
-        />
-      )}
-
-      <div>
-        <FieldLabel>
-          Is external reporting required?
-        </FieldLabel>
-
-        <div className="grid grid-cols-2 gap-3">
-          <OptionButton
-            label="No"
-            selected={
-              data.externalReportRequired === false
-            }
-            onClick={() =>
-              update({
-                externalReportRequired: false,
-                externalReportDetails: "",
-                externalReference: "",
-              })
-            }
+      {peopleAtRiskComplete && (
+        <FormSection title="Current hazard status">
+          <FormChoiceGroup
+            label="What is the current status of the hazard?"
+            value={data.hazardStatus}
+            options={hazardStatusOptions}
+            onChange={(value) => selectHazardStatus(value as NearMissData["hazardStatus"])}
+            required
+            columns={3}
           />
 
-          <OptionButton
-            label="Yes"
-            selected={
-              data.externalReportRequired === true
-            }
-            onClick={() =>
-              update({
-                externalReportRequired: true,
-              })
-            }
-          />
-        </div>
-      </div>
-
-      {data.externalReportRequired === true && (
-        <SectionCard title="📤 External Reporting">
-          <TextArea
-            label="Reporting Details"
-            value={data.externalReportDetails}
-            onChange={(value) =>
-              update({
-                externalReportDetails: value,
-              })
-            }
-            placeholder="Record who the near miss must be reported to and why..."
-            rows={4}
-          />
-
-          <TextInput
-            label="Reference Number (optional)"
-            value={data.externalReference}
-            onChange={(value) =>
-              update({
-                externalReference: value,
-              })
-            }
-            placeholder="Enter any reference number"
-          />
-        </SectionCard>
+          {data.hazardStatus === "remains" && (
+            <>
+              <FormChoiceGroup
+                label="Current risk level"
+                value={data.riskLevel}
+                options={riskLevelOptions}
+                onChange={(value) => update({ riskLevel: value })}
+                required
+                columns={2}
+              />
+              {data.riskLevel && (
+                <FormField label="Control measures" required>
+                  <FormTextarea
+                    value={data.controlMeasures}
+                    onChange={(event) => update({ controlMeasures: event.target.value })}
+                    placeholder="What is in place to reduce the remaining risk?"
+                    rows={4}
+                  />
+                </FormField>
+              )}
+            </>
+          )}
+        </FormSection>
       )}
 
-      <CheckboxGroup
-        label="Follow-up Actions"
-        values={data.followUpActions}
-        options={followUpOptions}
-        onToggle={toggleFollowUp}
-      />
+      {hazardComplete && (
+        <FormSection title="Immediate response">
+          <FormMultiSelect
+            label="Immediate actions"
+            value={data.immediateActions}
+            options={immediateActionOptions}
+            onChange={updateImmediateActions}
+            required
+            columns={2}
+          />
 
-      {notesRecommended && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Add any relevant detail where a hazard remains,
-          the risk is high, external reporting is required
-          or safeguarding has been considered.
-        </div>
+          {data.immediateActions.includes("Other") && (
+            <FormField label="Describe the other immediate action" required>
+              <FormTextarea
+                value={data.otherImmediateAction}
+                onChange={(event) => update({ otherImmediateAction: event.target.value })}
+                rows={3}
+              />
+            </FormField>
+          )}
+        </FormSection>
       )}
 
-      <TextArea
-        label="Notes"
-        value={data.notes}
-        onChange={(value) =>
-          update({
-            notes: value,
-          })
-        }
-        placeholder="Optional additional information..."
-        rows={4}
-      />
-    </div>
-  );
-}
+      {actionsComplete && (
+        <FormSection title="Reporting">
+          <FormMultiSelect
+            label="Who was informed?"
+            value={data.peopleInformed}
+            options={peopleInformedOptions}
+            onChange={(next) =>
+              update({
+                peopleInformed: next,
+                otherPersonInformed: next.includes("Other") ? data.otherPersonInformed : "",
+              })
+            }
+            required
+            columns={2}
+          />
 
-function FieldLabel({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="mb-2 block text-sm font-medium text-slate-700">
-      {children}
-    </label>
-  );
-}
+          {data.peopleInformed.includes("Other") && (
+            <FormField label="Other person or service informed" required>
+              <FormInput
+                value={data.otherPersonInformed}
+                onChange={(event) => update({ otherPersonInformed: event.target.value })}
+                placeholder="Who else was informed?"
+              />
+            </FormField>
+          )}
 
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <h4 className="font-semibold text-slate-900">
-        {title}
-      </h4>
+          {informedComplete && (
+            <FormYesNo
+              label="Is external reporting required?"
+              value={data.externalReportRequired}
+              onChange={(value) =>
+                update({
+                  externalReportRequired: value,
+                  externalReportDetails: value ? data.externalReportDetails : "",
+                  externalReference: value ? data.externalReference : "",
+                })
+              }
+              required
+            />
+          )}
 
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
+          {data.externalReportRequired === true && (
+            <>
+              <FormField label="External reporting details" required>
+                <FormTextarea
+                  value={data.externalReportDetails}
+                  onChange={(event) => update({ externalReportDetails: event.target.value })}
+                  placeholder="Who must be notified and what action is required?"
+                  rows={4}
+                />
+              </FormField>
+              <FormField label="Reference number">
+                <FormInput
+                  value={data.externalReference}
+                  onChange={(event) => update({ externalReference: event.target.value })}
+                  placeholder="Optional external reference"
+                />
+              </FormField>
+            </>
+          )}
+        </FormSection>
+      )}
 
-function OptionButton({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-xl border px-4 py-3 text-left text-sm ${
-        selected
-          ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-          : "border-slate-200 bg-white text-slate-700"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+      {reportingComplete && (
+        <FormSection
+          title="Follow-up actions"
+          collapsible
+          defaultOpen={false}
+          summary={data.followUpActions.length ? `${data.followUpActions.length} selected` : "Optional"}
+        >
+          <FormMultiSelect
+            label="Follow-up actions"
+            value={data.followUpActions}
+            options={followUpOptions}
+            onChange={(next) => update({ followUpActions: next })}
+            columns={2}
+          />
+        </FormSection>
+      )}
 
-function TextInput({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <input
-        type="text"
-        value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  placeholder,
-  rows = 3,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <textarea
-        value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        placeholder={placeholder}
-        rows={rows}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function SelectBlock({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange(option)}
-            className={`rounded-xl border px-3 py-3 text-left text-sm ${
-              value === option
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
+      {reportingComplete &&
+        (notesRecommended ? (
+          <FormSection title="Additional detail">
+            <FormAlert variant="warning" title="Additional detail recommended">
+              Add relevant information where risk remains high, external reporting is required or safeguarding was considered.
+            </FormAlert>
+            <FormField label="Notes">
+              <FormTextarea
+                value={data.notes}
+                onChange={(event) => update({ notes: event.target.value })}
+                placeholder="Add relevant detail..."
+                rows={4}
+              />
+            </FormField>
+          </FormSection>
+        ) : (
+          <FormSection
+            title="Additional notes"
+            description="Only add information that is not already captured above."
+            collapsible
+            defaultOpen={false}
+            summary={data.notes.trim() ? "Notes added" : "Optional"}
           >
-            {option}
-          </button>
+            <FormField label="Notes">
+              <FormTextarea
+                value={data.notes}
+                onChange={(event) => update({ notes: event.target.value })}
+                placeholder="Optional additional information..."
+                rows={4}
+              />
+            </FormField>
+          </FormSection>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function CheckboxGroup({
-  label,
-  values,
-  options,
-  onToggle,
-}: {
-  label: string;
-  values: string[];
-  options: string[];
-  onToggle: (value: string) => void;
-}) {
-  return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-
-      <div className="space-y-2">
-        {options.map((option) => {
-          const selected = values.includes(option);
-
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onToggle(option)}
-              className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm ${
-                selected
-                  ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                  : "border-slate-200 bg-white text-slate-700"
-              }`}
-            >
-              <span>{option}</span>
-              <span>{selected ? "✓" : ""}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }

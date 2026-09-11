@@ -1,4 +1,8 @@
 import type { SaveContext } from "../types";
+import {
+  completeTimelineSave,
+  insertTimelineEntry,
+} from "../saveTimelineEntry";
 
 export async function saveBodyMap(
   ctx: SaveContext
@@ -10,28 +14,15 @@ export async function saveBodyMap(
 
   const markerSummary = ctx.bodyMapMarkers
     .map(
-      (marker) => `Marker ${marker.markerNumber}
-View: ${marker.bodyView}
-Body Area: ${marker.bodyArea || "Not recorded"}
-Injury Type: ${marker.injuryType || "Not recorded"}
-Description: ${marker.description || "Not recorded"}
-Action Taken: ${marker.actionTaken || "Not recorded"}`
+      (marker) => `Marker ${marker.markerNumber}\nView: ${marker.bodyView}\nBody Area: ${marker.bodyArea || "Not recorded"}\nInjury Type: ${marker.injuryType || "Not recorded"}\nDescription: ${marker.description || "Not recorded"}\nAction Taken: ${marker.actionTaken || "Not recorded"}`
     )
     .join("\n\n");
 
   const additionalNotes = ctx.bodyMapNotes?.trim();
 
-  const finalContent = `Body Map
-
-Markers Recorded:
-${ctx.bodyMapMarkers.length}
-
-${markerSummary}${
+  const finalContent = `Body Map\n\nMarkers Recorded:\n${ctx.bodyMapMarkers.length}\n\n${markerSummary}${
     additionalNotes
-      ? `
-
-Additional Notes:
-${additionalNotes}`
+      ? `\n\nAdditional Notes:\n${additionalNotes}`
       : ""
   }`;
 
@@ -49,24 +40,27 @@ ${additionalNotes}`
     notes: additionalNotes || null,
   };
 
-  const { data: timelineEntry, error: timelineError } =
-    await ctx.supabase
-      .from("timeline_entries")
-      .insert({
-        service_user_id: ctx.serviceUserId,
-        created_by: ctx.userId,
-        entry_type: "Body Map",
-        content: finalContent,
-        metadata,
-        event_time: ctx.eventTime,
-      })
-      .select("id")
-      .single();
+  const timelineEntryId = await insertTimelineEntry(ctx, {
+    entryType: "Body Map",
+    content: finalContent,
+    metadata,
+  });
 
-  if (timelineError) {
-    alert(timelineError.message);
-    return false;
-  }
+  if (!timelineEntryId) return false;
+
+  const rollbackTimelineEntry = async () => {
+    const { error } = await ctx.supabase
+      .from("timeline_entries")
+      .delete()
+      .eq("id", timelineEntryId);
+
+    if (error) {
+      console.error("Failed to roll back incomplete body map timeline entry", {
+        timelineEntryId,
+        error,
+      });
+    }
+  };
 
   const { data: bodyMap, error: bodyMapError } =
     await ctx.supabase
@@ -74,14 +68,15 @@ ${additionalNotes}`
       .insert({
         organisation_id: ctx.organisationId,
         service_user_id: ctx.serviceUserId,
-        timeline_entry_id: timelineEntry.id,
+        timeline_entry_id: timelineEntryId,
         created_by: ctx.userId,
       })
       .select("id")
       .single();
 
-  if (bodyMapError) {
-    alert(bodyMapError.message);
+  if (bodyMapError || !bodyMap?.id) {
+    console.error("Body map record save failed", bodyMapError);
+    await rollbackTimelineEntry();
     return false;
   }
 
@@ -102,13 +97,13 @@ ${additionalNotes}`
     .insert(markerRows);
 
   if (markerError) {
-    alert(markerError.message);
+    console.error("Body map marker save failed", markerError);
+
+    await ctx.supabase.from("body_maps").delete().eq("id", bodyMap.id);
+    await rollbackTimelineEntry();
     return false;
   }
 
-  ctx.resetEntryPanel();
-  ctx.setEntryPanelOpen(false);
-  await ctx.loadEntries();
-
+  await completeTimelineSave(ctx);
   return true;
 }

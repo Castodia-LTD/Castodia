@@ -27,12 +27,8 @@ export type EnvironmentCheckData = {
 
 type Props = {
   environmentCheckData?: EnvironmentCheckData;
-  setEnvironmentCheckData?: (
-    data: EnvironmentCheckData,
-  ) => void;
-  onChange?: (
-    data: EnvironmentCheckData,
-  ) => void;
+  setEnvironmentCheckData?: (data: EnvironmentCheckData) => void;
+  onChange?: (data: EnvironmentCheckData) => void;
 };
 
 const cleanlinessOptions = [
@@ -66,10 +62,7 @@ const riskLevelOptions = [
 const reportedToOptions = [
   { value: "Manager", label: "Manager" },
   { value: "Maintenance", label: "Maintenance" },
-  {
-    value: "Manager and Maintenance",
-    label: "Manager and Maintenance",
-  },
+  { value: "Manager and Maintenance", label: "Manager and Maintenance" },
   { value: "Other", label: "Other" },
 ];
 
@@ -91,78 +84,42 @@ export default function EnvironmentCheckForm({
   setEnvironmentCheckData,
   onChange,
 }: Props) {
-  const [localData, setLocalData] =
-    useState<EnvironmentCheckData>(
-      environmentCheckData ??
-        initialEnvironmentCheckData,
-    );
+  const [localData, setLocalData] = useState<EnvironmentCheckData>(
+    environmentCheckData ?? initialEnvironmentCheckData,
+  );
 
-  const data =
-    environmentCheckData ?? localData;
+  const data = environmentCheckData ?? localData;
 
   useEffect(() => {
-    if (environmentCheckData) {
-      setLocalData(environmentCheckData);
-    }
+    if (environmentCheckData) setLocalData(environmentCheckData);
   }, [environmentCheckData]);
 
   const cleanlinessConcern = useMemo(
-    () =>
-      data.cleanliness === "Requires Cleaning" ||
-      data.cleanliness === "Unsanitary",
+    () => data.cleanliness === "Requires Cleaning" || data.cleanliness === "Unsanitary",
     [data.cleanliness],
   );
 
-  const hasTemperature =
-    data.temperature.trim() !== "";
-
-  const hasCleanliness =
-    data.cleanliness.trim() !== "";
-
-  const hasHazardStatus =
-    data.hazardStatus !== "";
-
-  const hazardIdentified =
-    data.hazardStatus === "hazard_identified";
-
-  const hasHazardType =
-    data.hazardType.trim() !== "";
-
+  const hasTemperature = data.temperature.trim() !== "";
+  const hasCleanliness = data.cleanliness.trim() !== "";
+  const hasHazardStatus = data.hazardStatus !== "";
+  const hazardIdentified = data.hazardStatus === "hazard_identified";
+  const hasHazardType = data.hazardType.trim() !== "";
   const hazardTypeComplete =
-    hasHazardType &&
-    (data.hazardType !== "Other" ||
-      data.otherHazardType.trim() !== "");
-
-  const hasRiskLevel =
-    data.riskLevel.trim() !== "";
-
-  const hasActionTaken =
-    data.actionTaken.trim() !== "";
-
-  const hasReportedTo =
-    data.reportedTo.trim() !== "";
-
+    hasHazardType && (data.hazardType !== "Other" || data.otherHazardType.trim() !== "");
+  const hasRiskLevel = data.riskLevel.trim() !== "";
+  const hasActionTaken = data.actionTaken.trim() !== "";
+  const hasReportedTo = data.reportedTo.trim() !== "";
   const reportedToComplete =
-    hasReportedTo &&
-    (data.reportedTo !== "Other" ||
-      data.otherReportedTo.trim() !== "");
+    hasReportedTo && (data.reportedTo !== "Other" || data.otherReportedTo.trim() !== "");
 
-  function update(
-    changes: Partial<EnvironmentCheckData>,
-  ) {
-    const next: EnvironmentCheckData = {
-      ...data,
-      ...changes,
-    };
-
+  function update(changes: Partial<EnvironmentCheckData>) {
+    const next: EnvironmentCheckData = { ...data, ...changes };
     setLocalData(next);
     setEnvironmentCheckData?.(next);
     onChange?.(next);
   }
 
-  function selectHazardStatus(
-    value: boolean,
-  ) {
+  function selectHazardStatus(value: boolean) {
     if (!value) {
       update({
         hazardStatus: "no_hazard",
@@ -173,73 +130,47 @@ export default function EnvironmentCheckForm({
         reportedTo: "",
         otherReportedTo: "",
       });
-
       return;
     }
 
-    update({
-      hazardStatus: "hazard_identified",
-    });
+    update({ hazardStatus: "hazard_identified" });
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-slate-950">
-          Environment Check
-        </h3>
-
+        <h3 className="text-lg font-semibold text-slate-950">Environment Check</h3>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          Record the condition and safety of the environment.
+          Record the routine check first. Extra detail only appears when something needs action.
         </p>
       </div>
 
-      <FormSection
-        title="Temperature"
-        description="Record the current environmental temperature."
-      >
-        <FormField label="Current temperature">
+      <FormSection title="Temperature">
+        <FormField label="Current temperature" required>
           <div className="flex items-center gap-3">
             <FormInput
               type="number"
               step="any"
               value={data.temperature}
-              onChange={(event) =>
-                update({
-                  temperature: event.target.value,
-                })
-              }
+              onChange={(event) => update({ temperature: event.target.value })}
               placeholder="For example, 21"
             />
-
-            <span className="shrink-0 text-sm font-medium text-teal-700">
-              °C
-            </span>
+            <span className="shrink-0 text-sm font-medium text-teal-700">°C</span>
           </div>
         </FormField>
       </FormSection>
 
       {hasTemperature && (
-        <FormSection
-          title="Cleanliness"
-          description="Record the current condition of the environment."
-        >
+        <FormSection title="Cleanliness">
           <FormChoiceGroup
             label="How clean is the environment?"
             value={data.cleanliness}
             options={cleanlinessOptions}
-            onChange={(value) =>
-              update({
-                cleanliness: value,
-              })
-            }
+            onChange={(value) => update({ cleanliness: value })}
+            required
           />
-
           {cleanlinessConcern && (
-            <FormAlert
-              variant="warning"
-              title="Cleaning action required"
-            >
+            <FormAlert variant="warning" title="Cleaning action required">
               Record the cleaning action or relevant details before saving.
             </FormAlert>
           )}
@@ -247,17 +178,10 @@ export default function EnvironmentCheckForm({
       )}
 
       {hasCleanliness && (
-        <FormSection
-          title="Hazards"
-          description="Record whether any environmental hazards were identified."
-        >
+        <FormSection title="Safety">
           <FormYesNo
             label="Were any hazards identified?"
-            value={
-              data.hazardStatus === ""
-                ? null
-                : hazardIdentified
-            }
+            value={data.hazardStatus === "" ? null : hazardIdentified}
             yesLabel="Hazard identified"
             noLabel="No hazards identified"
             onChange={selectHazardStatus}
@@ -268,7 +192,7 @@ export default function EnvironmentCheckForm({
       {hazardIdentified && (
         <FormSection
           title="Hazard details"
-          description="Record the hazard, current risk and action taken."
+          description="Because a hazard was identified, record the minimum information needed for safe follow-up."
           className="border-amber-200 bg-amber-50/50"
         >
           <FormChoiceGroup
@@ -278,20 +202,18 @@ export default function EnvironmentCheckForm({
             onChange={(value) =>
               update({
                 hazardType: value,
-                otherHazardType:
-                  value === "Other"
-                    ? data.otherHazardType
-                    : "",
+                otherHazardType: value === "Other" ? data.otherHazardType : "",
                 riskLevel: "",
                 actionTaken: "",
                 reportedTo: "",
                 otherReportedTo: "",
               })
             }
+            required
           />
 
           {data.hazardType === "Other" && (
-            <FormField label="Describe the hazard">
+            <FormField label="Describe the hazard" required>
               <FormInput
                 value={data.otherHazardType}
                 onChange={(event) =>
@@ -321,6 +243,7 @@ export default function EnvironmentCheckForm({
                   otherReportedTo: "",
                 })
               }
+              required
             />
           )}
 
@@ -328,6 +251,7 @@ export default function EnvironmentCheckForm({
             <FormField
               label="Action taken"
               description="Describe what was done to remove or reduce the risk."
+              required
             >
               <FormTextarea
                 rows={4}
@@ -352,24 +276,18 @@ export default function EnvironmentCheckForm({
               onChange={(value) =>
                 update({
                   reportedTo: value,
-                  otherReportedTo:
-                    value === "Other"
-                      ? data.otherReportedTo
-                      : "",
+                  otherReportedTo: value === "Other" ? data.otherReportedTo : "",
                 })
               }
+              required
             />
           )}
 
           {data.reportedTo === "Other" && (
-            <FormField label="Who was it reported to?">
+            <FormField label="Who was it reported to?" required>
               <FormInput
                 value={data.otherReportedTo}
-                onChange={(event) =>
-                  update({
-                    otherReportedTo: event.target.value,
-                  })
-                }
+                onChange={(event) => update({ otherReportedTo: event.target.value })}
                 placeholder="Enter the person or service informed"
               />
             </FormField>
@@ -377,41 +295,35 @@ export default function EnvironmentCheckForm({
         </FormSection>
       )}
 
-      {hasHazardStatus &&
-        (!hazardIdentified ||
-          reportedToComplete) && (
-          <FormSection
-            title="Additional notes"
-            description={
-              cleanlinessConcern
-                ? "Record cleaning action and any further relevant information."
-                : "Add any further information that may be useful."
-            }
+      {hasHazardStatus && (!hazardIdentified || reportedToComplete) && (
+        <FormSection
+          title={cleanlinessConcern ? "Cleaning action and notes" : "Additional notes"}
+          description={
+            cleanlinessConcern
+              ? "A cleanliness concern was recorded, so add the action taken."
+              : "Routine checks do not need extra narrative unless there is something useful to add."
+          }
+          collapsible={!cleanlinessConcern}
+          defaultOpen={cleanlinessConcern}
+          summary={data.notes.trim() ? "Notes added" : "Optional"}
+        >
+          <FormField
+            label={cleanlinessConcern ? "Action taken" : "Notes"}
+            required={cleanlinessConcern}
           >
-            <FormField
-              label={
+            <FormTextarea
+              rows={4}
+              value={data.notes}
+              onChange={(event) => update({ notes: event.target.value })}
+              placeholder={
                 cleanlinessConcern
-                  ? "Cleaning action and notes"
-                  : "Notes"
+                  ? "Record the cleaning action taken and any additional details..."
+                  : "Optional additional information..."
               }
-            >
-              <FormTextarea
-                rows={4}
-                value={data.notes}
-                onChange={(event) =>
-                  update({
-                    notes: event.target.value,
-                  })
-                }
-                placeholder={
-                  cleanlinessConcern
-                    ? "Record the cleaning action taken and any additional details..."
-                    : "Optional additional information..."
-                }
-              />
-            </FormField>
-          </FormSection>
-        )}
+            />
+          </FormField>
+        </FormSection>
+      )}
     </div>
   );
 }

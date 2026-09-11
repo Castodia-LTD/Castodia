@@ -1,5 +1,5 @@
-import ServiceUserReviewsPage from "@/features/care/manager/service-users/reviews/ServiceUserReviewsPage";
+import ReviewsHubPage from "@/features/care/manager/service-users/reviews/ReviewsHubPage";
 
 export default function Page() {
-  return <ServiceUserReviewsPage />;
+  return <ReviewsHubPage />;
 }

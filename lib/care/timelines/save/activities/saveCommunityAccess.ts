@@ -47,7 +47,11 @@ export async function saveCommunityAccess(
     return false;
   }
 
-  if (!data.participationLevel) {
+  const participationNotApplicable =
+    data.attendanceStatus === "Cancelled" ||
+    data.attendanceStatus === "Unable to Attend";
+
+  if (!participationNotApplicable && !data.participationLevel) {
     alert("Please select participation level.");
     return false;
   }
@@ -66,7 +70,7 @@ export async function saveCommunityAccess(
   }
 
   if (
-    data.supportProvided.includes("Other") &&
+    data.supportProvided?.includes("Other") &&
     !data.otherSupport?.trim()
   ) {
     alert("Please describe the support provided.");
@@ -82,7 +86,7 @@ export async function saveCommunityAccess(
     item === "Other" ? data.otherPurpose.trim() : item
   );
 
-  const support = data.supportProvided.map((item: string) =>
+  const support = (data.supportProvided || []).map((item: string) =>
     item === "Other" ? data.otherSupport.trim() : item
   );
 
@@ -90,34 +94,26 @@ export async function saveCommunityAccess(
     item === "Other" ? data.otherOutcome.trim() : item
   );
 
-  const finalContent = `Community Access
+  const participation = participationNotApplicable
+    ? "Not applicable"
+    : data.participationLevel;
 
-Community Type:
-${communityType}
-
-Place / Service / Group:
-${data.placeOrGroupName.trim()}
-
-Purpose:
-${purposes.map((item: string) => `• ${item}`).join("\n")}
-
-Attendance:
-${data.attendanceStatus}
-
-Participation Level:
-${data.participationLevel}
-
-Support Provided:
-${support.map((item: string) => `• ${item}`).join("\n")}
-
-Outcome:
-${outcomes.map((item: string) => `• ${item}`).join("\n")}
-
-Notes:
-${data.notes?.trim() || "Not recorded"}`;
+  const finalContent = `Community Access\n\nCommunity Type:\n${communityType}\n\nPlace / Service / Group:\n${data.placeOrGroupName.trim()}\n\nPurpose:\n${purposes.map((item: string) => `• ${item}`).join("\n")}\n\nAttendance:\n${data.attendanceStatus}\n\nParticipation Level:\n${participation}\n\nSupport Provided:\n${support.length ? support.map((item: string) => `• ${item}`).join("\n") : "Not recorded"}\n\nOutcome:\n${outcomes.map((item: string) => `• ${item}`).join("\n")}\n\nNotes:\n${data.notes?.trim() || "Not recorded"}`;
 
   return saveTimelineEntry(ctx, {
     entryType: "Community Access",
     content: finalContent,
+    metadata: {
+      communityType,
+      placeOrGroupName: data.placeOrGroupName.trim(),
+      purposes,
+      attendanceStatus: data.attendanceStatus,
+      participationLevel: participationNotApplicable
+        ? null
+        : data.participationLevel,
+      supportProvided: support,
+      outcomes,
+      notes: data.notes?.trim() || null,
+    },
   });
 }

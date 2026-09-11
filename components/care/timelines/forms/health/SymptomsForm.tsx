@@ -2,26 +2,36 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  FormAlert,
+  FormChoiceGroup,
+  FormField,
+  FormInput,
+  FormMultiSelect,
+  FormSection,
+  FormTextarea,
+} from "@/components/care/timelines/forms/shared";
+
 type Props = {
   onChange: (data: any) => void;
 };
 
 const symptomOptions = [
-  { value: "temperature", label: "Temperature", icon: "🤒" },
-  { value: "cough", label: "Cough", icon: "😮‍💨" },
-  { value: "cold_symptoms", label: "Cold Symptoms", icon: "🤧" },
-  { value: "nausea", label: "Nausea", icon: "🤢" },
-  { value: "vomiting", label: "Vomiting", icon: "🤮" },
-  { value: "diarrhoea", label: "Diarrhoea", icon: "💩" },
-  { value: "pain", label: "Pain", icon: "😣" },
-  { value: "dizziness", label: "Dizziness", icon: "🥴" },
-  { value: "fatigue", label: "Fatigue", icon: "😴" },
-  { value: "poor_appetite", label: "Poor Appetite", icon: "🍽" },
-  { value: "reduced_fluid_intake", label: "Reduced Fluid Intake", icon: "💧" },
-  { value: "shortness_of_breath", label: "Shortness of Breath", icon: "🫁" },
-  { value: "confusion", label: "Confusion", icon: "🧠" },
-  { value: "low_mood", label: "Low Mood", icon: "😢" },
-  { value: "other", label: "Other", icon: "➕" },
+  { value: "temperature", label: "Temperature" },
+  { value: "cough", label: "Cough" },
+  { value: "cold_symptoms", label: "Cold symptoms" },
+  { value: "nausea", label: "Nausea" },
+  { value: "vomiting", label: "Vomiting" },
+  { value: "diarrhoea", label: "Diarrhoea" },
+  { value: "pain", label: "Pain" },
+  { value: "dizziness", label: "Dizziness" },
+  { value: "fatigue", label: "Fatigue" },
+  { value: "poor_appetite", label: "Poor appetite" },
+  { value: "reduced_fluid_intake", label: "Reduced fluid intake" },
+  { value: "shortness_of_breath", label: "Shortness of breath" },
+  { value: "confusion", label: "Confusion" },
+  { value: "low_mood", label: "Low mood" },
+  { value: "other", label: "Other" },
 ];
 
 const actionOptions = [
@@ -33,11 +43,22 @@ const actionOptions = [
   "Medication Given",
   "Emergency Services",
   "Other",
-];
+].map((value) => ({ value, label: value }));
+
+const durationOptions = [
+  "Started Today",
+  "Yesterday",
+  "2–3 Days",
+  "More Than 3 Days",
+  "Unknown",
+].map((value) => ({ value, label: value }));
+
+function choices(values: string[]) {
+  return values.map((value) => ({ value, label: value }));
+}
 
 export default function SymptomsForm({ onChange }: Props) {
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-
   const [temperatureType, setTemperatureType] = useState("");
   const [coughType, setCoughType] = useState("");
   const [vomitingOccurrences, setVomitingOccurrences] = useState("");
@@ -46,7 +67,6 @@ export default function SymptomsForm({ onChange }: Props) {
   const [painSeverity, setPainSeverity] = useState("");
   const [breathlessnessSeverity, setBreathlessnessSeverity] = useState("");
   const [otherSymptom, setOtherSymptom] = useState("");
-
   const [duration, setDuration] = useState("");
   const [actionsTaken, setActionsTaken] = useState<string[]>([
     "No Action Required",
@@ -55,18 +75,18 @@ export default function SymptomsForm({ onChange }: Props) {
 
   const notesRequired = useMemo(() => {
     const hasAction = actionsTaken.some(
-      (action) => action !== "No Action Required"
+      (action) => action !== "No Action Required",
     );
 
-    const hasSevereSymptom =
-      painSeverity === "Severe" || breathlessnessSeverity === "Severe";
-
-    const hasOther = selectedSymptoms.includes("other");
-
-    return hasAction || hasSevereSymptom || hasOther;
+    return (
+      hasAction ||
+      painSeverity === "Severe" ||
+      breathlessnessSeverity === "Severe" ||
+      selectedSymptoms.includes("other")
+    );
   }, [actionsTaken, painSeverity, breathlessnessSeverity, selectedSymptoms]);
 
-  function update(payload?: any) {
+  function emit(overrides: any = {}) {
     onChange({
       selectedSymptoms,
       details: {
@@ -82,361 +102,225 @@ export default function SymptomsForm({ onChange }: Props) {
       duration,
       actionsTaken,
       notes,
-      ...payload,
+      ...overrides,
     });
   }
 
-  function toggleSymptom(value: string) {
-    const next = selectedSymptoms.includes(value)
-      ? selectedSymptoms.filter((item) => item !== value)
-      : [...selectedSymptoms, value];
-
+  function setSymptoms(next: string[]) {
     setSelectedSymptoms(next);
-    update({ selectedSymptoms: next });
+    emit({ selectedSymptoms: next });
   }
 
-  function toggleAction(value: string) {
-    let next: string[];
+  function setActions(next: string[]) {
+    let normalized = next;
 
-    if (value === "No Action Required") {
-      next = ["No Action Required"];
-    } else {
-      next = actionsTaken
-        .filter((item) => item !== "No Action Required")
-        .includes(value)
-        ? actionsTaken.filter((item) => item !== value)
-        : [
-            ...actionsTaken.filter(
-              (item) => item !== "No Action Required"
-            ),
-            value,
-          ];
+    if (normalized.includes("No Action Required") && normalized.length > 1) {
+      normalized = normalized.filter((item) => item !== "No Action Required");
     }
 
-    if (next.length === 0) next = ["No Action Required"];
+    if (normalized.length === 0) normalized = ["No Action Required"];
 
-    setActionsTaken(next);
-    update({ actionsTaken: next });
+    setActionsTaken(normalized);
+    emit({ actionsTaken: normalized });
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-slate-900">Symptoms</h3>
-        <p className="text-sm text-slate-500">
-          Record symptoms observed or reported.
-        </p>
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          What symptoms are present?
-        </label>
-
-        <div className="grid grid-cols-2 gap-3">
-          {symptomOptions.map((symptom) => (
-            <button
-              key={symptom.value}
-              type="button"
-              onClick={() => toggleSymptom(symptom.value)}
-              className={`rounded-2xl border p-4 text-left transition ${
-                selectedSymptoms.includes(symptom.value)
-                  ? "border-cyan-500 bg-cyan-50"
-                  : "border-slate-200 bg-white"
-              }`}
-            >
-              <div className="text-2xl">{symptom.icon}</div>
-              <div className="mt-2 text-sm font-semibold text-slate-900">
-                {symptom.label}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {selectedSymptoms.includes("temperature") && (
-        <SectionCard title="🤒 Temperature">
-          <SelectBlock
-            label="Temperature type"
-            value={temperatureType}
-            onChange={(value) => {
-              setTemperatureType(value);
-              update({ details: { temperatureType: value } });
-            }}
-            options={[
-              "Low Grade",
-              "High Temperature",
-              "Temperature Recorded Elsewhere",
-            ]}
-          />
-        </SectionCard>
-      )}
-
-      {selectedSymptoms.includes("cough") && (
-        <SectionCard title="😮‍💨 Cough">
-          <SelectBlock
-            label="Cough type"
-            value={coughType}
-            onChange={(value) => {
-              setCoughType(value);
-              update();
-            }}
-            options={["Dry", "Productive", "Unknown"]}
-          />
-        </SectionCard>
-      )}
-
-      {selectedSymptoms.includes("vomiting") && (
-        <SectionCard title="🤮 Vomiting">
-          <SelectBlock
-            label="Occurrences"
-            value={vomitingOccurrences}
-            onChange={(value) => {
-              setVomitingOccurrences(value);
-              update();
-            }}
-            options={["1", "2", "3", "4+"]}
-          />
-        </SectionCard>
-      )}
-
-      {selectedSymptoms.includes("diarrhoea") && (
-        <SectionCard title="💩 Diarrhoea">
-          <SelectBlock
-            label="Occurrences"
-            value={diarrhoeaOccurrences}
-            onChange={(value) => {
-              setDiarrhoeaOccurrences(value);
-              update();
-            }}
-            options={["1", "2", "3", "4+"]}
-          />
-        </SectionCard>
-      )}
-
-      {selectedSymptoms.includes("pain") && (
-        <SectionCard title="😣 Pain">
-          <SelectBlock
-            label="Location"
-            value={painLocation}
-            onChange={(value) => {
-              setPainLocation(value);
-              update();
-            }}
-            options={[
-              "Head",
-              "Chest",
-              "Abdomen",
-              "Back",
-              "Arm",
-              "Leg",
-              "Other",
-            ]}
-          />
-
-          <SelectBlock
-            label="Severity"
-            value={painSeverity}
-            onChange={(value) => {
-              setPainSeverity(value);
-              update();
-            }}
-            options={["Mild", "Moderate", "Severe"]}
-          />
-        </SectionCard>
-      )}
-
-      {selectedSymptoms.includes("shortness_of_breath") && (
-        <SectionCard title="🫁 Shortness of Breath">
-          <SelectBlock
-            label="Severity"
-            value={breathlessnessSeverity}
-            onChange={(value) => {
-              setBreathlessnessSeverity(value);
-              update();
-            }}
-            options={["Mild", "Moderate", "Severe"]}
-          />
-        </SectionCard>
-      )}
-
-      {selectedSymptoms.includes("other") && (
-        <SectionCard title="➕ Other Symptom">
-          <TextInput
-            label="Other symptom"
-            value={otherSymptom}
-            onChange={(value) => {
-              setOtherSymptom(value);
-              update();
-            }}
-          />
-        </SectionCard>
-      )}
+    <div className="space-y-5">
+      <FormSection
+        title="Symptoms"
+        description="Select the symptoms observed or reported. Only relevant follow-up questions will appear."
+      >
+        <FormMultiSelect
+          label="Symptoms present"
+          value={selectedSymptoms}
+          options={symptomOptions}
+          onChange={setSymptoms}
+          columns={2}
+          required
+        />
+      </FormSection>
 
       {selectedSymptoms.length > 0 && (
-        <>
-          <SelectBlock
-            label="Duration"
-            value={duration}
-            onChange={(value) => {
-              setDuration(value);
-              update({ duration: value });
-            }}
-            options={[
-              "Started Today",
-              "Yesterday",
-              "2–3 Days",
-              "More Than 3 Days",
-              "Unknown",
-            ]}
-          />
+        <FormSection
+          title="Symptom details"
+          description="Add detail only for the symptoms that need it."
+        >
+          {selectedSymptoms.includes("temperature") && (
+            <FormChoiceGroup
+              label="Temperature"
+              value={temperatureType}
+              options={choices([
+                "Low Grade",
+                "High Temperature",
+                "Temperature Recorded Elsewhere",
+              ])}
+              onChange={(value) => {
+                setTemperatureType(value);
+                emit({ details: { temperatureType: value } });
+              }}
+            />
+          )}
 
-          <CheckboxGroup
-            label="Action Taken"
-            values={actionsTaken}
-            options={actionOptions}
-            onToggle={toggleAction}
-          />
+          {selectedSymptoms.includes("cough") && (
+            <FormChoiceGroup
+              label="Cough type"
+              value={coughType}
+              options={choices(["Dry", "Productive", "Unknown"])}
+              onChange={(value) => {
+                setCoughType(value);
+                emit();
+              }}
+            />
+          )}
 
-          {notesRequired && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              Please add notes for actions taken, severe symptoms, or other
-              symptoms.
+          {selectedSymptoms.includes("vomiting") && (
+            <FormChoiceGroup
+              label="Vomiting occurrences"
+              value={vomitingOccurrences}
+              options={choices(["1", "2", "3", "4+"])}
+              onChange={(value) => {
+                setVomitingOccurrences(value);
+                emit();
+              }}
+            />
+          )}
+
+          {selectedSymptoms.includes("diarrhoea") && (
+            <FormChoiceGroup
+              label="Diarrhoea occurrences"
+              value={diarrhoeaOccurrences}
+              options={choices(["1", "2", "3", "4+"])}
+              onChange={(value) => {
+                setDiarrhoeaOccurrences(value);
+                emit();
+              }}
+            />
+          )}
+
+          {selectedSymptoms.includes("pain") && (
+            <div className="space-y-5">
+              <FormChoiceGroup
+                label="Pain location"
+                value={painLocation}
+                options={choices([
+                  "Head",
+                  "Chest",
+                  "Abdomen",
+                  "Back",
+                  "Arm",
+                  "Leg",
+                  "Other",
+                ])}
+                onChange={(value) => {
+                  setPainLocation(value);
+                  emit();
+                }}
+              />
+
+              <FormChoiceGroup
+                label="Pain severity"
+                value={painSeverity}
+                options={choices(["Mild", "Moderate", "Severe"])}
+                onChange={(value) => {
+                  setPainSeverity(value);
+                  emit();
+                }}
+              />
             </div>
           )}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              {notesRequired ? "Tell us more" : "Notes"}
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value);
-                update({ notes: e.target.value });
+          {selectedSymptoms.includes("shortness_of_breath") && (
+            <FormChoiceGroup
+              label="Breathlessness severity"
+              value={breathlessnessSeverity}
+              options={choices(["Mild", "Moderate", "Severe"])}
+              onChange={(value) => {
+                setBreathlessnessSeverity(value);
+                emit();
               }}
-              rows={3}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+            />
+          )}
+
+          {selectedSymptoms.includes("other") && (
+            <FormField label="Other symptom" required>
+              <FormInput
+                value={otherSymptom}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setOtherSymptom(value);
+                  emit();
+                }}
+                placeholder="Describe the symptom"
+              />
+            </FormField>
+          )}
+        </FormSection>
+      )}
+
+      {selectedSymptoms.length > 0 && (
+        <FormSection
+          title="Duration and action"
+          description="Record how long the symptoms have been present and what was done."
+        >
+          <FormChoiceGroup
+            label="Duration"
+            value={duration}
+            options={durationOptions}
+            onChange={(value) => {
+              setDuration(value);
+              emit({ duration: value });
+            }}
+            required
+          />
+
+          {duration && (
+            <FormMultiSelect
+              label="Action taken"
+              value={actionsTaken}
+              options={actionOptions}
+              onChange={setActions}
+              columns={2}
+            />
+          )}
+        </FormSection>
+      )}
+
+      {duration && (
+        <FormSection
+          title="Notes"
+          description={
+            notesRequired
+              ? "Add enough detail to explain the concern or action taken."
+              : "Optional additional context."
+          }
+          collapsible={!notesRequired}
+          defaultOpen={notesRequired}
+          summary={!notesRequired && notes ? "Notes added" : undefined}
+        >
+          {notesRequired && (
+            <FormAlert variant="warning" title="Additional detail required">
+              Notes are required for severe symptoms, other symptoms or when action was taken.
+            </FormAlert>
+          )}
+
+          <FormField label={notesRequired ? "Tell us more" : "Notes"} required={notesRequired}>
+            <FormTextarea
+              value={notes}
+              onChange={(event) => {
+                const value = event.target.value;
+                setNotes(value);
+                emit({ notes: value });
+              }}
+              rows={4}
               placeholder={
                 notesRequired
-                  ? "Describe symptoms and action taken..."
-                  : "Optional notes..."
+                  ? "Describe the symptoms, concern and action taken..."
+                  : "Optional additional information..."
               }
             />
-          </div>
-        </>
+          </FormField>
+        </FormSection>
       )}
-    </div>
-  );
-}
-
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <h4 className="font-semibold text-slate-900">{title}</h4>
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
-function SelectBlock({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange(option)}
-            className={`rounded-xl border px-3 py-3 text-left text-sm ${
-              value === option
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TextInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function CheckboxGroup({
-  label,
-  values,
-  options,
-  onToggle,
-}: {
-  label: string;
-  values: string[];
-  options: string[];
-  onToggle: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <div className="space-y-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onToggle(option)}
-            className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm ${
-              values.includes(option)
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            <span>{option}</span>
-            <span>{values.includes(option) ? "✓" : ""}</span>
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

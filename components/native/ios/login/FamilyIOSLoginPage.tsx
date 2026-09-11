@@ -5,6 +5,7 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from "lucide-react";
+import { LoginLegalLinks } from "@/components/auth/LoginLegalLinks";
 
 import type {
   IOSLoginViewProps,
@@ -89,6 +90,10 @@ export function FamilyIOSLoginPage(
             />
           </div>
 
+          <div className="mt-4">
+            <LoginLegalLinks variant="family" />
+          </div>
+
           <p className="mt-3 text-[11px] text-white/40">
             © 2026 Castodia LTD
           </p>
@@ -97,3 +102,4 @@ export function FamilyIOSLoginPage(
     </main>
   );
 }
+
