@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>CastodiaCare uses the camera so care staff can add relevant photographs to care records and profiles.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CastodiaCare accesses selected photos so care staff can add them to care records and profiles.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
