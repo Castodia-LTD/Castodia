@@ -48,6 +48,20 @@ export async function saveBodyMap(
 
   if (!timelineEntryId) return false;
 
+  const rollbackTimelineEntry = async () => {
+    const { error } = await ctx.supabase
+      .from("timeline_entries")
+      .delete()
+      .eq("id", timelineEntryId);
+
+    if (error) {
+      console.error("Failed to roll back incomplete body map timeline entry", {
+        timelineEntryId,
+        error,
+      });
+    }
+  };
+
   const { data: bodyMap, error: bodyMapError } =
     await ctx.supabase
       .from("body_maps")
@@ -60,8 +74,9 @@ export async function saveBodyMap(
       .select("id")
       .single();
 
-  if (bodyMapError) {
+  if (bodyMapError || !bodyMap?.id) {
     console.error("Body map record save failed", bodyMapError);
+    await rollbackTimelineEntry();
     return false;
   }
 
@@ -83,6 +98,9 @@ export async function saveBodyMap(
 
   if (markerError) {
     console.error("Body map marker save failed", markerError);
+
+    await ctx.supabase.from("body_maps").delete().eq("id", bodyMap.id);
+    await rollbackTimelineEntry();
     return false;
   }
 
