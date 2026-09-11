@@ -25,8 +25,7 @@ export function useTimelineForm() {
   const [communityTransport, setCommunityTransport] = useState("");
   const [communitySupportProvided, setCommunitySupportProvided] =
     useState("");
-  const [communityAccessData, setCommunityAccessData] =
-    useState<any>(null);
+  const [communityAccessData, setCommunityAccessData] = useState<any>(null);
   const [socialInteractionData, setSocialInteractionData] = useState<any>(null);
   const [contactVisitData, setContactVisitData] = useState<any>(null);
   const [shoppingData, setShoppingData] = useState<any>(null);
@@ -180,7 +179,6 @@ export function useTimelineForm() {
   }
 
   function closeAndReset() {
-    if (saving) return;
     setEntryPanelOpen(false);
     resetEntryPanel();
   }
