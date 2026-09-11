@@ -150,6 +150,7 @@ export function WebLoginPage({
 
               <form
                 className="mt-9 space-y-5"
+                autoComplete="on"
                 onSubmit={(event) => {
                   event.preventDefault();
                   void onLogin();
@@ -165,9 +166,14 @@ export function WebLoginPage({
 
                   <input
                     id="email"
+                    name="username"
                     type="email"
                     required
-                    autoComplete="email"
+                    autoComplete="username"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     value={email}
                     onChange={(event) =>
                       onEmailChange(event.target.value)
@@ -188,6 +194,7 @@ export function WebLoginPage({
 
                   <input
                     id="password"
+                    name="password"
                     type="password"
                     required
                     autoComplete="current-password"
