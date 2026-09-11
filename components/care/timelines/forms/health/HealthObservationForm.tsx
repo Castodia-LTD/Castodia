@@ -2,6 +2,15 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  FormAlert,
+  FormField,
+  FormInput,
+  FormMultiSelect,
+  FormSection,
+  FormTextarea,
+} from "@/components/care/timelines/forms/shared";
+
 type Props = {
   onChange: (data: any) => void;
 };
@@ -14,11 +23,11 @@ type Section =
   | "other";
 
 const sectionOptions = [
-  { value: "vital_signs", label: "Vital Signs", icon: "❤️" },
-  { value: "general_observation", label: "General Observation", icon: "👁" },
-  { value: "weight", label: "Weight", icon: "⚖" },
-  { value: "blood_glucose", label: "Blood Glucose", icon: "🩸" },
-  { value: "other", label: "Other Observation", icon: "➕" },
+  { value: "vital_signs", label: "Vital signs" },
+  { value: "general_observation", label: "General observation" },
+  { value: "weight", label: "Weight" },
+  { value: "blood_glucose", label: "Blood glucose" },
+  { value: "other", label: "Other observation" },
 ];
 
 const actionOptions = [
@@ -30,11 +39,18 @@ const actionOptions = [
   "Monitoring Increased",
   "Emergency Services",
   "Other",
-];
+].map((value) => ({ value, label: value }));
+
+const presentationFields = [
+  ["Appearance", "appearance"],
+  ["Mood", "mood"],
+  ["Skin colour", "skinColour"],
+  ["Breathing", "breathing"],
+  ["Alertness", "alertness"],
+] as const;
 
 export default function HealthObservationForm({ onChange }: Props) {
   const [sections, setSections] = useState<Section[]>([]);
-
   const [temperature, setTemperature] = useState("");
   const [systolic, setSystolic] = useState("");
   const [diastolic, setDiastolic] = useState("");
@@ -42,33 +58,26 @@ export default function HealthObservationForm({ onChange }: Props) {
   const [respiratoryRate, setRespiratoryRate] = useState("");
   const [oxygenSaturation, setOxygenSaturation] = useState("");
   const [painScore, setPainScore] = useState("");
-
   const [appearance, setAppearance] = useState("");
   const [mood, setMood] = useState("");
   const [skinColour, setSkinColour] = useState("");
   const [breathing, setBreathing] = useState("");
   const [alertness, setAlertness] = useState("");
-
   const [weightKg, setWeightKg] = useState("");
-
   const [bloodGlucose, setBloodGlucose] = useState("");
   const [bloodGlucoseTiming, setBloodGlucoseTiming] = useState("");
-
   const [otherObservation, setOtherObservation] = useState("");
   const [otherValue, setOtherValue] = useState("");
-
-  const [actionsTaken, setActionsTaken] = useState<string[]>([
-    "No Action Required",
-  ]);
+  const [actionsTaken, setActionsTaken] = useState<string[]>(["No Action Required"]);
   const [notes, setNotes] = useState("");
 
-  const notesRequired = useMemo(() => {
-    return actionsTaken.some((action) => action !== "No Action Required");
-  }, [actionsTaken]);
+  const notesRequired = useMemo(
+    () => actionsTaken.some((action) => action !== "No Action Required"),
+    [actionsTaken],
+  );
 
   const warningMessages = useMemo(() => {
     const warnings: string[] = [];
-
     const temp = Number(temperature);
     const sats = Number(oxygenSaturation);
     const pulseValue = Number(pulse);
@@ -76,11 +85,9 @@ export default function HealthObservationForm({ onChange }: Props) {
     if (temperature && (temp >= 38 || temp <= 35)) {
       warnings.push("Temperature is outside the usual range.");
     }
-
     if (oxygenSaturation && sats < 94) {
       warnings.push("Oxygen saturation is below the usual range.");
     }
-
     if (pulse && (pulseValue > 120 || pulseValue < 50)) {
       warnings.push("Pulse is outside the usual range.");
     }
@@ -88,8 +95,8 @@ export default function HealthObservationForm({ onChange }: Props) {
     return warnings;
   }, [temperature, oxygenSaturation, pulse]);
 
-  function update(payload?: any) {
-    onChange({
+  function snapshot(overrides: any = {}) {
+    return {
       sections,
       vitalSigns: {
         temperature: temperature ? Number(temperature) : null,
@@ -102,499 +109,279 @@ export default function HealthObservationForm({ onChange }: Props) {
             : null,
         pulse: pulse ? Number(pulse) : null,
         respiratoryRate: respiratoryRate ? Number(respiratoryRate) : null,
-        oxygenSaturation: oxygenSaturation
-          ? Number(oxygenSaturation)
-          : null,
+        oxygenSaturation: oxygenSaturation ? Number(oxygenSaturation) : null,
         painScore: painScore ? Number(painScore) : null,
       },
+      generalObservation: { appearance, mood, skinColour, breathing, alertness },
+      weight: { kg: weightKg ? Number(weightKg) : null },
+      bloodGlucose: {
+        value: bloodGlucose ? Number(bloodGlucose) : null,
+        timing: bloodGlucoseTiming,
+      },
+      other: { observation: otherObservation, value: otherValue },
+      actionsTaken,
+      notes,
+      ...overrides,
+    };
+  }
+
+  function update(overrides: any = {}) {
+    onChange(snapshot(overrides));
+  }
+
+  function setSelectedSections(next: string[]) {
+    const typed = next as Section[];
+    setSections(typed);
+    update({ sections: typed });
+  }
+
+  function setActions(next: string[]) {
+    let normalized = next;
+
+    if (next.includes("No Action Required") && next.length > 1) {
+      const selectedNoneNow =
+        !actionsTaken.includes("No Action Required") && next.includes("No Action Required");
+      normalized = selectedNoneNow
+        ? ["No Action Required"]
+        : next.filter((item) => item !== "No Action Required");
+    }
+
+    if (!normalized.length) normalized = ["No Action Required"];
+    setActionsTaken(normalized);
+    update({ actionsTaken: normalized });
+  }
+
+  const generalValues: Record<string, string> = {
+    appearance,
+    mood,
+    skinColour,
+    breathing,
+    alertness,
+  };
+
+  function setGeneralField(key: string, value: string) {
+    if (key === "appearance") setAppearance(value);
+    if (key === "mood") setMood(value);
+    if (key === "skinColour") setSkinColour(value);
+    if (key === "breathing") setBreathing(value);
+    if (key === "alertness") setAlertness(value);
+
+    update({
       generalObservation: {
         appearance,
         mood,
         skinColour,
         breathing,
         alertness,
+        [key]: value,
       },
-      weight: {
-        kg: weightKg ? Number(weightKg) : null,
-      },
-      bloodGlucose: {
-        value: bloodGlucose ? Number(bloodGlucose) : null,
-        timing: bloodGlucoseTiming,
-      },
-      other: {
-        observation: otherObservation,
-        value: otherValue,
-      },
-      actionsTaken,
-      notes,
-      ...payload,
     });
-  }
-
-  function toggleSection(value: Section) {
-    const next = sections.includes(value)
-      ? sections.filter((section) => section !== value)
-      : [...sections, value];
-
-    setSections(next);
-    update({ sections: next });
-  }
-
-  function toggleAction(value: string) {
-    let next: string[];
-
-    if (value === "No Action Required") {
-      next = ["No Action Required"];
-    } else {
-      next = actionsTaken
-        .filter((action) => action !== "No Action Required")
-        .includes(value)
-        ? actionsTaken.filter((action) => action !== value)
-        : [
-            ...actionsTaken.filter(
-              (action) => action !== "No Action Required"
-            ),
-            value,
-          ];
-    }
-
-    if (next.length === 0) next = ["No Action Required"];
-
-    setActionsTaken(next);
-    update({ actionsTaken: next });
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">
-          Health Observation
-        </h3>
-        <p className="text-sm text-slate-500">
-          Record observations, vital signs and actions taken.
+        <h3 className="text-lg font-semibold text-slate-950">Health Observation</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          Choose only the observations you are recording. Unselected sections stay out of the way.
         </p>
       </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          What are you recording?
-        </label>
-
-        <div className="grid grid-cols-2 gap-3">
-          {sectionOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => toggleSection(option.value as Section)}
-              className={`rounded-2xl border p-4 text-left transition ${
-                sections.includes(option.value as Section)
-                  ? "border-cyan-500 bg-cyan-50"
-                  : "border-slate-200 bg-white"
-              }`}
-            >
-              <div className="text-2xl">{option.icon}</div>
-              <div className="mt-2 text-sm font-semibold text-slate-900">
-                {option.label}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      <FormSection title="What are you recording?">
+        <FormMultiSelect
+          label="Observation sections"
+          value={sections}
+          options={sectionOptions}
+          onChange={setSelectedSections}
+          columns={2}
+          required
+        />
+      </FormSection>
 
       {sections.includes("vital_signs") && (
-        <SectionCard title="❤️ Vital Signs">
-          <NumberInput
-            label="Temperature"
-            suffix="°C"
-            value={temperature}
-            onChange={(value) => {
-              setTemperature(value);
-              update({ vitalSigns: { temperature: Number(value) } });
-            }}
-          />
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Blood Pressure
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="number"
-                placeholder="Systolic"
-                value={systolic}
-                onChange={(e) => {
-                  setSystolic(e.target.value);
-                  update();
-                }}
-                className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              />
-              <input
-                type="number"
-                placeholder="Diastolic"
-                value={diastolic}
-                onChange={(e) => {
-                  setDiastolic(e.target.value);
-                  update();
-                }}
-                className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              />
-            </div>
+        <FormSection title="Vital signs">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Metric label="Temperature" suffix="°C" value={temperature} setValue={(value) => { setTemperature(value); update({ vitalSigns: { ...snapshot().vitalSigns, temperature: value ? Number(value) : null } }); }} />
+            <Metric label="Pulse" suffix="bpm" value={pulse} setValue={(value) => { setPulse(value); update({ vitalSigns: { ...snapshot().vitalSigns, pulse: value ? Number(value) : null } }); }} />
+            <Metric label="Respiratory rate" suffix="/min" value={respiratoryRate} setValue={(value) => { setRespiratoryRate(value); update({ vitalSigns: { ...snapshot().vitalSigns, respiratoryRate: value ? Number(value) : null } }); }} />
+            <Metric label="Oxygen saturation" suffix="%" value={oxygenSaturation} setValue={(value) => { setOxygenSaturation(value); update({ vitalSigns: { ...snapshot().vitalSigns, oxygenSaturation: value ? Number(value) : null } }); }} />
+            <Metric label="Pain score" suffix="/10" value={painScore} setValue={(value) => { setPainScore(value); update({ vitalSigns: { ...snapshot().vitalSigns, painScore: value ? Number(value) : null } }); }} />
           </div>
 
-          <NumberInput
-            label="Pulse"
-            suffix="bpm"
-            value={pulse}
-            onChange={(value) => {
-              setPulse(value);
-              update();
-            }}
-          />
+          <FormField label="Blood pressure">
+            <div className="grid grid-cols-2 gap-3">
+              <FormInput
+                type="number"
+                inputMode="numeric"
+                value={systolic}
+                placeholder="Systolic"
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setSystolic(value);
+                  update({
+                    vitalSigns: {
+                      ...snapshot().vitalSigns,
+                      bloodPressure: {
+                        systolic: value ? Number(value) : null,
+                        diastolic: diastolic ? Number(diastolic) : null,
+                      },
+                    },
+                  });
+                }}
+              />
+              <FormInput
+                type="number"
+                inputMode="numeric"
+                value={diastolic}
+                placeholder="Diastolic"
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setDiastolic(value);
+                  update({
+                    vitalSigns: {
+                      ...snapshot().vitalSigns,
+                      bloodPressure: {
+                        systolic: systolic ? Number(systolic) : null,
+                        diastolic: value ? Number(value) : null,
+                      },
+                    },
+                  });
+                }}
+              />
+            </div>
+          </FormField>
 
-          <NumberInput
-            label="Respiratory Rate"
-            suffix="breaths/min"
-            value={respiratoryRate}
-            onChange={(value) => {
-              setRespiratoryRate(value);
-              update();
-            }}
-          />
-
-          <NumberInput
-            label="Oxygen Saturation"
-            suffix="%"
-            value={oxygenSaturation}
-            onChange={(value) => {
-              setOxygenSaturation(value);
-              update();
-            }}
-          />
-
-          <SelectBlock
-            label="Pain Score"
-            value={painScore}
-            onChange={(value) => {
-              setPainScore(value);
-              update();
-            }}
-            options={["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]}
-          />
-        </SectionCard>
+          {warningMessages.length > 0 && (
+            <FormAlert variant="warning" title="Check these observations">
+              <ul className="list-disc space-y-1 pl-5">
+                {warningMessages.map((warning) => <li key={warning}>{warning}</li>)}
+              </ul>
+            </FormAlert>
+          )}
+        </FormSection>
       )}
 
       {sections.includes("general_observation") && (
-        <SectionCard title="👁 General Observation">
-          <SelectBlock
-            label="Appearance"
-            value={appearance}
-            onChange={(value) => {
-              setAppearance(value);
-              update();
-            }}
-            options={["Well", "Slightly Unwell", "Unwell"]}
-          />
-
-          <SelectBlock
-            label="Mood"
-            value={mood}
-            onChange={(value) => {
-              setMood(value);
-              update();
-            }}
-            options={["Positive", "Neutral", "Low"]}
-          />
-
-          <SelectBlock
-            label="Skin Colour"
-            value={skinColour}
-            onChange={(value) => {
-              setSkinColour(value);
-              update();
-            }}
-            options={["Normal", "Pale", "Flushed", "Blue"]}
-          />
-
-          <SelectBlock
-            label="Breathing"
-            value={breathing}
-            onChange={(value) => {
-              setBreathing(value);
-              update();
-            }}
-            options={["Normal", "Laboured", "Rapid"]}
-          />
-
-          <SelectBlock
-            label="Alertness"
-            value={alertness}
-            onChange={(value) => {
-              setAlertness(value);
-              update();
-            }}
-            options={["Alert", "Drowsy", "Confused", "Unresponsive"]}
-          />
-        </SectionCard>
+        <FormSection title="General observation">
+          {presentationFields.map(([label, key]) => (
+            <FormField key={key} label={label}>
+              <FormInput
+                value={generalValues[key]}
+                onChange={(event) => setGeneralField(key, event.target.value)}
+                placeholder={`Record ${label.toLowerCase()}...`}
+              />
+            </FormField>
+          ))}
+        </FormSection>
       )}
 
       {sections.includes("weight") && (
-        <SectionCard title="⚖ Weight">
-          <NumberInput
-            label="Weight"
-            suffix="kg"
-            value={weightKg}
-            onChange={(value) => {
-              setWeightKg(value);
-              update();
-            }}
-          />
-        </SectionCard>
+        <FormSection title="Weight">
+          <Metric label="Weight" suffix="kg" value={weightKg} setValue={(value) => { setWeightKg(value); update({ weight: { kg: value ? Number(value) : null } }); }} />
+        </FormSection>
       )}
 
       {sections.includes("blood_glucose") && (
-        <SectionCard title="🩸 Blood Glucose">
-          <NumberInput
-            label="Blood Glucose"
-            suffix="mmol/L"
-            value={bloodGlucose}
-            onChange={(value) => {
-              setBloodGlucose(value);
-              update();
-            }}
-          />
-
-          <SelectBlock
-            label="Reading Taken"
-            value={bloodGlucoseTiming}
-            onChange={(value) => {
-              setBloodGlucoseTiming(value);
-              update();
-            }}
-            options={[
-              "Before Breakfast",
-              "Before Lunch",
-              "Before Evening Meal",
-              "Bedtime",
-              "Other",
-            ]}
-          />
-        </SectionCard>
+        <FormSection title="Blood glucose">
+          <Metric label="Blood glucose" suffix="mmol/L" value={bloodGlucose} setValue={(value) => { setBloodGlucose(value); update({ bloodGlucose: { value: value ? Number(value) : null, timing: bloodGlucoseTiming } }); }} />
+          <FormField label="Timing / context">
+            <FormInput
+              value={bloodGlucoseTiming}
+              onChange={(event) => {
+                const value = event.target.value;
+                setBloodGlucoseTiming(value);
+                update({ bloodGlucose: { value: bloodGlucose ? Number(bloodGlucose) : null, timing: value } });
+              }}
+              placeholder="For example: before breakfast or 2 hours after meal"
+            />
+          </FormField>
+        </FormSection>
       )}
 
       {sections.includes("other") && (
-        <SectionCard title="➕ Other Observation">
-          <TextInput
-            label="Observation"
-            value={otherObservation}
-            onChange={(value) => {
-              setOtherObservation(value);
-              update();
-            }}
-          />
-
-          <TextInput
-            label="Value"
-            value={otherValue}
-            onChange={(value) => {
-              setOtherValue(value);
-              update();
-            }}
-          />
-        </SectionCard>
-      )}
-
-      {warningMessages.length > 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <p className="font-semibold">Observation warning</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            {warningMessages.map((message) => (
-              <li key={message}>{message}</li>
-            ))}
-          </ul>
-          <p className="mt-2">
-            Please ensure appropriate action has been taken in line with the
-            person's care plan.
-          </p>
-        </div>
+        <FormSection title="Other observation">
+          <FormField label="Observation">
+            <FormInput
+              value={otherObservation}
+              onChange={(event) => {
+                const value = event.target.value;
+                setOtherObservation(value);
+                update({ other: { observation: value, value: otherValue } });
+              }}
+              placeholder="What was observed?"
+            />
+          </FormField>
+          <FormField label="Value / result">
+            <FormInput
+              value={otherValue}
+              onChange={(event) => {
+                const value = event.target.value;
+                setOtherValue(value);
+                update({ other: { observation: otherObservation, value } });
+              }}
+              placeholder="Record the result or value"
+            />
+          </FormField>
+        </FormSection>
       )}
 
       {sections.length > 0 && (
-        <>
-          <CheckboxGroup
-            label="Action Taken"
-            values={actionsTaken}
+        <FormSection title="Action taken">
+          <FormMultiSelect
+            label="Actions"
+            value={actionsTaken}
             options={actionOptions}
-            onToggle={toggleAction}
+            onChange={setActions}
+            columns={2}
           />
 
           {notesRequired && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              Please add notes when action has been taken.
-            </div>
+            <FormAlert variant="warning" title="Add supporting detail">
+              An action has been recorded, so add enough detail for continuity of care.
+            </FormAlert>
           )}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              {notesRequired ? "Tell us more" : "Notes"}
-            </label>
-            <textarea
+          <FormField label={notesRequired ? "Action notes" : "Notes"} required={notesRequired}>
+            <FormTextarea
               value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value);
-                update({ notes: e.target.value });
+              onChange={(event) => {
+                const value = event.target.value;
+                setNotes(value);
+                update({ notes: value });
               }}
-              rows={3}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              placeholder={
-                notesRequired
-                  ? "Describe the observation and action taken..."
-                  : "Optional notes..."
-              }
+              placeholder={notesRequired ? "Record what action was taken and any instructions..." : "Optional notes..."}
+              rows={4}
             />
-          </div>
-        </>
+          </FormField>
+        </FormSection>
       )}
     </div>
   );
 }
 
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <h4 className="font-semibold text-slate-900">{title}</h4>
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
-function NumberInput({
+function Metric({
   label,
   suffix,
   value,
-  onChange,
+  setValue,
 }: {
   label: string;
   suffix: string;
   value: string;
-  onChange: (value: string) => void;
+  setValue: (value: string) => void;
 }) {
   return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <input
+    <FormField label={label}>
+      <div className="flex items-center gap-3">
+        <FormInput
           type="number"
           step="any"
+          inputMode="decimal"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+          onChange={(event) => setValue(event.target.value)}
         />
-        <span className="text-sm text-slate-500">{suffix}</span>
+        <span className="shrink-0 text-sm font-medium text-teal-700">{suffix}</span>
       </div>
-    </div>
-  );
-}
-
-function TextInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function SelectBlock({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange(option)}
-            className={`rounded-xl border px-3 py-3 text-left text-sm ${
-              value === option
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CheckboxGroup({
-  label,
-  values,
-  options,
-  onToggle,
-}: {
-  label: string;
-  values: string[];
-  options: string[];
-  onToggle: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      <div className="space-y-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onToggle(option)}
-            className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm ${
-              values.includes(option)
-                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            <span>{option}</span>
-            <span>{values.includes(option) ? "✓" : ""}</span>
-          </button>
-        ))}
-      </div>
-    </div>
+    </FormField>
   );
 }
