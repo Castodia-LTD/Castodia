@@ -140,12 +140,7 @@ export default function NearMissForm({ onChange }: Props) {
       data.riskLevel === "Immediate" ||
       data.externalReportRequired === true ||
       data.followUpActions.includes("Safeguarding Considered"),
-    [
-      data.hazardStatus,
-      data.riskLevel,
-      data.externalReportRequired,
-      data.followUpActions,
-    ],
+    [data],
   );
 
   function update(changes: Partial<NearMissData>) {
@@ -174,34 +169,43 @@ export default function NearMissForm({ onChange }: Props) {
   }
 
   function selectHazardStatus(value: NearMissData["hazardStatus"]) {
-    if (value !== "remains") {
-      update({ hazardStatus: value, riskLevel: "", controlMeasures: "" });
-      return;
-    }
-
-    update({ hazardStatus: value });
+    update(
+      value === "remains"
+        ? { hazardStatus: value }
+        : { hazardStatus: value, riskLevel: "", controlMeasures: "" },
+    );
   }
 
-  const typeComplete =
+  const typeComplete = Boolean(
     data.nearMissType &&
-    (data.nearMissType !== "Other" || data.otherNearMissType.trim());
+      (data.nearMissType !== "Other" || data.otherNearMissType.trim()),
+  );
 
-  const peopleAtRiskComplete =
+  const peopleAtRiskComplete = Boolean(
     data.peopleAtRisk.length > 0 &&
-    (!data.peopleAtRisk.includes("Other") || data.otherPersonAtRisk.trim());
+      (!data.peopleAtRisk.includes("Other") || data.otherPersonAtRisk.trim()),
+  );
 
-  const hazardComplete =
+  const hazardComplete = Boolean(
     data.hazardStatus &&
-    (data.hazardStatus !== "remains" ||
-      (data.riskLevel && data.controlMeasures.trim()));
+      (data.hazardStatus !== "remains" ||
+        (data.riskLevel && data.controlMeasures.trim())),
+  );
 
-  const actionsComplete =
+  const actionsComplete = Boolean(
     data.immediateActions.length > 0 &&
-    (!data.immediateActions.includes("Other") || data.otherImmediateAction.trim());
+      (!data.immediateActions.includes("Other") || data.otherImmediateAction.trim()),
+  );
 
-  const informedComplete =
+  const informedComplete = Boolean(
     data.peopleInformed.length > 0 &&
-    (!data.peopleInformed.includes("Other") || data.otherPersonInformed.trim());
+      (!data.peopleInformed.includes("Other") || data.otherPersonInformed.trim()),
+  );
+
+  const reportingComplete = Boolean(
+    data.externalReportRequired === false ||
+      (data.externalReportRequired === true && data.externalReportDetails.trim()),
+  );
 
   return (
     <div className="space-y-6">
@@ -420,26 +424,24 @@ export default function NearMissForm({ onChange }: Props) {
         </FormSection>
       )}
 
-      {data.externalReportRequired !== null &&
-        (!data.externalReportRequired || data.externalReportDetails.trim()) && (
-          <FormSection
-            title="Follow-up actions"
-            collapsible
-            defaultOpen={false}
-            summary={data.followUpActions.length ? `${data.followUpActions.length} selected` : "Optional"}
-          >
-            <FormMultiSelect
-              label="Follow-up actions"
-              value={data.followUpActions}
-              options={followUpOptions}
-              onChange={(next) => update({ followUpActions: next })}
-              columns={2}
-            />
-          </FormSection>
-        )}
+      {reportingComplete && (
+        <FormSection
+          title="Follow-up actions"
+          collapsible
+          defaultOpen={false}
+          summary={data.followUpActions.length ? `${data.followUpActions.length} selected` : "Optional"}
+        >
+          <FormMultiSelect
+            label="Follow-up actions"
+            value={data.followUpActions}
+            options={followUpOptions}
+            onChange={(next) => update({ followUpActions: next })}
+            columns={2}
+          />
+        </FormSection>
+      )}
 
-      {data.externalReportRequired !== null &&
-        (!data.externalReportRequired || data.externalReportDetails.trim()) &&
+      {reportingComplete &&
         (notesRecommended ? (
           <FormSection title="Additional detail">
             <FormAlert variant="warning" title="Additional detail recommended">
