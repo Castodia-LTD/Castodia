@@ -336,27 +336,50 @@ export default function HealthObservationForm({ onChange }: Props) {
             onChange={setActions}
             columns={2}
           />
+        </FormSection>
+      )}
 
-          {notesRequired && (
+      {sections.length > 0 &&
+        (notesRequired ? (
+          <FormSection title="Action detail">
             <FormAlert variant="warning" title="Add supporting detail">
               An action has been recorded, so add enough detail for continuity of care.
             </FormAlert>
-          )}
-
-          <FormField label={notesRequired ? "Action notes" : "Notes"} required={notesRequired}>
-            <FormTextarea
-              value={notes}
-              onChange={(event) => {
-                const value = event.target.value;
-                setNotes(value);
-                update({ notes: value });
-              }}
-              placeholder={notesRequired ? "Record what action was taken and any instructions..." : "Optional notes..."}
-              rows={4}
-            />
-          </FormField>
-        </FormSection>
-      )}
+            <FormField label="Action notes" required>
+              <FormTextarea
+                value={notes}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setNotes(value);
+                  update({ notes: value });
+                }}
+                placeholder="Record what action was taken and any instructions..."
+                rows={4}
+              />
+            </FormField>
+          </FormSection>
+        ) : (
+          <FormSection
+            title="Additional notes"
+            description="Routine observations do not need extra narrative unless it adds useful context."
+            collapsible
+            defaultOpen={false}
+            summary={notes.trim() ? "Notes added" : "Optional"}
+          >
+            <FormField label="Notes">
+              <FormTextarea
+                value={notes}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setNotes(value);
+                  update({ notes: value });
+                }}
+                placeholder="Optional notes..."
+                rows={4}
+              />
+            </FormField>
+          </FormSection>
+        ))}
     </div>
   );
 }
