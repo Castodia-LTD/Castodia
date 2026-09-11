@@ -19,14 +19,14 @@ export default function ServiceUserHubPage() {
     { label: "DoLS", href: "#" },
     { label: "Documents", href: "#" },
     { label: "Medication", href: `/care/manager/service-users/${serviceUserId}/medication` },
-    { label: "Monthly Reviews", href: `/care/manager/service-users/${serviceUserId}/reviews` },
+    { label: "Reviews", href: `/care/manager/service-users/${serviceUserId}/reviews` },
     { label: "Behaviour Incidents", href: "#" },
     { label: "Timeline", href: "#" },
   ];
 
   return (
     <CastodiaPageShell
-      title="Service User Hub"
+      title="Person Hub"
       description={`ID: ${serviceUserId}`}
       maxWidth="wide"
     >
