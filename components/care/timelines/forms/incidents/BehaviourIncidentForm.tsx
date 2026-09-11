@@ -10,21 +10,21 @@ import {
 } from "@/components/care/timelines/forms/shared";
 
 type Props = {
-  trigger: string;
-  setTrigger: (value: string) => void;
-  behaviourTypes: string[];
-  setBehaviourTypes: (value: string[]) => void;
-  description: string;
-  setDescription: (value: string) => void;
-  supportProvided: string[];
-  setSupportProvided: (value: string[]) => void;
+  behaviourIncidentTrigger: string;
+  setBehaviourIncidentTrigger: (value: string) => void;
+  behaviourIncidentTypes: string[];
+  setBehaviourIncidentTypes: (value: string[]) => void;
+  behaviourIncidentDescription: string;
+  setBehaviourIncidentDescription: (value: string) => void;
+  behaviourIncidentSupport: string[];
+  setBehaviourIncidentSupport: (value: string[]) => void;
   linkedPrnAdministrationId: string;
   setLinkedPrnAdministrationId: (value: string) => void;
   prnOptions?: { id: string; label: string }[];
-  immediateOutcomes: string[];
-  setImmediateOutcomes: (value: string[]) => void;
-  notes: string;
-  setNotes: (value: string) => void;
+  behaviourIncidentOutcomes: string[];
+  setBehaviourIncidentOutcomes: (value: string[]) => void;
+  behaviourIncidentNotes: string;
+  setBehaviourIncidentNotes: (value: string) => void;
 };
 
 const behaviourOptions = [
@@ -57,28 +57,28 @@ const outcomeOptions = [
 ].map((value) => ({ value, label: value }));
 
 export default function BehaviourIncidentForm({
-  trigger,
-  setTrigger,
-  behaviourTypes,
-  setBehaviourTypes,
-  description,
-  setDescription,
-  supportProvided,
-  setSupportProvided,
+  behaviourIncidentTrigger,
+  setBehaviourIncidentTrigger,
+  behaviourIncidentTypes,
+  setBehaviourIncidentTypes,
+  behaviourIncidentDescription,
+  setBehaviourIncidentDescription,
+  behaviourIncidentSupport,
+  setBehaviourIncidentSupport,
   linkedPrnAdministrationId,
   setLinkedPrnAdministrationId,
   prnOptions = [],
-  immediateOutcomes,
-  setImmediateOutcomes,
-  notes,
-  setNotes,
+  behaviourIncidentOutcomes,
+  setBehaviourIncidentOutcomes,
+  behaviourIncidentNotes,
+  setBehaviourIncidentNotes,
 }: Props) {
-  const prnMedicationSelected = supportProvided.includes("PRN Medication");
+  const prnMedicationSelected = behaviourIncidentSupport.includes("PRN Medication");
   const notesUseful =
-    supportProvided.includes("Physical Intervention") ||
-    immediateOutcomes.includes("Service user remained distressed") ||
-    behaviourTypes.includes("Self Injury") ||
-    behaviourTypes.includes("Absconding");
+    behaviourIncidentSupport.includes("Physical Intervention") ||
+    behaviourIncidentOutcomes.includes("Service user remained distressed") ||
+    behaviourIncidentTypes.includes("Self Injury") ||
+    behaviourIncidentTypes.includes("Absconding");
 
   return (
     <div className="space-y-5">
@@ -88,33 +88,33 @@ export default function BehaviourIncidentForm({
       >
         <FormField label="What happened before?" required>
           <FormTextarea
-            value={trigger}
-            onChange={(event) => setTrigger(event.target.value)}
+            value={behaviourIncidentTrigger}
+            onChange={(event) => setBehaviourIncidentTrigger(event.target.value)}
             rows={4}
             placeholder="Describe what happened before the incident..."
           />
         </FormField>
       </FormSection>
 
-      {trigger.trim() && (
+      {behaviourIncidentTrigger.trim() && (
         <FormSection
           title="What happened"
           description="Record the behaviour and a factual description without assumptions or blame."
         >
           <FormMultiSelect
             label="Behaviour type"
-            value={behaviourTypes}
+            value={behaviourIncidentTypes}
             options={behaviourOptions}
-            onChange={setBehaviourTypes}
+            onChange={setBehaviourIncidentTypes}
             columns={2}
             required
           />
 
-          {behaviourTypes.length > 0 && (
+          {behaviourIncidentTypes.length > 0 && (
             <FormField label="Factual description" required>
               <FormTextarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
+                value={behaviourIncidentDescription}
+                onChange={(event) => setBehaviourIncidentDescription(event.target.value)}
                 rows={5}
                 placeholder="Describe what was observed..."
               />
@@ -123,16 +123,16 @@ export default function BehaviourIncidentForm({
         </FormSection>
       )}
 
-      {description.trim() && (
+      {behaviourIncidentDescription.trim() && (
         <FormSection
           title="Support provided"
           description="Record the support used during the incident."
         >
           <FormMultiSelect
             label="Support"
-            value={supportProvided}
+            value={behaviourIncidentSupport}
             options={supportOptions}
-            onChange={setSupportProvided}
+            onChange={setBehaviourIncidentSupport}
             columns={2}
             required
           />
@@ -168,23 +168,23 @@ export default function BehaviourIncidentForm({
         </FormSection>
       )}
 
-      {supportProvided.length > 0 && (
+      {behaviourIncidentSupport.length > 0 && (
         <FormSection
           title="Immediate outcome"
           description="Record what happened immediately after support was provided."
         >
           <FormMultiSelect
             label="Outcome"
-            value={immediateOutcomes}
+            value={behaviourIncidentOutcomes}
             options={outcomeOptions}
-            onChange={setImmediateOutcomes}
+            onChange={setBehaviourIncidentOutcomes}
             columns={2}
             required
           />
         </FormSection>
       )}
 
-      {immediateOutcomes.length > 0 && (
+      {behaviourIncidentOutcomes.length > 0 && (
         <FormSection
           title="Additional information"
           description={
@@ -194,12 +194,12 @@ export default function BehaviourIncidentForm({
           }
           collapsible={!notesUseful}
           defaultOpen={notesUseful}
-          summary={!notesUseful && notes ? "Notes added" : undefined}
+          summary={!notesUseful && behaviourIncidentNotes ? "Notes added" : undefined}
         >
           <FormField label="Notes">
             <FormTextarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
+              value={behaviourIncidentNotes}
+              onChange={(event) => setBehaviourIncidentNotes(event.target.value)}
               rows={4}
               placeholder="Add any additional relevant information..."
             />
