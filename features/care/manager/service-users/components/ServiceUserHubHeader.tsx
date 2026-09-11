@@ -40,7 +40,7 @@ const tabs: HubTab[] = [
   { label: "Risk Register", path: "risk-assessments" },
   { label: "Body Maps", path: "body-maps" },
   { label: "Memories", path: "memories" },
-  { label: "Incident Review", path: "reviews", managerOnly: true },
+  { label: "Reviews", path: "reviews", managerOnly: true },
   { label: "Wellbeing Indicators", path: "wellbeing-indicators", managerOnly: true },
 ];
 
