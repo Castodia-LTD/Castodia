@@ -25,5 +25,12 @@ This refactor changes application routes and renames live Supabase objects. Use 
     - Display name: `CastodiaCare`
     - Bundle ID: `uk.co.castodia.care`
 11. Test the native Care login to confirm Core-only/Family-only accounts are refused rather than routed into another product.
+12. Configure the production environment variable `APPLE_DEVELOPER_TEAM_ID` with the 10-character Team ID from Apple Developer.
+13. Confirm `https://app.castodia.co.uk/.well-known/apple-app-site-association` returns HTTP 200, `application/json`, and both production bundle identifiers.
+14. In Apple Developer, enable Associated Domains for:
+    - `uk.co.castodia.care`
+    - `uk.co.castodia.family`
+15. Refresh the provisioning profiles, build both apps, and confirm their signed entitlements contain `webcredentials:app.castodia.co.uk`.
+16. On a physical iPhone or iPad with Password AutoFill enabled, sign in once and save the credentials, then sign out and confirm Apple Passwords offers them on both native login screens.
 
 Do not deploy the code that references `core_issues` before applying the database migration.
