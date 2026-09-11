@@ -21,7 +21,7 @@ export const supportDashboardTiles: SupportDashboardTile[] = [
     icon: Clock3,
   },
   {
-    label: "Service Users",
+    label: "People",
     description: "View the people you support.",
     href: "/care/support/service-users",
     icon: UserRound,
