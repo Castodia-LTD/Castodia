@@ -1,4 +1,5 @@
 import type { SaveContext } from "../types";
+import { saveTimelineEntry } from "../saveTimelineEntry";
 
 export async function saveContinenceCare(
   ctx: SaveContext,
@@ -35,9 +36,7 @@ export async function saveContinenceCare(
     data.bowelIntervention === "Other prescribed intervention";
 
   const initials = getInitials(ctx.serviceUserName);
-
   const summary = buildSummary(initials, data);
-
   const detailLines: string[] = [];
 
   detailLines.push(`Care provided: ${data.careTypes.join(", ")}`);
@@ -56,90 +55,56 @@ export async function saveContinenceCare(
   }
 
   if (data.urinePassed !== null) {
-    detailLines.push(
-      `Urine passed: ${data.urinePassed ? "Yes" : "No"}`,
-    );
+    detailLines.push(`Urine passed: ${data.urinePassed ? "Yes" : "No"}`);
   }
 
   if (data.urinaryObservations?.length) {
-    detailLines.push(
-      `Urinary observations: ${data.urinaryObservations.join(", ")}`,
-    );
+    detailLines.push(`Urinary observations: ${data.urinaryObservations.join(", ")}`);
   }
 
   if (data.urinaryNotes?.trim()) {
-    detailLines.push(
-      `Urinary notes: ${data.urinaryNotes.trim()}`,
-    );
+    detailLines.push(`Urinary notes: ${data.urinaryNotes.trim()}`);
   }
 
   if (data.bowelOpened !== null) {
-    detailLines.push(
-      `Bowels opened: ${data.bowelOpened ? "Yes" : "No"}`,
-    );
+    detailLines.push(`Bowels opened: ${data.bowelOpened ? "Yes" : "No"}`);
   }
 
-  if (data.bristolType) {
-    detailLines.push(`Bristol stool type: ${data.bristolType}`);
-  }
-
-  if (data.bowelAmount) {
-    detailLines.push(`Bowel amount: ${data.bowelAmount}`);
-  }
+  if (data.bristolType) detailLines.push(`Bristol stool type: ${data.bristolType}`);
+  if (data.bowelAmount) detailLines.push(`Bowel amount: ${data.bowelAmount}`);
 
   if (data.bowelObservations?.length) {
-    detailLines.push(
-      `Bowel observations: ${data.bowelObservations.join(", ")}`,
-    );
+    detailLines.push(`Bowel observations: ${data.bowelObservations.join(", ")}`);
   }
 
   if (data.bowelNotes?.trim()) {
-    detailLines.push(
-      `Bowel notes: ${data.bowelNotes.trim()}`,
-    );
+    detailLines.push(`Bowel notes: ${data.bowelNotes.trim()}`);
   }
 
   if (data.catheterCareProvided !== null) {
     detailLines.push(
-      `Catheter care provided: ${
-        data.catheterCareProvided ? "Yes" : "No"
-      }`,
+      `Catheter care provided: ${data.catheterCareProvided ? "Yes" : "No"}`,
     );
   }
 
-  if (
-    data.catheterOutputMl !== null &&
-    data.catheterOutputMl !== undefined
-  ) {
-    detailLines.push(
-      `Catheter output: ${data.catheterOutputMl} ml`,
-    );
+  if (data.catheterOutputMl !== null && data.catheterOutputMl !== undefined) {
+    detailLines.push(`Catheter output: ${data.catheterOutputMl} ml`);
   }
 
   if (data.catheterObservations?.length) {
-    detailLines.push(
-      `Catheter observations: ${data.catheterObservations.join(", ")}`,
-    );
+    detailLines.push(`Catheter observations: ${data.catheterObservations.join(", ")}`);
   }
 
   if (data.stomaCareProvided !== null) {
-    detailLines.push(
-      `Stoma care provided: ${
-        data.stomaCareProvided ? "Yes" : "No"
-      }`,
-    );
+    detailLines.push(`Stoma care provided: ${data.stomaCareProvided ? "Yes" : "No"}`);
   }
 
   if (data.stomaObservations?.length) {
-    detailLines.push(
-      `Stoma observations: ${data.stomaObservations.join(", ")}`,
-    );
+    detailLines.push(`Stoma observations: ${data.stomaObservations.join(", ")}`);
   }
 
   if (data.bowelIntervention) {
-    detailLines.push(
-      `Bowel intervention: ${data.bowelIntervention}`,
-    );
+    detailLines.push(`Bowel intervention: ${data.bowelIntervention}`);
   }
 
   if (data.linkedMedicationAdministrationId?.trim()) {
@@ -149,83 +114,33 @@ export async function saveContinenceCare(
   }
 
   if (data.interventionOutcome) {
-    detailLines.push(
-      `Intervention outcome: ${data.interventionOutcome}`,
-    );
+    detailLines.push(`Intervention outcome: ${data.interventionOutcome}`);
   }
 
-  if (data.skinCondition) {
-    detailLines.push(
-      `Skin condition: ${data.skinCondition}`,
-    );
-  }
+  if (data.skinCondition) detailLines.push(`Skin condition: ${data.skinCondition}`);
+  if (data.skinNotes?.trim()) detailLines.push(`Skin observations: ${data.skinNotes.trim()}`);
+  if (data.concerns?.length) detailLines.push(`Concerns: ${data.concerns.join(", ")}`);
+  if (data.escalation?.length) detailLines.push(`Action / escalation: ${data.escalation.join(", ")}`);
+  if (data.notes?.trim()) detailLines.push(`Notes: ${data.notes.trim()}`);
 
-  if (data.skinNotes?.trim()) {
-    detailLines.push(
-      `Skin observations: ${data.skinNotes.trim()}`,
-    );
-  }
-
-  if (data.concerns?.length) {
-    detailLines.push(
-      `Concerns: ${data.concerns.join(", ")}`,
-    );
-  }
-
-  if (data.escalation?.length) {
-    detailLines.push(
-      `Action / escalation: ${data.escalation.join(", ")}`,
-    );
-  }
-
-  if (data.notes?.trim()) {
-    detailLines.push(`Notes: ${data.notes.trim()}`);
-  }
-
-  if (
-    medicationIntervention &&
-    !data.linkedMedicationAdministrationId?.trim()
-  ) {
+  if (medicationIntervention && !data.linkedMedicationAdministrationId?.trim()) {
     detailLines.push(
       "Medication administration record: Related medicinal bowel intervention should also be recorded through the medication workflow.",
     );
   }
 
-  const content = [
-    summary,
-    "",
-    ...detailLines,
-  ].join("\n");
-
-  const { error } = await ctx.supabase
-    .from("timeline_entries")
-    .insert({
-      service_user_id: ctx.serviceUserId,
-      created_by: ctx.userId,
-      entry_type: "Continence Care",
-      content,
-      event_time: ctx.eventTime,
-    });
-
-  if (error) {
-    alert(error.message);
-    return false;
-  }
-
-  ctx.resetEntryPanel();
-  ctx.setEntryPanelOpen(false);
-  await ctx.loadEntries();
-
-  return true;
+  return saveTimelineEntry(ctx, {
+    entryType: "Continence Care",
+    content: [summary, "", ...detailLines].join("\n"),
+    metadata: data,
+  });
 }
 
 function buildSummary(
   initials: string,
   data: SaveContext["continenceCareData"],
 ) {
-  if (!data) {
-    return `${initials} received continence care.`;
-  }
+  if (!data) return `${initials} received continence care.`;
 
   const careSummary = data.careTypes.join(", ").toLowerCase();
 
