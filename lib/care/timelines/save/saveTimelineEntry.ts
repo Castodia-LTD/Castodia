@@ -14,6 +14,26 @@ export async function insertTimelineEntry(
   ctx: SaveContext,
   entry: TimelineEntryPayload,
 ): Promise<string | null> {
+  const metadata = entry.metadata && typeof entry.metadata === "object"
+    ? { ...entry.metadata as object, ...(ctx.growthMetadata ? { growth: ctx.growthMetadata } : {}) }
+    : ctx.growthMetadata ? { growth: ctx.growthMetadata } : entry.metadata ?? null;
+
+  if (ctx.growthMetadata) {
+    const { data, error } = await ctx.supabase.rpc("save_timeline_entry_with_growth", {
+      p_service_user_id: ctx.serviceUserId,
+      p_entry_type: entry.entryType,
+      p_content: entry.content,
+      p_metadata: metadata,
+      p_event_time: ctx.eventTime,
+      p_growth: ctx.growthMetadata,
+    });
+    if (error) {
+      console.error("Timeline Growth save failed", { entryType: entry.entryType, error });
+      return null;
+    }
+    return typeof data === "string" ? data : null;
+  }
+
   const { data, error } = await ctx.supabase
     .from("timeline_entries")
     .insert({
@@ -21,7 +41,7 @@ export async function insertTimelineEntry(
       created_by: ctx.userId,
       entry_type: entry.entryType,
       content: entry.content,
-      metadata: entry.metadata ?? null,
+      metadata,
       event_time: ctx.eventTime,
     })
     .select("id")

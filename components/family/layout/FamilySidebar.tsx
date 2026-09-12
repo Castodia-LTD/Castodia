@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { Home, Loader2, LogOut } from "lucide-react";
+import { Home, Loader2, LogOut, Sprout } from "lucide-react";
 
 import { BotanicalVines } from "./BotanicalVines";
 import { FamilyBrand } from "./FamilyBrand";
 
-const navigation = [{ name: "Home", href: "/family", icon: Home }];
+const navigation = [
+  { name: "Home", href: "/family", icon: Home },
+  { name: "Growth", href: "/family/growth", icon: Sprout },
+];
 
 type Props = {
   pathname: string;
@@ -39,7 +42,7 @@ export function FamilySidebar({
       <nav className="relative z-10 mt-8 flex flex-1 flex-col gap-2" aria-label="Family navigation">
         {navigation.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href;
+          const active = pathname === item.href || (item.href !== "/family" && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.name}

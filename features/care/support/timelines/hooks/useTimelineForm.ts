@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { getTimeNow } from "@/lib/shared/date";
+import type { GrowthDomain, GrowthProgressType } from "@/lib/growth/types";
 
 export function useTimelineForm() {
   const [content, setContent] = useState("");
@@ -13,6 +14,11 @@ export function useTimelineForm() {
   const [entryTime, setEntryTime] = useState(getTimeNow());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [growthEnabled, setGrowthEnabled] = useState(false);
+  const [growthDomain, setGrowthDomain] = useState<GrowthDomain>("personal_choice_and_confidence");
+  const [growthProgressType, setGrowthProgressType] = useState<GrowthProgressType>("progress");
+  const [growthGoalIds, setGrowthGoalIds] = useState<string[]>([]);
+  const [growthSummary, setGrowthSummary] = useState("");
 
   const [activityTitle, setActivityTitle] = useState("");
   const [activityLocation, setActivityLocation] = useState("");
@@ -93,6 +99,11 @@ export function useTimelineForm() {
     setSelectedCategoryId(null);
     setEntryTime(getTimeNow());
     setSaveError(null);
+    setGrowthEnabled(false);
+    setGrowthDomain("personal_choice_and_confidence");
+    setGrowthProgressType("progress");
+    setGrowthGoalIds([]);
+    setGrowthSummary("");
   }
 
   function resetActivityState() {
@@ -191,6 +202,11 @@ export function useTimelineForm() {
     entryTime, setEntryTime,
     saving, setSaving,
     saveError, setSaveError,
+    growthEnabled, setGrowthEnabled,
+    growthDomain, setGrowthDomain,
+    growthProgressType, setGrowthProgressType,
+    growthGoalIds, setGrowthGoalIds,
+    growthSummary, setGrowthSummary,
 
     activityTitle, setActivityTitle,
     activityLocation, setActivityLocation,

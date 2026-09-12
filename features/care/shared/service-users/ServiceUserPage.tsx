@@ -213,14 +213,7 @@ export default function ServiceUserPage({ portal }: Props) {
     }
 
     setSelectedServiceUserId(serviceUserId);
-
-    function handleServiceUserChange(serviceUserId: string) {
-  if (!serviceUserId) {
-    return;
-  }
-
-  setSelectedServiceUserId(serviceUserId);
-}
+    router.push(`/care/${portal}/service-users/${serviceUserId}/growth`);
   }
 
   const selectedServiceUser =

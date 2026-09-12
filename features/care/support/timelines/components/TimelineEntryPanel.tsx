@@ -9,6 +9,7 @@ import { primaryActionBase, secondaryActionBase } from "@/components/care/timeli
 import { formRegistry } from "@/lib/care/timelines/formRegistry";
 import { saveRegistry } from "@/lib/care/timelines/saveRegistry";
 import { combineDateAndTime } from "@/lib/shared/date";
+import { GrowthEvidenceFields } from "@/components/care/shared/growth/GrowthEvidenceFields";
 
 type Props = {
   serviceUserId: string;
@@ -175,6 +176,12 @@ export default function TimelineEntryPanel({
           linkedPrnAdministrationId: form.linkedPrnAdministrationId ?? "",
           behaviourIncidentOutcomes: form.behaviourIncidentOutcomes ?? [],
           behaviourIncidentNotes: form.behaviourIncidentNotes ?? "",
+          growthMetadata: form.growthEnabled ? {
+            domain: form.growthDomain,
+            progressType: form.growthProgressType,
+            relatedGoalIds: form.growthGoalIds,
+            summary: form.growthSummary.trim() || undefined,
+          } : undefined,
         });
 
         if (!saved) {
@@ -333,6 +340,8 @@ export default function TimelineEntryPanel({
                 />
               </div>
             )}
+
+            <GrowthEvidenceFields serviceUserId={serviceUserId} entryType={form.entryType} form={form} />
 
             {form.saveError ? (
               <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">

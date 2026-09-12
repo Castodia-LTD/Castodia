@@ -20,6 +20,7 @@ export type SaveContext = {
   organisationId: string;
   userId: string;
   eventTime: string;
+  growthMetadata?: import("@/lib/growth/types").GrowthMetadata["growth"];
 
   resetEntryPanel: () => void;
   setEntryPanelOpen: (value: boolean) => void;

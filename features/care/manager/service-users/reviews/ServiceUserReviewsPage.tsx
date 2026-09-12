@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { CalendarDays, Check, ChevronDown, ChevronUp, Plus, Save, Trash2, UserRound } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { saveMonthlyReviewWithGrowth } from "@/lib/growth/review-goals";
+import { GROWTH_DOMAIN_LABELS, GROWTH_DOMAINS, type GrowthDomain } from "@/lib/growth/types";
 import {
   CastodiaBadge,
   CastodiaButton,
@@ -21,6 +23,7 @@ type AgreedGoal = {
   status: "active";
   source: "monthly_check_in";
   agreedAt: string;
+  domain: GrowthDomain;
 };
 
 type GoalDraft = {
@@ -28,6 +31,7 @@ type GoalDraft = {
   title: string;
   desiredOutcome: string;
   targetDate: string;
+  domain: GrowthDomain;
 };
 
 type ReviewResponses = {
@@ -96,6 +100,7 @@ function createGoalDraft(index: number): GoalDraft {
     title: "",
     desiredOutcome: "",
     targetDate: "",
+    domain: "personal_choice_and_confidence",
   };
 }
 
@@ -206,7 +211,7 @@ function ReviewQuestion({
   );
 }
 
-export default function ServiceUserReviewsPage() {
+export default function ServiceUserReviewsPage({ readOnly = false }: { readOnly?: boolean }) {
   const params = useParams<{ id: string }>();
   const serviceUserId = params.id;
 
@@ -334,6 +339,7 @@ export default function ServiceUserReviewsPage() {
           status: "active",
           source: "monthly_check_in",
           agreedAt,
+          domain: goal.domain,
         }));
 
       const payload = {
@@ -357,11 +363,7 @@ export default function ServiceUserReviewsPage() {
         completed_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from("monthly_service_user_reviews")
-        .upsert(payload, { onConflict: "service_user_id,review_month" });
-
-      if (error) throw error;
+      await saveMonthlyReviewWithGrowth(supabase, payload);
 
       setEditing(false);
       resetForm();
@@ -386,9 +388,9 @@ export default function ServiceUserReviewsPage() {
               <h2 className="text-xl font-semibold text-slate-950">Monthly Check-Ins</h2>
               <p className="mt-1 text-sm text-slate-500">Keep the person's voice, choices and lived experience visible month by month.</p>
             </div>
-            <CastodiaButton onClick={() => setEditing(true)}>
+            {!readOnly ? <CastodiaButton onClick={() => setEditing(true)}>
               <span className="inline-flex items-center gap-2"><Plus size={17} /> New monthly check-in</span>
-            </CastodiaButton>
+            </CastodiaButton> : null}
           </div>
 
           {loading ? (
@@ -604,6 +606,23 @@ export default function ServiceUserReviewsPage() {
                         placeholder="Describe the outcome in the person's own words where possible"
                         className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
                       />
+                    </label>
+
+                    <label className="text-sm font-semibold text-slate-700">
+                      Growth area
+                      <select
+                        value={goal.domain}
+                        onChange={(event) =>
+                          setGoalDrafts((current) => current.map((item) =>
+                            item.clientId === goal.clientId
+                              ? { ...item, domain: event.target.value as GrowthDomain }
+                              : item,
+                          ))
+                        }
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
+                      >
+                        {GROWTH_DOMAINS.map((domain) => <option key={domain} value={domain}>{GROWTH_DOMAIN_LABELS[domain]}</option>)}
+                      </select>
                     </label>
 
                     <label className="text-sm font-semibold text-slate-700">

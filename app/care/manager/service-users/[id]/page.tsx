@@ -1,5 +1,6 @@
-import ServiceUserHubPage from "@/features/care/manager/service-users/ServiceUserHubPage";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <ServiceUserHubPage />;
+export default async function Page({ params }: PageProps<"/care/manager/service-users/[id]">) {
+  const { id } = await params;
+  redirect(`/care/manager/service-users/${id}/growth`);
 }

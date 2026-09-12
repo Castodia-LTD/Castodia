@@ -35,6 +35,7 @@ type Props = {
 };
 
 const tabs: HubTab[] = [
+  { label: "Growth", path: "growth" },
   { label: "Medication", path: "medication" },
   { label: "Care Plans", path: "care-plans" },
   { label: "Risk Register", path: "risk-assessments" },
