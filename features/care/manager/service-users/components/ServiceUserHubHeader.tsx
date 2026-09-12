@@ -40,6 +40,7 @@ const tabs: HubTab[] = [
   { label: "Risk Register", path: "risk-assessments" },
   { label: "Body Maps", path: "body-maps" },
   { label: "Memories", path: "memories" },
+  { label: "Mental Capacity", path: "mental-capacity" },
   { label: "Reviews", path: "reviews" },
   { label: "Wellbeing Indicators", path: "wellbeing-indicators", managerOnly: true },
 ];
@@ -60,7 +61,7 @@ export default function ServiceUserHubHeader({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(Boolean(photoPath));
 
-  const basePath = `/${portal}/service-users/${id}`;
+  const basePath = `/care/${portal}/service-users/${id}`;
   const aboutMeHref = `${basePath}/about-me`;
   const editHref = `${basePath}/edit`;
 
