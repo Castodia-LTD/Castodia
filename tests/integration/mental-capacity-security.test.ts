@@ -20,6 +20,7 @@ let orgB = "";
 let serviceUserA = "";
 let serviceUserB = "";
 let assessmentA = "";
+let documentA = "";
 const authIds: string[] = [];
 
 function assessmentPayload(
@@ -92,10 +93,35 @@ beforeAll(async () => {
     throw new Error(`Could not create MCA fixture: ${error?.message}`);
   }
   assessmentA = data.id as string;
+
+  const { data: document, error: documentError } = await managerA
+    .from("mental_capacity_documents")
+    .insert({
+      organisation_id: orgA,
+      service_user_id: serviceUserA,
+      title: "External medication assessment",
+      decision: "Can the person decide whether to take their evening medicine?",
+      assessment_date: "2026-09-12",
+      review_date: "2026-12-12",
+      completed_by: "External Assessor",
+      file_name: "completed-mca.pdf",
+      storage_path: `${orgA}/${serviceUserA}/fixture/completed-mca.pdf`,
+      mime_type: "application/pdf",
+      file_size_bytes: 1024,
+      uploaded_by: managerAIdentity.id,
+    })
+    .select("id")
+    .single();
+
+  if (documentError || !document?.id) {
+    throw new Error(`Could not create MCA document fixture: ${documentError?.message}`);
+  }
+  documentA = document.id as string;
 }, 45_000);
 
 afterAll(async () => {
   if (!admin) return;
+  await admin.from("mental_capacity_documents").delete().in("organisation_id", [orgA, orgB].filter(Boolean));
   await admin.from("mental_capacity_assessments").delete().in("organisation_id", [orgA, orgB].filter(Boolean));
   await admin.from("service_users").delete().in("id", [serviceUserA, serviceUserB].filter(Boolean));
 
@@ -160,6 +186,46 @@ describe("Mental capacity assessment security", () => {
       .from("mental_capacity_assessments")
       .select("id")
       .eq("id", assessmentA);
+
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  test("support can read uploaded MCA metadata in their organisation", async () => {
+    const { data, error } = await supportA
+      .from("mental_capacity_documents")
+      .select("id")
+      .eq("id", documentA);
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+  });
+
+  test("support cannot register an uploaded MCA", async () => {
+    const { error } = await supportA
+      .from("mental_capacity_documents")
+      .insert({
+        organisation_id: orgA,
+        service_user_id: serviceUserA,
+        title: "Forbidden upload",
+        decision: "Forbidden decision",
+        assessment_date: "2026-09-12",
+        completed_by: "Support user",
+        file_name: "forbidden.pdf",
+        storage_path: `${orgA}/${serviceUserA}/forbidden/forbidden.pdf`,
+        mime_type: "application/pdf",
+        file_size_bytes: 100,
+        uploaded_by: authIds[1],
+      });
+
+    expect(error).not.toBeNull();
+  });
+
+  test("another organisation cannot read uploaded MCA metadata", async () => {
+    const { data, error } = await managerB
+      .from("mental_capacity_documents")
+      .select("id")
+      .eq("id", documentA);
 
     expect(error).toBeNull();
     expect(data).toEqual([]);

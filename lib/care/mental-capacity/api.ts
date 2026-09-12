@@ -7,7 +7,17 @@ import {
   type CapacityOutcome,
   type MentalCapacityAssessmentInput,
   type MentalCapacityAssessmentRecord,
+  type MentalCapacityDocumentInput,
+  type MentalCapacityDocumentRecord,
 } from "./types";
+
+const MENTAL_CAPACITY_DOCUMENT_BUCKET = "mental-capacity-documents";
+const MAX_MCA_DOCUMENT_BYTES = 10 * 1024 * 1024;
+const MCA_DOCUMENT_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
 
 type CurrentManager = {
   id: string;
@@ -77,6 +87,114 @@ export async function getMentalCapacityAssessment(assessmentId: string) {
 
   if (error) throw new Error(error.message);
   return data as MentalCapacityAssessmentRecord;
+}
+
+export async function getMentalCapacityDocuments(serviceUserId: string) {
+  const { data, error } = await supabase
+    .from("mental_capacity_documents")
+    .select("*")
+    .eq("service_user_id", requiredText(serviceUserId, "Service user ID"))
+    .order("assessment_date", { ascending: false })
+    .order("uploaded_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as MentalCapacityDocumentRecord[];
+}
+
+export async function getMentalCapacityDocument(documentId: string) {
+  const { data, error } = await supabase
+    .from("mental_capacity_documents")
+    .select("*")
+    .eq("id", requiredText(documentId, "Document ID"))
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as MentalCapacityDocumentRecord;
+}
+
+function safeFileName(fileName: string) {
+  const cleanName = fileName
+    .normalize("NFKD")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return cleanName || "completed-mca";
+}
+
+export async function uploadMentalCapacityDocument(
+  input: MentalCapacityDocumentInput,
+) {
+  const manager = await getCurrentManager();
+  const assessmentDate = requiredDate(input.assessmentDate, "Assessment date");
+  const reviewDate = input.reviewDate
+    ? requiredDate(input.reviewDate, "Review date")
+    : null;
+
+  if (reviewDate && reviewDate < assessmentDate) {
+    throw new Error("Review date cannot be before the assessment date.");
+  }
+  if (input.file.size < 1 || input.file.size > MAX_MCA_DOCUMENT_BYTES) {
+    throw new Error("Choose a PDF or Word document no larger than 10 MB.");
+  }
+  if (!MCA_DOCUMENT_MIME_TYPES.has(input.file.type)) {
+    throw new Error("Only PDF, DOC and DOCX files can be uploaded.");
+  }
+
+  const documentId = crypto.randomUUID();
+  const storagePath = [
+    manager.organisation_id,
+    requiredText(input.serviceUserId, "Service user ID"),
+    documentId,
+    safeFileName(input.file.name),
+  ].join("/");
+
+  const { error: uploadError } = await supabase.storage
+    .from(MENTAL_CAPACITY_DOCUMENT_BUCKET)
+    .upload(storagePath, input.file, {
+      cacheControl: "3600",
+      contentType: input.file.type,
+      upsert: false,
+    });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data, error } = await supabase
+    .from("mental_capacity_documents")
+    .insert({
+      id: documentId,
+      organisation_id: manager.organisation_id,
+      service_user_id: input.serviceUserId,
+      title: requiredText(input.title, "Assessment title"),
+      decision: requiredText(input.decision, "Exact decision"),
+      assessment_date: assessmentDate,
+      review_date: reviewDate,
+      completed_by: requiredText(input.completedBy, "Completed by"),
+      notes: input.notes.trim() || null,
+      file_name: input.file.name,
+      storage_path: storagePath,
+      mime_type: input.file.type,
+      file_size_bytes: input.file.size,
+      uploaded_by: manager.id,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(
+      `${error.message} The file was uploaded but could not be registered; contact an administrator.`,
+    );
+  }
+  return data as MentalCapacityDocumentRecord;
+}
+
+export async function createMentalCapacityDocumentUrl(storagePath: string) {
+  const { data, error } = await supabase.storage
+    .from(MENTAL_CAPACITY_DOCUMENT_BUCKET)
+    .createSignedUrl(requiredText(storagePath, "Storage path"), 60);
+
+  if (error) throw new Error(error.message);
+  if (!data?.signedUrl) throw new Error("A secure document link could not be created.");
+  return data.signedUrl;
 }
 
 export async function createMentalCapacityAssessment(

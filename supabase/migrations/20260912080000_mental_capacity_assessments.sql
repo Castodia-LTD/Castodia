@@ -145,3 +145,137 @@ create policy "Managers can create MCA records in their organisation"
 
 grant select, insert on public.mental_capacity_assessments to authenticated;
 grant all on public.mental_capacity_assessments to service_role;
+
+create table if not exists public.mental_capacity_documents (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references public.organisations(id) on delete restrict,
+  service_user_id uuid not null references public.service_users(id) on delete cascade,
+  title text not null,
+  decision text not null,
+  assessment_date date not null,
+  review_date date,
+  completed_by text not null,
+  notes text,
+  file_name text not null,
+  storage_path text not null unique,
+  mime_type text not null,
+  file_size_bytes bigint not null,
+  uploaded_by uuid not null references public.profiles(id) on delete restrict,
+  uploaded_at timestamptz not null default now(),
+  constraint mental_capacity_document_title_not_blank check (length(btrim(title)) > 0),
+  constraint mental_capacity_document_decision_not_blank check (length(btrim(decision)) > 0),
+  constraint mental_capacity_document_completed_by_not_blank check (length(btrim(completed_by)) > 0),
+  constraint mental_capacity_document_file_name_not_blank check (length(btrim(file_name)) > 0),
+  constraint mental_capacity_document_path_not_blank check (length(btrim(storage_path)) > 0),
+  constraint mental_capacity_document_review_date_valid check (
+    review_date is null or review_date >= assessment_date
+  ),
+  constraint mental_capacity_document_mime_type_valid check (
+    mime_type in (
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    )
+  ),
+  constraint mental_capacity_document_file_size_valid check (
+    file_size_bytes between 1 and 10485760
+  )
+);
+
+comment on table public.mental_capacity_documents is
+  'Metadata for completed external MCA documents uploaded against a service user. Files are held in a private storage bucket.';
+
+create index if not exists mental_capacity_documents_service_user_idx
+  on public.mental_capacity_documents(service_user_id, assessment_date desc);
+
+create index if not exists mental_capacity_documents_review_date_idx
+  on public.mental_capacity_documents(review_date)
+  where review_date is not null;
+
+alter table public.mental_capacity_documents enable row level security;
+
+create policy "Managers can read uploaded MCA documents in their organisation"
+  on public.mental_capacity_documents
+  for select
+  to authenticated
+  using (
+    public.is_castodia_manager()
+    and organisation_id = public.current_castodia_organisation_id()
+  );
+
+create policy "Support can read uploaded MCA documents in their organisation"
+  on public.mental_capacity_documents
+  for select
+  to authenticated
+  using (
+    public.is_castodia_support()
+    and organisation_id = public.current_castodia_organisation_id()
+  );
+
+create policy "Managers can register uploaded MCA documents in their organisation"
+  on public.mental_capacity_documents
+  for insert
+  to authenticated
+  with check (
+    public.is_castodia_manager()
+    and organisation_id = public.current_castodia_organisation_id()
+    and uploaded_by = auth.uid()
+    and exists (
+      select 1
+      from public.service_users as service_user
+      where service_user.id = mental_capacity_documents.service_user_id
+        and service_user.organisation_id = mental_capacity_documents.organisation_id
+    )
+  );
+
+grant select, insert on public.mental_capacity_documents to authenticated;
+grant all on public.mental_capacity_documents to service_role;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'mental-capacity-documents',
+  'mental-capacity-documents',
+  false,
+  10485760,
+  array[
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ]
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+create policy "Managers can upload MCA files for their organisation"
+  on storage.objects
+  for insert
+  to authenticated
+  with check (
+    bucket_id = 'mental-capacity-documents'
+    and public.is_castodia_manager()
+    and (storage.foldername(name))[1] = public.current_castodia_organisation_id()::text
+    and lower(storage.extension(name)) in ('pdf', 'doc', 'docx')
+  );
+
+create policy "Managers can read MCA files for their organisation"
+  on storage.objects
+  for select
+  to authenticated
+  using (
+    bucket_id = 'mental-capacity-documents'
+    and public.is_castodia_manager()
+    and (storage.foldername(name))[1] = public.current_castodia_organisation_id()::text
+  );
+
+create policy "Support can read MCA files for their organisation"
+  on storage.objects
+  for select
+  to authenticated
+  using (
+    bucket_id = 'mental-capacity-documents'
+    and public.is_castodia_support()
+    and (storage.foldername(name))[1] = public.current_castodia_organisation_id()::text
+  );

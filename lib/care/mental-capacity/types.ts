@@ -85,6 +85,35 @@ export type MentalCapacityAssessmentInput = {
   };
 };
 
+export type MentalCapacityDocumentRecord = {
+  id: string;
+  organisation_id: string;
+  service_user_id: string;
+  title: string;
+  decision: string;
+  assessment_date: string;
+  review_date: string | null;
+  completed_by: string;
+  notes: string | null;
+  file_name: string;
+  storage_path: string;
+  mime_type: string;
+  file_size_bytes: number;
+  uploaded_by: string;
+  uploaded_at: string;
+};
+
+export type MentalCapacityDocumentInput = {
+  serviceUserId: string;
+  title: string;
+  decision: string;
+  assessmentDate: string;
+  reviewDate: string;
+  completedBy: string;
+  notes: string;
+  file: File;
+};
+
 export function createEmptyMentalCapacityAssessment(
   serviceUserId: string,
 ): MentalCapacityAssessmentInput {

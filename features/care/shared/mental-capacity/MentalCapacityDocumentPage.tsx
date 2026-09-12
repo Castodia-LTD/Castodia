@@ -3,16 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { MentalCapacityList } from "@/components/care/shared/mental-capacity/MentalCapacityList";
+import { MentalCapacityDocumentView } from "@/components/care/shared/mental-capacity/MentalCapacityDocumentView";
 import ServiceUserHubHeader from "@/features/care/manager/service-users/components/ServiceUserHubHeader";
-import {
-  getMentalCapacityAssessments,
-  getMentalCapacityDocuments,
-} from "@/lib/care/mental-capacity/api";
-import type {
-  MentalCapacityAssessmentRecord,
-  MentalCapacityDocumentRecord,
-} from "@/lib/care/mental-capacity/types";
+import { getMentalCapacityDocument } from "@/lib/care/mental-capacity/api";
+import type { MentalCapacityDocumentRecord } from "@/lib/care/mental-capacity/types";
 
 import {
   loadMentalCapacityServiceUsers,
@@ -22,18 +16,17 @@ import { MentalCapacityError, MentalCapacityLoading } from "./page-state";
 import type { MentalCapacityPortal, MentalCapacityServiceUser } from "./types";
 
 type Props = { portal: MentalCapacityPortal };
-
 type LoadedData = {
   selectedServiceUser: MentalCapacityServiceUser;
   serviceUsers: MentalCapacityServiceUser[];
-  assessments: MentalCapacityAssessmentRecord[];
-  documents: MentalCapacityDocumentRecord[];
+  document: MentalCapacityDocumentRecord;
 };
 
-export default function MentalCapacityHubPage({ portal }: Props) {
-  const params = useParams<{ id: string }>();
+export default function MentalCapacityDocumentPage({ portal }: Props) {
+  const params = useParams<{ id: string; documentId: string }>();
   const router = useRouter();
   const serviceUserId = params.id;
+  const documentId = params.documentId;
   const [loadedData, setLoadedData] = useState<LoadedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,48 +34,35 @@ export default function MentalCapacityHubPage({ portal }: Props) {
   const loadPage = useCallback(async () => {
     setLoading(true);
     setErrorMessage(null);
-
     try {
-      const [serviceUsers, assessments, documents] = await Promise.all([
+      const [serviceUsers, document] = await Promise.all([
         loadMentalCapacityServiceUsers(),
-        getMentalCapacityAssessments(serviceUserId),
-        getMentalCapacityDocuments(serviceUserId),
+        getMentalCapacityDocument(documentId),
       ]);
-      const selectedServiceUser = selectMentalCapacityServiceUser(
-        serviceUsers,
-        serviceUserId,
-      );
-
-      setLoadedData({ selectedServiceUser, serviceUsers, assessments, documents });
+      const selectedServiceUser = selectMentalCapacityServiceUser(serviceUsers, serviceUserId);
+      if (document.service_user_id !== serviceUserId) {
+        throw new Error("This document does not belong to the selected service user.");
+      }
+      setLoadedData({ selectedServiceUser, serviceUsers, document });
     } catch (error) {
       setLoadedData(null);
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "The mental capacity assessments could not be loaded.",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "The MCA document could not be loaded.");
     } finally {
       setLoading(false);
     }
-  }, [serviceUserId]);
+  }, [documentId, serviceUserId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => void loadPage(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadPage]);
 
-  if (loading) return <MentalCapacityLoading label="Loading capacity assessments…" />;
+  if (loading) return <MentalCapacityLoading label="Loading MCA document…" />;
   if (errorMessage || !loadedData) {
-    return (
-      <MentalCapacityError
-        message={errorMessage || "The mental capacity assessments could not be opened."}
-        retry={() => void loadPage()}
-      />
-    );
+    return <MentalCapacityError message={errorMessage || "The MCA document could not be opened."} retry={() => void loadPage()} />;
   }
 
-  const { selectedServiceUser, serviceUsers, assessments, documents } = loadedData;
-
+  const { selectedServiceUser, serviceUsers, document } = loadedData;
   return (
     <div className="space-y-6">
       <ServiceUserHubHeader
@@ -99,12 +79,7 @@ export default function MentalCapacityHubPage({ portal }: Props) {
           }
         }}
       />
-      <MentalCapacityList
-        assessments={assessments}
-        documents={documents}
-        serviceUserId={serviceUserId}
-        portal={portal}
-      />
+      <MentalCapacityDocumentView document={document} serviceUserId={serviceUserId} portal={portal} />
     </div>
   );
 }
