@@ -6,7 +6,11 @@ import { CalendarDays, ClipboardCheck } from "lucide-react";
 
 import { CastodiaCard, CastodiaPageShell } from "@/components/castodia";
 
-export default function ReviewsHubPage() {
+type Props = {
+  portal?: "manager" | "support";
+};
+
+export default function ReviewsHubPage({ portal = "manager" }: Props) {
   const params = useParams<{ id: string }>();
   const personId = params.id;
 
@@ -14,15 +18,20 @@ export default function ReviewsHubPage() {
     {
       title: "Monthly Check-In",
       description: "Record the person's monthly views, choices, wellbeing, consent and agreed actions.",
-      href: `/care/manager/service-users/${personId}/reviews/monthly-check-in`,
+      href: `/care/${portal}/service-users/${personId}/reviews/monthly-check-in`,
       icon: CalendarDays,
     },
-    {
-      title: "Incident Reviews",
-      description: "Review recorded behaviour incidents and document management oversight.",
-      href: `/care/manager/service-users/${personId}/reviews/incidents`,
-      icon: ClipboardCheck,
-    },
+    ...(portal === "manager"
+      ? [
+          {
+            title: "Incident Reviews",
+            description:
+              "Review recorded behaviour incidents and document management oversight.",
+            href: `/care/manager/service-users/${personId}/reviews/incidents`,
+            icon: ClipboardCheck,
+          },
+        ]
+      : []),
   ];
 
   return (
