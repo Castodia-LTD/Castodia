@@ -53,9 +53,12 @@ export function MentalCapacityList({
   const basePath = `/care/${portal}/service-users/${serviceUserId}/mental-capacity`;
 
   return (
-    <section aria-labelledby="mental-capacity-heading" className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+    <section
+      aria-labelledby="mental-capacity-heading"
+      className="min-w-0 max-w-full space-y-4"
+    >
+      <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
           <h2 id="mental-capacity-heading" className="text-2xl font-bold text-slate-950">
             Mental capacity assessments
           </h2>
@@ -65,17 +68,17 @@ export function MentalCapacityList({
         </div>
 
         {portal === "manager" ? (
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 xl:w-auto">
             <Link
               href={`${basePath}/upload`}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2 text-sm font-bold text-teal-800 shadow-sm transition hover:bg-teal-50"
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2 text-center text-sm font-bold text-teal-800 shadow-sm transition hover:bg-teal-50"
             >
               <FileUp aria-hidden="true" className="h-4 w-4" />
               Upload completed MCA
             </Link>
             <Link
               href={`${basePath}/new`}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:from-cyan-700 hover:to-teal-700"
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 px-4 py-2 text-center text-sm font-bold text-white shadow-sm transition hover:from-cyan-700 hover:to-teal-700"
             >
               <Plus aria-hidden="true" className="h-4 w-4" />
               New assessment
