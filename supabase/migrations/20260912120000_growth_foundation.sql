@@ -427,7 +427,7 @@ for insert to authenticated with check (
   and exists (
     select 1 from public.timeline_entries entry
     where entry.id = timeline_entry_id
-      and entry.service_user_id::uuid = service_user_id
+      and entry.service_user_id::uuid = growth_observations.service_user_id
       and entry.created_by = auth.uid()
       and entry.event_time = occurred_at
   )
