@@ -66,7 +66,7 @@ export function IOSAppShell({
       : "w-[118px]";
 
   return (
-    <div className="min-h-dvh bg-[#f5f8f9] text-slate-950">
+    <div className="min-h-dvh w-full max-w-full overflow-x-hidden bg-[#f5f8f9] text-slate-950">
       <header
         className={[
           "sticky top-0 z-50",
@@ -97,7 +97,7 @@ export function IOSAppShell({
         </div>
       </header>
 
-      <main className="min-h-0">
+      <main className="min-h-0 min-w-0 max-w-full overflow-x-hidden">
         {children}
 
         {isDashboard ? (

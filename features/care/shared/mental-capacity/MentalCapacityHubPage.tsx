@@ -84,7 +84,7 @@ export default function MentalCapacityHubPage({ portal }: Props) {
   const { selectedServiceUser, serviceUsers, assessments, documents } = loadedData;
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 max-w-full space-y-6 overflow-x-hidden">
       <ServiceUserHubHeader
         id={selectedServiceUser.id}
         fullName={selectedServiceUser.full_name}
