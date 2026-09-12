@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { CalendarDays, Check, ChevronDown, ChevronUp, Plus, Save, UserRound } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, ChevronUp, Plus, Save, Trash2, UserRound } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   CastodiaBadge,
@@ -12,6 +12,23 @@ import {
 } from "@/components/castodia";
 
 type ResponseValue = "yes" | "not_sure" | "no" | "";
+
+type AgreedGoal = {
+  id: string;
+  title: string;
+  desiredOutcome: string | null;
+  targetDate: string | null;
+  status: "active";
+  source: "monthly_check_in";
+  agreedAt: string;
+};
+
+type GoalDraft = {
+  clientId: string;
+  title: string;
+  desiredOutcome: string;
+  targetDate: string;
+};
 
 type ReviewResponses = {
   home: ResponseValue;
@@ -32,6 +49,7 @@ type ReviewResponses = {
   activitiesNotes: string;
   needsNotes: string;
   talkNotes: string;
+  agreedGoals: AgreedGoal[];
 };
 
 type ConsentState = {
@@ -69,7 +87,17 @@ const emptyResponses: ReviewResponses = {
   activitiesNotes: "",
   needsNotes: "",
   talkNotes: "",
+  agreedGoals: [],
 };
+
+function createGoalDraft(index: number): GoalDraft {
+  return {
+    clientId: `goal-${Date.now()}-${index}`,
+    title: "",
+    desiredOutcome: "",
+    targetDate: "",
+  };
+}
 
 const emptyConsent: ConsentState = {
   personalCare: "",
@@ -194,6 +222,9 @@ export default function ServiceUserReviewsPage() {
   const [consent, setConsent] = useState<ConsentState>(emptyConsent);
   const [serviceUserComments, setServiceUserComments] = useState("");
   const [actions, setActions] = useState("");
+  const [goalDrafts, setGoalDrafts] = useState<GoalDraft[]>([
+    createGoalDraft(0),
+  ]);
   const [capacityStatus, setCapacityStatus] = useState("");
   const [bestInterestDecisionCopy, setBestInterestDecisionCopy] = useState<boolean | null>(null);
   const [representativeName, setRepresentativeName] = useState("");
@@ -253,6 +284,7 @@ export default function ServiceUserReviewsPage() {
     setConsent(emptyConsent);
     setServiceUserComments("");
     setActions("");
+    setGoalDrafts([createGoalDraft(0)]);
     setCapacityStatus("");
     setBestInterestDecisionCopy(null);
     setRepresentativeName("");
@@ -291,13 +323,28 @@ export default function ServiceUserReviewsPage() {
         .map((item) => item.trim())
         .filter(Boolean)
         .map((item) => ({ text: item, completed: false }));
+      const agreedAt = new Date().toISOString();
+      const agreedGoals: AgreedGoal[] = goalDrafts
+        .filter((goal) => goal.title.trim())
+        .map((goal) => ({
+          id: crypto.randomUUID(),
+          title: goal.title.trim(),
+          desiredOutcome: goal.desiredOutcome.trim() || null,
+          targetDate: goal.targetDate || null,
+          status: "active",
+          source: "monthly_check_in",
+          agreedAt,
+        }));
 
       const payload = {
         service_user_id: serviceUserId,
         reviewer_id: user.id,
         review_month: reviewMonthValue,
         meeting_date: meetingDate,
-        responses,
+        responses: {
+          ...responses,
+          agreedGoals,
+        },
         consent,
         actions: actionItems,
         service_user_comments: serviceUserComments.trim() || null,
@@ -472,6 +519,114 @@ export default function ServiceUserReviewsPage() {
               <input type="checkbox" checked={serviceUserConfirmed} onChange={(event) => setServiceUserConfirmed(event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
               <span><strong className="font-semibold text-slate-900">Person involved in the check-in</strong><br />Confirm that the person's views were sought and the check-in was discussed with them, or with their representative where appropriate.</span>
             </label>
+          </CastodiaCard>
+
+          <CastodiaCard padding="md">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">Agreed goals</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Record the outcomes the person wants to work towards. These goals will feed into their Growth portal.
+                </p>
+              </div>
+              <CastodiaButton
+                variant="secondary"
+                onClick={() =>
+                  setGoalDrafts((current) => [
+                    ...current,
+                    createGoalDraft(current.length),
+                  ])
+                }
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Plus size={17} /> Add another goal
+                </span>
+              </CastodiaButton>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {goalDrafts.map((goal, index) => (
+                <div
+                  key={goal.clientId}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-900">Goal {index + 1}</p>
+                    {goalDrafts.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGoalDrafts((current) =>
+                            current.filter((item) => item.clientId !== goal.clientId),
+                          )
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                        aria-label={`Remove goal ${index + 1}`}
+                      >
+                        <Trash2 size={15} /> Remove
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label className="text-sm font-semibold text-slate-700 sm:col-span-2">
+                      What is the agreed goal?
+                      <input
+                        value={goal.title}
+                        onChange={(event) =>
+                          setGoalDrafts((current) =>
+                            current.map((item) =>
+                              item.clientId === goal.clientId
+                                ? { ...item, title: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        placeholder="Example: Join a local music group"
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
+                      />
+                    </label>
+
+                    <label className="text-sm font-semibold text-slate-700">
+                      What would success look like?
+                      <textarea
+                        value={goal.desiredOutcome}
+                        onChange={(event) =>
+                          setGoalDrafts((current) =>
+                            current.map((item) =>
+                              item.clientId === goal.clientId
+                                ? { ...item, desiredOutcome: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        rows={3}
+                        placeholder="Describe the outcome in the person's own words where possible"
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
+                      />
+                    </label>
+
+                    <label className="text-sm font-semibold text-slate-700">
+                      Target date (optional)
+                      <input
+                        type="date"
+                        value={goal.targetDate}
+                        onChange={(event) =>
+                          setGoalDrafts((current) =>
+                            current.map((item) =>
+                              item.clientId === goal.clientId
+                                ? { ...item, targetDate: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CastodiaCard>
 
           {saveError ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">{saveError}</div> : null}
