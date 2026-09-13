@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Moon, Plus, Sun, UserPlus, X } from "lucide-react";
+import { AlertTriangle, BedDouble, CalendarDays, ChevronLeft, ChevronRight, Moon, Plus, Sun, UserPlus, X } from "lucide-react";
 
 import { CastodiaButton, CastodiaCard, CastodiaPageShell } from "@/components/castodia";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +17,7 @@ type ShiftDraft = {
   endTime: string;
   shiftType: string;
   shiftPeriod: RotaShiftPeriod;
+  isSleepIn: boolean;
   notes: string;
   assignments: DraftAssignment[];
 };
@@ -30,26 +31,10 @@ function addDays(date: Date, amount: number) {
   return next;
 }
 
-function monthStart(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function monthEnd(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-}
-
-function calendarStart(date: Date) {
-  const first = monthStart(date);
-  const weekday = (first.getDay() + 6) % 7;
-  return addDays(first, -weekday);
-}
-
-function calendarEnd(date: Date) {
-  const last = monthEnd(date);
-  const weekday = (last.getDay() + 6) % 7;
-  return addDays(last, 6 - weekday);
-}
-
+function monthStart(date: Date) { return new Date(date.getFullYear(), date.getMonth(), 1); }
+function monthEnd(date: Date) { return new Date(date.getFullYear(), date.getMonth() + 1, 0); }
+function calendarStart(date: Date) { const first = monthStart(date); return addDays(first, -((first.getDay() + 6) % 7)); }
+function calendarEnd(date: Date) { const last = monthEnd(date); return addDays(last, 6 - ((last.getDay() + 6) % 7)); }
 function calendarDays(date: Date) {
   const start = calendarStart(date);
   const end = calendarEnd(date);
@@ -57,10 +42,7 @@ function calendarDays(date: Date) {
   for (let current = start; current <= end; current = addDays(current, 1)) days.push(current);
   return days;
 }
-
-function monthLabel(date: Date) {
-  return date.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
-}
+function monthLabel(date: Date) { return date.toLocaleDateString("en-GB", { month: "long", year: "numeric" }); }
 
 function blankDraft(date: Date): ShiftDraft {
   return {
@@ -69,6 +51,7 @@ function blankDraft(date: Date): ShiftDraft {
     endTime: "20:00",
     shiftType: "Support",
     shiftPeriod: "day",
+    isSleepIn: false,
     notes: "",
     assignments: [],
   };
@@ -100,31 +83,16 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
       const user = authData.user;
       if (!user) throw new Error("You are not signed in.");
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("organisation_id")
-        .eq("id", user.id)
-        .single();
+      const { data: profile, error: profileError } = await supabase.from("profiles").select("organisation_id").eq("id", user.id).single();
       if (profileError || !profile?.organisation_id) throw new Error("Organisation not found.");
 
       const queryStart = addDays(displayStart, -1);
       const queryEnd = addDays(displayEnd, 1);
       const [personResult, staffResult, shiftsResult] = await Promise.all([
-        supabase
-          .from("service_users")
-          .select("id, full_name, house_name")
-          .eq("id", serviceUserId)
-          .eq("organisation_id", profile.organisation_id)
-          .eq("is_active", true)
-          .single(),
-        supabase
-          .from("profiles")
-          .select("id, full_name, role")
-          .eq("organisation_id", profile.organisation_id)
-          .order("full_name"),
-        supabase
-          .from("rota_shifts")
-          .select("id, organisation_id, service_user_id, shift_date, start_time, end_time, shift_type, shift_period, notes, status, rota_shift_assignments(id, staff_user_id, assignment_type)")
+        supabase.from("service_users").select("id, full_name, house_name").eq("id", serviceUserId).eq("organisation_id", profile.organisation_id).eq("is_active", true).single(),
+        supabase.from("profiles").select("id, full_name, role").eq("organisation_id", profile.organisation_id).order("full_name"),
+        supabase.from("rota_shifts")
+          .select("id, organisation_id, service_user_id, shift_date, start_time, end_time, shift_type, shift_period, is_sleep_in, notes, status, rota_shift_assignments(id, staff_user_id, assignment_type)")
           .eq("organisation_id", profile.organisation_id)
           .gte("shift_date", toLocalDateKey(queryStart))
           .lte("shift_date", toLocalDateKey(queryEnd))
@@ -167,6 +135,7 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
       end_time: draft.endTime,
       shift_type: draft.shiftType,
       shift_period: draft.shiftPeriod,
+      is_sleep_in: draft.isSleepIn,
       notes: draft.notes || null,
       status: "planned",
       rota_shift_assignments: workingIds.map((staffUserId) => ({ id: `draft-${staffUserId}`, staff_user_id: staffUserId, assignment_type: "working" })),
@@ -199,6 +168,7 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
       endTime: timeLabel(shift.end_time),
       shiftType: shift.shift_type,
       shiftPeriod: shift.shift_period || "day",
+      isSleepIn: Boolean(shift.is_sleep_in),
       notes: shift.notes ?? "",
       assignments: (shift.rota_shift_assignments ?? []).map((assignment) => ({ staffUserId: assignment.staff_user_id, type: assignment.assignment_type || "working" })),
     });
@@ -263,6 +233,7 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
         p_shift_id: shiftId,
         p_shift_period: draft.shiftPeriod,
         p_annual_leave_staff_user_ids: leaveIds,
+        p_is_sleep_in: draft.isSleepIn,
       });
       if (configError) throw configError;
 
@@ -317,13 +288,17 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
       {formOpen && (
         <CastodiaCard className="p-5">
           <div className="mb-5 flex items-start justify-between gap-4">
-            <div><h2 className="text-lg font-bold text-slate-900">{editingShiftId ? "Edit shift" : "Add shift"}</h2><p className="mt-1 text-sm text-slate-500">Tag the shift as Day or Night, then add working staff or record annual leave and assign cover.</p></div>
+            <div><h2 className="text-lg font-bold text-slate-900">{editingShiftId ? "Edit shift" : "Add shift"}</h2><p className="mt-1 text-sm text-slate-500">Tag the shift as Day or Night, mark Sleep-in when needed, then add working staff or annual leave cover.</p></div>
             <button type="button" onClick={() => setFormOpen(false)} aria-label="Close shift editor" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X className="h-5 w-5" /></button>
           </div>
 
-          <div className="mb-5 flex flex-wrap gap-2">
+          <div className="mb-5 flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => setPeriod("day")} className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${draft.shiftPeriod === "day" ? "bg-amber-100 text-amber-900 ring-2 ring-amber-300" : "bg-slate-100 text-slate-600"}`}><Sun className="h-4 w-4" />Day</button>
             <button type="button" onClick={() => setPeriod("night")} className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${draft.shiftPeriod === "night" ? "bg-indigo-100 text-indigo-900 ring-2 ring-indigo-300" : "bg-slate-100 text-slate-600"}`}><Moon className="h-4 w-4" />Night</button>
+            <label className={`ml-0 flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold sm:ml-2 ${draft.isSleepIn ? "border-violet-300 bg-violet-100 text-violet-900" : "border-slate-300 bg-white text-slate-700"}`}>
+              <input type="checkbox" checked={draft.isSleepIn} onChange={(event) => setDraft((current) => ({ ...current, isSleepIn: event.target.checked }))} className="h-4 w-4 rounded border-slate-300" />
+              <BedDouble className="h-4 w-4" />Sleep-in
+            </label>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -379,7 +354,7 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
                     const workingAssignments = assignments.filter((item) => item.assignment_type !== "annual_leave");
                     const hasConflict = conflictShiftIds.has(shift.id);
                     return <button type="button" key={shift.id} onClick={() => openEditShift(shift)} className={`w-full rounded-xl border p-2.5 text-left shadow-sm ${hasConflict ? "border-amber-400 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                      <div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${shift.shift_period === "night" ? "bg-indigo-100 text-indigo-800" : "bg-amber-100 text-amber-800"}`}>{shift.shift_period === "night" ? "Night" : "Day"}</span>{hasConflict && <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />}</div>
+                      <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap gap-1"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${shift.shift_period === "night" ? "bg-indigo-100 text-indigo-800" : "bg-amber-100 text-amber-800"}`}>{shift.shift_period === "night" ? "Night" : "Day"}</span>{shift.is_sleep_in && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase text-violet-800">Sleep-in</span>}</div>{hasConflict && <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />}</div>
                       <p className="mt-1.5 text-xs font-bold text-slate-900">{timeLabel(shift.start_time)}–{timeLabel(shift.end_time)}</p>
                       {workingAssignments.length > 0 ? <div className="mt-2 space-y-1">{workingAssignments.map((assignment) => <div key={assignment.id} className="rounded-md bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-800">{staffById.get(assignment.staff_user_id)?.full_name || "Unnamed staff"}</div>)}</div> : <p className="mt-2 text-[11px] font-semibold text-amber-700">No cover assigned</p>}
                       {leaveAssignments.length > 0 && <div className="mt-1.5 space-y-1">{leaveAssignments.map((assignment) => <div key={assignment.id} className="rounded-md border border-rose-200 bg-rose-100/60 px-2 py-1 text-[11px] font-semibold text-rose-800 opacity-80">{staffById.get(assignment.staff_user_id)?.full_name || "Unnamed staff"} · Annual leave</div>)}</div>}
