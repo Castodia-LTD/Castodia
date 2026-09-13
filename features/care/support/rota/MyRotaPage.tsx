@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Home, UserRound } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Home, Moon, Sun, UserRound } from "lucide-react";
 
 import { CastodiaCard, CastodiaPageShell } from "@/components/castodia";
 import { supabase } from "@/lib/supabase";
@@ -34,7 +34,7 @@ export default function MyRotaPage() {
 
       const { data: shiftData, error: shiftError } = await supabase
         .from("rota_shifts")
-        .select("id, organisation_id, service_user_id, shift_date, start_time, end_time, shift_type, notes, status, rota_shift_assignments(id, staff_user_id)")
+        .select("id, organisation_id, service_user_id, shift_date, start_time, end_time, shift_type, shift_period, notes, status, rota_shift_assignments(id, staff_user_id, assignment_type)")
         .gte("shift_date", toLocalDateKey(weekStart))
         .lte("shift_date", toLocalDateKey(weekEnd))
         .eq("status", "planned")
@@ -64,14 +64,12 @@ export default function MyRotaPage() {
     }
   }, [weekEnd, weekStart]);
 
-  useEffect(() => {
-    void loadRota();
-  }, [loadRota]);
+  useEffect(() => { void loadRota(); }, [loadRota]);
 
   return (
     <CastodiaPageShell
       title="My rota"
-      description="Your assigned shifts are populated automatically from the service rota."
+      description="Your assigned shifts and annual leave are populated automatically from service-user rotas."
       maxWidth="wide"
       actions={
         <div className="flex items-center gap-2">
@@ -86,7 +84,7 @@ export default function MyRotaPage() {
       {loading ? (
         <CastodiaCard className="p-8 text-center text-sm text-slate-500">Loading your rota…</CastodiaCard>
       ) : shifts.length === 0 ? (
-        <CastodiaCard className="p-10 text-center"><CalendarDays className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3 font-semibold text-slate-800">No shifts assigned this week</p><p className="mt-1 text-sm text-slate-500">Shifts will appear here when a manager assigns you on the service rota.</p></CastodiaCard>
+        <CastodiaCard className="p-10 text-center"><CalendarDays className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3 font-semibold text-slate-800">No shifts assigned this week</p><p className="mt-1 text-sm text-slate-500">Shifts will appear here when a manager tags you on a service-user rota.</p></CastodiaCard>
       ) : (
         <div className="space-y-4">
           {days.map((day) => {
@@ -100,19 +98,29 @@ export default function MyRotaPage() {
                 <div className="grid gap-3 lg:grid-cols-2">
                   {dayShifts.map((shift) => {
                     const person = peopleById.get(shift.service_user_id);
+                    const assignment = shift.rota_shift_assignments?.[0];
+                    const annualLeave = assignment?.assignment_type === "annual_leave";
                     return (
-                      <CastodiaCard key={shift.id} className="p-4 sm:p-5">
+                      <CastodiaCard key={shift.id} className={`p-4 sm:p-5 ${annualLeave ? "border-rose-200 bg-rose-50/60 opacity-80" : ""}`}>
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2 text-lg font-bold text-slate-900"><Clock3 className="h-5 w-5 text-cyan-700" />{timeLabel(shift.start_time)}–{timeLabel(shift.end_time)}</div>
-                            <p className="mt-1 text-sm font-semibold text-cyan-700">{shift.shift_type}</p>
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${shift.shift_period === "night" ? "bg-indigo-100 text-indigo-800" : "bg-amber-100 text-amber-800"}`}>
+                                {shift.shift_period === "night" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+                                {shift.shift_period === "night" ? "Night" : "Day"}
+                              </span>
+                              {annualLeave && <span className="rounded-full border border-rose-300 bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-800">Annual leave</span>}
+                            </div>
+                            <div className={`flex items-center gap-2 text-lg font-bold ${annualLeave ? "text-rose-900" : "text-slate-900"}`}><Clock3 className={`h-5 w-5 ${annualLeave ? "text-rose-600" : "text-cyan-700"}`} />{timeLabel(shift.start_time)}–{timeLabel(shift.end_time)}</div>
+                            <p className={`mt-1 text-sm font-semibold ${annualLeave ? "text-rose-700" : "text-cyan-700"}`}>{shift.shift_type}</p>
                           </div>
-                          <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                          <div className={`rounded-xl px-3 py-2 text-sm ${annualLeave ? "bg-rose-100/70 text-rose-800" : "bg-slate-50 text-slate-700"}`}>
                             <div className="flex items-center gap-2 font-semibold"><UserRound className="h-4 w-4" />{personName(person)}</div>
-                            {person?.house_name && <div className="mt-1 flex items-center gap-2 text-xs text-slate-500"><Home className="h-3.5 w-3.5" />{person.house_name}</div>}
+                            {person?.house_name && <div className="mt-1 flex items-center gap-2 text-xs opacity-75"><Home className="h-3.5 w-3.5" />{person.house_name}</div>}
                           </div>
                         </div>
-                        {shift.notes && <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Shift details</p><p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{shift.notes}</p></div>}
+                        {annualLeave && <p className="mt-4 rounded-xl border border-rose-200 bg-white/60 p-3 text-sm font-semibold text-rose-800">You are marked as annual leave for this shift. Any cover staff are managed on the service-user rota.</p>}
+                        {!annualLeave && shift.notes && <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Shift details</p><p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{shift.notes}</p></div>}
                       </CastodiaCard>
                     );
                   })}
