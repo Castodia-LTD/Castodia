@@ -24,7 +24,7 @@ const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 function personName(person?: RotaPerson | null) {
   if (!person) return "Unknown person";
-  return person.full_name?.trim() || `${person.first_name ?? ""} ${person.surname ?? ""}`.trim() || "Unknown person";
+  return person.full_name.trim() || "Unknown person";
 }
 
 function blankDraft(personId: string, weekStart: Date): ShiftDraft {
@@ -75,10 +75,10 @@ export default function RotaBuilderPage() {
       const [peopleResult, staffResult, shiftsResult] = await Promise.all([
         supabase
           .from("service_users")
-          .select("id, first_name, surname, full_name, house_name")
+          .select("id, full_name, house_name")
           .eq("organisation_id", profile.organisation_id)
           .eq("is_active", true)
-          .order("first_name"),
+          .order("full_name"),
         supabase
           .from("profiles")
           .select("id, full_name, role")
