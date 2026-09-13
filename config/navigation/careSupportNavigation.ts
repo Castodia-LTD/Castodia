@@ -8,6 +8,11 @@ export const careSupportNavigation: AppShellLink[] = [
     exact: true,
   },
   {
+    href: "/care/support/rota",
+    label: "My rota",
+    icon: "calendar",
+  },
+  {
     href: "/care/support/timelines",
     label: "Timelines",
     icon: "timelines",
