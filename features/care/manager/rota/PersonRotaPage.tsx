@@ -106,9 +106,9 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
       if (shiftsResult.error) throw shiftsResult.error;
 
       setPerson(personResult.data as RotaPerson);
-      const assignable = ((staffResult.data ?? []) as RotaStaff[]).filter((member) => member.role === "support" || member.role === "manager");
-      setStaff(assignable);
-      setSelectedStaffId((current) => current || assignable[0]?.id || "");
+      const organisationStaff = (staffResult.data ?? []) as RotaStaff[];
+      setStaff(organisationStaff);
+      setSelectedStaffId((current) => current || organisationStaff[0]?.id || "");
       setShifts((shiftsResult.data ?? []) as unknown as RotaShift[]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to load this rota.");
@@ -311,7 +311,7 @@ export default function PersonRotaPage({ serviceUserId }: { serviceUserId: strin
 
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-              <div className="min-w-0 flex-1"><label className={labelClass} htmlFor="staff-picker">Staff member</label><select id="staff-picker" value={selectedStaffId} onChange={(event) => setSelectedStaffId(event.target.value)} className={inputClass} disabled={staff.length === 0}>{staff.length === 0 && <option value="">No staff available</option>}{staff.map((member) => <option key={member.id} value={member.id}>{member.full_name || "Unnamed staff"}</option>)}</select></div>
+              <div className="min-w-0 flex-1"><label className={labelClass} htmlFor="staff-picker">Staff member</label><select id="staff-picker" value={selectedStaffId} onChange={(event) => setSelectedStaffId(event.target.value)} className={inputClass} disabled={staff.length === 0}>{staff.length === 0 && <option value="">No staff available</option>}{staff.map((member) => <option key={member.id} value={member.id}>{member.full_name || "Unnamed staff"}{member.role === "manager" ? " — Manager" : ""}</option>)}</select></div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => assignSelected("working")} disabled={!selectedStaffId} className="flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><UserPlus className="h-4 w-4" />Add staff</button>
                 <button type="button" onClick={() => assignSelected("annual_leave")} disabled={!selectedStaffId} className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700 disabled:opacity-40">Annual leave</button>
