@@ -22,6 +22,7 @@ export function findRotaConflicts(
 
   for (const shift of shifts.filter((item) => item.status !== "cancelled")) {
     for (const assignment of shift.rota_shift_assignments ?? []) {
+      if (assignment.assignment_type === "annual_leave") continue;
       const current = byStaff.get(assignment.staff_user_id) ?? [];
       current.push(shift);
       byStaff.set(assignment.staff_user_id, current);
