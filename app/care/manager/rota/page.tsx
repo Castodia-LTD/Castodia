@@ -1,5 +1,5 @@
-import RotaBuilderPage from "@/features/care/manager/rota/RotaBuilderPage";
+import RotaDirectoryPage from "@/features/care/manager/rota/RotaDirectoryPage";
 
 export default function Page() {
-  return <RotaBuilderPage />;
+  return <RotaDirectoryPage />;
 }
