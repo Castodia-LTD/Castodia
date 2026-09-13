@@ -298,7 +298,7 @@ export default function ManagerInsightsDashboard() {
     };
   }, [timeline, competencies, medications, shifts]);
 
-  const items: Item[] = [
+  const allItems: Item[] = [
     {
       key: "incidents",
       title: "Incident reviews",
@@ -353,8 +353,9 @@ export default function ManagerInsightsDashboard() {
       tone: "amber",
       icon: <Pill className="h-5 w-5" />,
     },
-  ].filter((item) => item.count > 0);
+  ];
 
+  const items = allItems.filter((item) => item.count > 0);
   const total = items.reduce((sum, item) => sum + item.count, 0);
 
   const positives = [
@@ -474,17 +475,15 @@ export default function ManagerInsightsDashboard() {
           <h2 className="text-lg font-bold text-slate-950">Service readiness</h2>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {[
-              { label: "Rota conflicts", value: stats.conflicts },
-              { label: "Unfilled shifts", value: stats.unfilled },
-              { label: "Overdue competencies", value: stats.overdue },
-              { label: "Competency actions", value: stats.competencyActions },
-            ].map((metric) => (
-              <div key={metric.label} className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-2xl font-bold text-slate-950">
-                  {metric.value}
-                </div>
+              ["Rota conflicts", stats.conflicts],
+              ["Unfilled shifts", stats.unfilled],
+              ["Overdue competencies", stats.overdue],
+              ["Competency actions", stats.competencyActions],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl bg-slate-50 p-4">
+                <div className="text-2xl font-bold text-slate-950">{value}</div>
                 <div className="mt-1 text-xs font-medium text-slate-500">
-                  {metric.label}
+                  {label}
                 </div>
               </div>
             ))}
@@ -502,14 +501,13 @@ export default function ManagerInsightsDashboard() {
             </p>
           </div>
         </div>
-
         <ul className="mt-5 grid gap-3 md:grid-cols-2">
-          {positives.map((positive) => (
+          {positives.map((item) => (
             <li
-              key={positive}
+              key={item}
               className="rounded-2xl bg-emerald-50/60 p-4 text-sm text-slate-700"
             >
-              {positive}
+              {item}
             </li>
           ))}
         </ul>
