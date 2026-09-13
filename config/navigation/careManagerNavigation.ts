@@ -13,6 +13,11 @@ export const careManagerNavigation: AppShellLink[] = [
     icon: "calendar",
   },
   {
+    href: "/care/manager/rota",
+    label: "Rotas",
+    icon: "calendar",
+  },
+  {
     href: "/care/manager/service-users",
     label: "People",
     icon: "service-users",
