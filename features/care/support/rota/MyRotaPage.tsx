@@ -10,7 +10,7 @@ import type { RotaPerson, RotaShift } from "@/features/care/shared/rota/types";
 
 function personName(person?: RotaPerson | null) {
   if (!person) return "Unknown person";
-  return person.full_name?.trim() || `${person.first_name ?? ""} ${person.surname ?? ""}`.trim() || "Unknown person";
+  return person.full_name.trim() || "Unknown person";
 }
 
 export default function MyRotaPage() {
@@ -53,7 +53,7 @@ export default function MyRotaPage() {
 
       const { data: personData, error: personError } = await supabase
         .from("service_users")
-        .select("id, first_name, surname, full_name, house_name")
+        .select("id, full_name, house_name")
         .in("id", personIds);
       if (personError) throw personError;
       setPeople((personData ?? []) as RotaPerson[]);
