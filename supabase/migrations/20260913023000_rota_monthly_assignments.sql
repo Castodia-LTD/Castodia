@@ -108,3 +108,48 @@ end;
 $$;
 
 grant execute on function public.create_rota_shift_v2(uuid,date,time,time,text,text,uuid[],uuid[],text) to authenticated;
+
+create or replace function public.configure_rota_shift(
+  p_shift_id uuid,
+  p_shift_period text,
+  p_annual_leave_staff_user_ids uuid[] default '{}'::uuid[]
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  actor_organisation_id uuid := private.current_organisation_id();
+begin
+  if not private.is_manager() then
+    raise exception 'Only managers can configure rota shifts';
+  end if;
+
+  if p_shift_period not in ('day', 'night') then
+    raise exception 'Shift period must be day or night';
+  end if;
+
+  update public.rota_shifts
+  set shift_period = p_shift_period,
+      updated_by_user_id = auth.uid(),
+      updated_at = now()
+  where id = p_shift_id
+    and organisation_id = actor_organisation_id
+    and status = 'planned';
+
+  if not found then
+    raise exception 'Active shift not found';
+  end if;
+
+  update public.rota_shift_assignments
+  set assignment_type = case
+    when staff_user_id = any(coalesce(p_annual_leave_staff_user_ids, '{}'::uuid[])) then 'annual_leave'
+    else 'working'
+  end
+  where shift_id = p_shift_id
+    and organisation_id = actor_organisation_id;
+end;
+$$;
+
+grant execute on function public.configure_rota_shift(uuid,text,uuid[]) to authenticated;
