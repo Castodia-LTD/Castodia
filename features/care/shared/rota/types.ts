@@ -29,6 +29,7 @@ export type RotaShift = {
   end_time: string;
   shift_type: string;
   shift_period: RotaShiftPeriod;
+  is_sleep_in: boolean;
   notes: string | null;
   status: "planned" | "cancelled";
   service_users?: {
