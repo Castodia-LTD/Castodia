@@ -1,9 +1,7 @@
 export type RotaPerson = {
   id: string;
-  first_name: string;
-  surname: string;
-  full_name?: string | null;
-  house_name?: string | null;
+  full_name: string;
+  house_name: string;
 };
 
 export type RotaStaff = {
@@ -29,10 +27,8 @@ export type RotaShift = {
   notes: string | null;
   status: "planned" | "cancelled";
   service_users?: {
-    first_name: string;
-    surname: string;
-    full_name?: string | null;
-    house_name?: string | null;
+    full_name: string;
+    house_name: string;
   } | null;
   rota_shift_assignments?: RotaAssignment[];
 };
