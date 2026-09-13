@@ -1,5 +1,5 @@
-import ManagerDashboardPage from "@/features/care/manager/insights/ManagerInsightsPage";
+import ManagerInsightsDashboard from "@/features/care/manager/insights/ManagerInsightsDashboard";
 
 export default function Page() {
-  return <ManagerDashboardPage />;
+  return <ManagerInsightsDashboard />;
 }
