@@ -24,7 +24,7 @@ export type MonthlyReviewWrite = {
 
 /**
  * Writes the monthly review and synchronises its embedded goal bridge in one
- * database transaction. User identity, organisation and manager capability are
+ * database transaction. User identity, organisation and care-staff capability are
  * revalidated by the database function; callers cannot supply trusted audit data.
  */
 export async function saveMonthlyReviewWithGrowth(

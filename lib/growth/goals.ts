@@ -19,7 +19,7 @@ export type UpdateGrowthGoalInput = Omit<CreateGrowthGoalInput, "serviceUserId" 
   familyVisible: boolean;
 };
 
-/** Manager-only persistence boundary. RLS independently enforces every field. */
+/** Care-staff creation boundary. RLS independently enforces access and safe defaults. */
 export async function createGrowthGoal(
   supabase: SupabaseClient,
   input: CreateGrowthGoalInput,

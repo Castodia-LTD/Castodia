@@ -25,6 +25,7 @@ let serviceUserA = "";
 let serviceUserB = "";
 let managerAId = "";
 let supportAId = "";
+let unassignedSupportAId = "";
 let familyAId = "";
 const authIds: string[] = [];
 
@@ -63,6 +64,7 @@ beforeAll(async () => {
   authIds.push(managerAIdentity.id, managerBIdentity.id, supportAIdentity.id, unassignedIdentity.id);
   managerAId = managerAIdentity.id;
   supportAId = supportAIdentity.id;
+  unassignedSupportAId = unassignedIdentity.id;
   serviceUserA = await makeServiceUser(admin, orgA, "Growth-A");
   serviceUserB = await makeServiceUser(admin, orgB, "Growth-B");
   const assignment = await admin.from("staff_service_user_access").insert({
@@ -119,7 +121,20 @@ describe("Castodia Growth security and idempotency", () => {
     expect(other.data).toEqual([]);
   });
 
-  test("assigned support can read but cannot mutate goals", async () => {
+  test("assigned support can create and read goals but cannot update them", async () => {
+    const created = await supportA.rpc("create_growth_goal", {
+      p_service_user_id: serviceUserA,
+      p_title: "Choose a household task",
+      p_desired_outcome: "More independence at home",
+      p_support_approach: "Offer a choice of two tasks",
+      p_domain: "independent_living",
+      p_status: "active",
+      p_start_date: "2026-09-13",
+      p_target_date: null,
+    });
+    expect(created.error).toBeNull();
+    expect(created.data).toEqual(expect.any(String));
+
     const assigned = await supportA.from("growth_goals").select("id").eq("service_user_id", serviceUserA);
     expect(assigned.error).toBeNull();
     expect(assigned.data?.length).toBeGreaterThan(0);
@@ -176,7 +191,7 @@ describe("Castodia Growth security and idempotency", () => {
     expect(source.data?.responses).toEqual(editedReview.responses);
   });
 
-  test("monthly reviews are tenant-scoped and support cannot write them", async () => {
+  test("monthly reviews are tenant-scoped and assigned support can create goals through them", async () => {
     const own = await managerA.from("monthly_service_user_reviews")
       .select("id").eq("service_user_id", serviceUserA);
     expect(own.error).toBeNull();
@@ -187,18 +202,50 @@ describe("Castodia Growth security and idempotency", () => {
     expect(crossTenant.error).toBeNull();
     expect(crossTenant.data).toEqual([]);
 
-    const forbidden = await supportA.rpc("save_monthly_review_with_growth", {
+    const embeddedId = randomUUID();
+    const supportReview = await supportA.rpc("save_monthly_review_with_growth", {
       p_review: {
         service_user_id: serviceUserA,
         reviewer_id: supportAId,
         review_month: "2026-10-01",
         meeting_date: "2026-10-12",
-        responses: { agreedGoals: [] },
+        responses: { agreedGoals: [{
+          id: embeddedId,
+          title: "Choose a weekly community activity",
+          desiredOutcome: "More confidence making community choices",
+          targetDate: null,
+          status: "active",
+          source: "monthly_check_in",
+          agreedAt: "2026-10-12T12:00:00.000Z",
+        }] },
         consent: {}, actions: [], completed_at: "2026-10-12T12:00:00.000Z",
         reviewer_name: "Growth Support", service_user_name: "Growth Person",
       },
     });
-    expect(forbidden.error).not.toBeNull();
+    expect(supportReview.error).toBeNull();
+
+    const createdGoal = await supportA.from("growth_goals").select("id,created_by_user_id")
+      .eq("source_review_id", supportReview.data).eq("source_external_id", embeddedId).single();
+    expect(createdGoal.error).toBeNull();
+    expect(createdGoal.data?.created_by_user_id).toBe(supportAId);
+
+    for (const [client, actorId, target] of [
+      [unassignedSupportA, unassignedSupportAId, serviceUserA],
+      [supportA, supportAId, serviceUserB],
+    ] as const) {
+      const forbidden = await client.rpc("save_monthly_review_with_growth", {
+        p_review: {
+          service_user_id: target,
+          reviewer_id: actorId,
+          review_month: "2026-11-01",
+          meeting_date: "2026-11-12",
+          responses: { agreedGoals: [] },
+          consent: {}, actions: [], completed_at: "2026-11-12T12:00:00.000Z",
+          reviewer_name: "Growth Support", service_user_name: "Growth Person",
+        },
+      });
+      expect(forbidden.error).not.toBeNull();
+    }
   });
 
   test("family sees only separately authorised goals", async () => {
@@ -254,9 +301,9 @@ describe("Castodia Growth security and idempotency", () => {
     expect(afterRevocation.data).toEqual([]);
   });
 
-  test("support cannot create a goal, including in another organisation", async () => {
-    for (const target of [serviceUserA, serviceUserB]) {
-      const result = await supportA.rpc("create_growth_goal", {
+  test("support cannot create a goal without person access or across organisations", async () => {
+    for (const [client, target] of [[unassignedSupportA, serviceUserA], [supportA, serviceUserB]] as const) {
+      const result = await client.rpc("create_growth_goal", {
         p_service_user_id: target,
         p_title: "Forbidden",
         p_desired_outcome: null,
