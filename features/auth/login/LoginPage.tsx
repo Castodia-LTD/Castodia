@@ -1,5 +1,6 @@
 "use client";
 
+import { MfaChallengePage } from "@/components/auth/MfaChallengePage";
 import { WebLoginPage } from "@/components/auth/WebLoginPage";
 import { AppShell } from "@/components/layout/AppShell";
 import { IOSLoginPage } from "@/components/native/ios/IOSLoginPage";
@@ -19,47 +20,42 @@ export default function LoginPage() {
     nativeProductLoaded,
   } = useNativeProduct();
 
-  const login =
-    useLoginController({
-      product:
-        isIOS && nativeProduct
-          ? nativeProduct
-          : "auto",
-    });
+  const login = useLoginController({
+    product:
+      isIOS && nativeProduct
+        ? nativeProduct
+        : "auto",
+  });
 
   if (
     !nativePlatformLoaded ||
-    (
-      isIOS &&
-      !nativeProductLoaded
-    )
+    (isIOS && !nativeProductLoaded)
   ) {
+    return <main className="min-h-dvh bg-[#063b40]" />;
+  }
+
+  if (login.pendingMfa) {
     return (
-      <main className="min-h-dvh bg-[#063b40]" />
+      <MfaChallengePage
+        preparation={login.pendingMfa.preparation}
+        code={login.mfaCode}
+        verifying={login.verifyingMfa}
+        onCodeChange={login.setMfaCode}
+        onVerify={login.submitMfa}
+        onCancel={login.cancelMfaAndSignOut}
+      />
     );
   }
 
   const props = {
     email: login.email,
     password: login.password,
-
-    loggingIn:
-      login.loggingIn,
-
-    sendingReset:
-      login.sendingReset,
-
-    onEmailChange:
-      login.setEmail,
-
-    onPasswordChange:
-      login.setPassword,
-
-    onLogin:
-      login.login,
-
-    onForgotPassword:
-      login.forgotPassword,
+    loggingIn: login.loggingIn,
+    sendingReset: login.sendingReset,
+    onEmailChange: login.setEmail,
+    onPasswordChange: login.setPassword,
+    onLogin: login.login,
+    onForgotPassword: login.forgotPassword,
   };
 
   if (isIOS) {
@@ -82,18 +78,14 @@ export default function LoginPage() {
     return (
       <IOSLoginPage
         {...props}
-        product={
-          nativeProduct
-        }
+        product={nativeProduct}
       />
     );
   }
 
   return (
     <AppShell>
-      <WebLoginPage
-        {...props}
-      />
+      <WebLoginPage {...props} />
     </AppShell>
   );
 }

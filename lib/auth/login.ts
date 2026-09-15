@@ -9,11 +9,71 @@ export type LoginDestination =
   | typeof CASTODIA_PRODUCTS.care.managerHome
   | typeof CASTODIA_PRODUCTS.care.supportHome;
 
+export type CastodiaLoginResult =
+  | {
+      status: "authenticated";
+      destination: LoginDestination;
+    }
+  | {
+      status: "mfa_required";
+      destination: LoginDestination;
+      enrollmentRequired: boolean;
+    };
+
+type ProfessionalRole =
+  | "castodia_owner"
+  | "castodia_admin"
+  | "manager"
+  | "support"
+  | string;
+
+function requiresMfa(role: ProfessionalRole): boolean {
+  return (
+    role === "castodia_owner" ||
+    role === "castodia_admin" ||
+    role === "manager"
+  );
+}
+
+async function finishProfessionalLogin(
+  destination: LoginDestination,
+  role: ProfessionalRole,
+): Promise<CastodiaLoginResult> {
+  if (!requiresMfa(role)) {
+    return { status: "authenticated", destination };
+  }
+
+  const supabase = createClient();
+  const { data: aal, error: aalError } =
+    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+  if (aalError) throw new Error(aalError.message);
+
+  if (aal.currentLevel === "aal2") {
+    return { status: "authenticated", destination };
+  }
+
+  const { data: factors, error: factorError } =
+    await supabase.auth.mfa.listFactors();
+
+  if (factorError) throw new Error(factorError.message);
+
+  const hasVerifiedTotp = factors.totp.some(
+    (factor) => factor.status === "verified",
+  );
+
+  return {
+    status: "mfa_required",
+    destination,
+    enrollmentRequired: !hasVerifiedTotp,
+  };
+}
+
 export async function authenticateCastodiaUser(
   email: string,
   password: string,
   product: LoginProduct = "auto",
-): Promise<LoginDestination> {
+): Promise<CastodiaLoginResult> {
   const supabase = createClient();
   const {
     data: signInData,
@@ -41,7 +101,13 @@ export async function authenticateCastodiaUser(
       throw new Error(familyError.message);
     }
 
-    if (familyRows?.length) return CASTODIA_PRODUCTS.family.home;
+    if (familyRows?.length) {
+      return {
+        status: "authenticated",
+        destination: CASTODIA_PRODUCTS.family.home,
+      };
+    }
+
     if (product === "family") return rejectProductAccess("CastodiaFamily");
   }
 
@@ -63,14 +129,26 @@ export async function authenticateCastodiaUser(
   }
 
   if (product === "care") {
-    if (role === "manager") return CASTODIA_PRODUCTS.care.managerHome;
-    if (role === "support") return CASTODIA_PRODUCTS.care.supportHome;
+    if (role === "manager") {
+      return finishProfessionalLogin(
+        CASTODIA_PRODUCTS.care.managerHome,
+        role,
+      );
+    }
+
+    if (role === "support") {
+      return finishProfessionalLogin(
+        CASTODIA_PRODUCTS.care.supportHome,
+        role,
+      );
+    }
+
     return rejectProductAccess("CastodiaCare");
   }
 
   if (product === "core") {
     if (role === "castodia_owner" || role === "castodia_admin") {
-      return CASTODIA_PRODUCTS.core.home;
+      return finishProfessionalLogin(CASTODIA_PRODUCTS.core.home, role);
     }
     return rejectProductAccess("CastodiaCore");
   }
@@ -78,11 +156,17 @@ export async function authenticateCastodiaUser(
   switch (role) {
     case "castodia_owner":
     case "castodia_admin":
-      return CASTODIA_PRODUCTS.core.home;
+      return finishProfessionalLogin(CASTODIA_PRODUCTS.core.home, role);
     case "manager":
-      return CASTODIA_PRODUCTS.care.managerHome;
+      return finishProfessionalLogin(
+        CASTODIA_PRODUCTS.care.managerHome,
+        role,
+      );
     case "support":
-      return CASTODIA_PRODUCTS.care.supportHome;
+      return finishProfessionalLogin(
+        CASTODIA_PRODUCTS.care.supportHome,
+        role,
+      );
     default:
       return rejectProductAccess("Castodia");
   }

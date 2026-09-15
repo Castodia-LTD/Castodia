@@ -12,307 +12,165 @@ type UserRole =
   | "manager"
   | "support";
 
-const roleHome: Record<
-  UserRole,
-  string
-> = {
-  support:
-    CASTODIA_PRODUCTS.care.supportHome,
-
-  manager:
-    CASTODIA_PRODUCTS.care.managerHome,
-
-  castodia_admin:
-    CASTODIA_PRODUCTS.core.home,
-
-  castodia_owner:
-    CASTODIA_PRODUCTS.core.home,
+const roleHome: Record<UserRole, string> = {
+  support: CASTODIA_PRODUCTS.care.supportHome,
+  manager: CASTODIA_PRODUCTS.care.managerHome,
+  castodia_admin: CASTODIA_PRODUCTS.core.home,
+  castodia_owner: CASTODIA_PRODUCTS.core.home,
 };
 
-export async function updateSession(
-  request: NextRequest,
-) {
-  let response =
-    NextResponse.next({
-      request,
-    });
+function roleRequiresMfa(role: UserRole): boolean {
+  return (
+    role === "manager" ||
+    role === "castodia_admin" ||
+    role === "castodia_owner"
+  );
+}
 
-  const supabase =
-    createServerClient(
-      process.env
-        .NEXT_PUBLIC_SUPABASE_URL!,
-      process.env
-        .NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
+export async function updateSession(request: NextRequest) {
+  let response = NextResponse.next({ request });
 
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(
-              ({
-                name,
-                value,
-              }) => {
-                request.cookies.set(
-                  name,
-                  value,
-                );
-              },
-            );
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
 
-            response =
-              NextResponse.next({
-                request,
-              });
+          response = NextResponse.next({ request });
 
-            cookiesToSet.forEach(
-              ({
-                name,
-                value,
-                options,
-              }) => {
-                response.cookies.set(
-                  name,
-                  value,
-                  options,
-                );
-              },
-            );
-          },
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
         },
       },
-    );
+    },
+  );
 
   const {
     data: { user },
-  } =
-    await supabase.auth.getUser();
+  } = await supabase.auth.getUser();
 
-  const pathname =
-    request.nextUrl.pathname;
+  const pathname = request.nextUrl.pathname;
 
   const isFamilyRoute =
-    pathname === "/family" ||
-    pathname.startsWith(
-      "/family/",
-    );
+    pathname === "/family" || pathname.startsWith("/family/");
 
-  const isCareSupportRoute =
-    pathname.startsWith(
-      "/care/support",
-    );
+  const isCareSupportRoute = pathname.startsWith("/care/support");
 
   const isCareManagerRoute =
-    pathname.startsWith(
-      "/care/manager",
-    );
+    pathname.startsWith("/care/manager") ||
+    pathname.startsWith("/api/care/admin");
 
   const isCoreRoute =
-    pathname.startsWith(
-      "/core",
-    );
+    pathname.startsWith("/core") ||
+    pathname.startsWith("/api/core");
 
   const isProfessionalRoute =
-    isCareSupportRoute ||
-    isCareManagerRoute ||
-    isCoreRoute;
+    isCareSupportRoute || isCareManagerRoute || isCoreRoute;
 
-  const isProtectedRoute =
-    isFamilyRoute ||
-    isProfessionalRoute;
+  const isProtectedRoute = isFamilyRoute || isProfessionalRoute;
 
-  /*
-   * Protected product route without
-   * an authenticated Supabase user.
-   */
-  if (
-    !user &&
-    isProtectedRoute
-  ) {
-    const loginUrl =
-      request.nextUrl.clone();
-
-    loginUrl.pathname =
-      "/login";
-
+  if (!user && isProtectedRoute) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
     loginUrl.search = "";
-
-    return NextResponse.redirect(
-      loginUrl,
-    );
+    return NextResponse.redirect(loginUrl);
   }
 
-  if (!user) {
-    return response;
-  }
+  if (!user) return response;
 
-  /*
-   * CASTODIA FAMILY
-   *
-   * Family access is resolved from
-   * family_users, not profiles.
-   */
   if (isFamilyRoute) {
-    const {
-      data: familyRows,
-      error: familyError,
-    } = await supabase
+    const { data: familyRows, error: familyError } = await supabase
       .from("family_users")
       .select("id")
-      .eq(
-        "auth_user_id",
-        user.id,
-      )
-      .eq(
-        "is_active",
-        true,
-      )
+      .eq("auth_user_id", user.id)
+      .eq("is_active", true)
       .limit(1);
 
-    if (
-      familyError ||
-      !familyRows?.length
-    ) {
+    if (familyError || !familyRows?.length) {
       await supabase.auth.signOut();
-
-      const loginUrl =
-        request.nextUrl.clone();
-
-      loginUrl.pathname =
-        "/login";
-
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
       loginUrl.search = "";
-
-      loginUrl.searchParams.set(
-        "error",
-        "family_access_not_found",
-      );
-
-      return NextResponse.redirect(
-        loginUrl,
-      );
+      loginUrl.searchParams.set("error", "family_access_not_found");
+      return NextResponse.redirect(loginUrl);
     }
 
     return response;
   }
 
-  /*
-   * Public routes do not require
-   * a professional profile.
-   */
-  if (!isProfessionalRoute) {
-    return response;
-  }
+  if (!isProfessionalRoute) return response;
 
-  /*
-   * CASTODIA CARE / CORE
-   *
-   * These products use profiles.role.
-   */
-  const {
-    data: profile,
-    error: profileError,
-  } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
-    .eq(
-      "id",
-      user.id,
-    )
+    .eq("id", user.id)
     .single();
 
-  if (
-    profileError ||
-    !profile
-  ) {
+  if (profileError || !profile) {
     await supabase.auth.signOut();
-
-    const loginUrl =
-      request.nextUrl.clone();
-
-    loginUrl.pathname =
-      "/login";
-
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
     loginUrl.search = "";
-
-    loginUrl.searchParams.set(
-      "error",
-      "profile_not_found",
-    );
-
-    return NextResponse.redirect(
-      loginUrl,
-    );
+    loginUrl.searchParams.set("error", "profile_not_found");
+    return NextResponse.redirect(loginUrl);
   }
 
-  const role =
-    profile.role as UserRole;
-
+  const role = profile.role as UserRole;
   const isKnownRole =
     role === "support" ||
     role === "manager" ||
-    role ===
-      "castodia_admin" ||
-    role ===
-      "castodia_owner";
+    role === "castodia_admin" ||
+    role === "castodia_owner";
 
   if (!isKnownRole) {
     await supabase.auth.signOut();
-
-    const loginUrl =
-      request.nextUrl.clone();
-
-    loginUrl.pathname =
-      "/login";
-
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
     loginUrl.search = "";
+    loginUrl.searchParams.set("error", "invalid_role");
+    return NextResponse.redirect(loginUrl);
+  }
 
-    loginUrl.searchParams.set(
-      "error",
-      "invalid_role",
-    );
+  if (roleRequiresMfa(role)) {
+    const { data: aal, error: aalError } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
-    return NextResponse.redirect(
-      loginUrl,
-    );
+    if (aalError || aal.currentLevel !== "aal2") {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.search = "";
+      loginUrl.searchParams.set("error", "mfa_required");
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   let hasAccess = true;
 
   if (isCareSupportRoute) {
-    hasAccess =
-      role === "support" ||
-      role === "manager";
+    hasAccess = role === "support" || role === "manager";
   }
 
   if (isCareManagerRoute) {
-    hasAccess =
-      role === "manager";
+    hasAccess = role === "manager";
   }
 
   if (isCoreRoute) {
-    hasAccess =
-      role ===
-        "castodia_admin" ||
-      role ===
-        "castodia_owner";
+    hasAccess = role === "castodia_admin" || role === "castodia_owner";
   }
 
   if (!hasAccess) {
-    const authorisedHomeUrl =
-      request.nextUrl.clone();
-
-    authorisedHomeUrl.pathname =
-      roleHome[role];
-
-    authorisedHomeUrl.search =
-      "";
-
-    return NextResponse.redirect(
-      authorisedHomeUrl,
-    );
+    const authorisedHomeUrl = request.nextUrl.clone();
+    authorisedHomeUrl.pathname = roleHome[role];
+    authorisedHomeUrl.search = "";
+    return NextResponse.redirect(authorisedHomeUrl);
   }
 
   return response;
