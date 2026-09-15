@@ -19,14 +19,6 @@ const roleHome: Record<UserRole, string> = {
   castodia_owner: CASTODIA_PRODUCTS.core.home,
 };
 
-function roleRequiresMfa(role: UserRole): boolean {
-  return (
-    role === "manager" ||
-    role === "castodia_admin" ||
-    role === "castodia_owner"
-  );
-}
-
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -137,19 +129,6 @@ export async function updateSession(request: NextRequest) {
     loginUrl.search = "";
     loginUrl.searchParams.set("error", "invalid_role");
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (roleRequiresMfa(role)) {
-    const { data: aal, error: aalError } =
-      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
-    if (aalError || aal.currentLevel !== "aal2") {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/login";
-      loginUrl.search = "";
-      loginUrl.searchParams.set("error", "mfa_required");
-      return NextResponse.redirect(loginUrl);
-    }
   }
 
   let hasAccess = true;
