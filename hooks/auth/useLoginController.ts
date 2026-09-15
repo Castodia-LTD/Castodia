@@ -45,14 +45,22 @@ export function useLoginController({
   );
 
   useEffect(() => {
-    if (!enableQuickSignIn || !browserSupportsPasskeys()) {
-      setQuickSignInEnabled(false);
-      return;
-    }
+    let cancelled = false;
 
-    setQuickSignInEnabled(
-      window.localStorage.getItem(quickSignInStorageKey) === "enabled",
-    );
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      const enabled =
+        enableQuickSignIn &&
+        browserSupportsPasskeys() &&
+        window.localStorage.getItem(quickSignInStorageKey) === "enabled";
+
+      setQuickSignInEnabled(enabled);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [enableQuickSignIn, quickSignInStorageKey]);
 
   async function offerQuickSignIn() {
