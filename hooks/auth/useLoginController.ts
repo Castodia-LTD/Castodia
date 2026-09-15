@@ -1,45 +1,88 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   authenticateCastodiaUser,
-  type LoginDestination,
+  authenticateCastodiaWithPasskey,
+  registerCastodiaPasskey,
   type LoginProduct,
 } from "@/lib/auth/login";
-import {
-  cancelMfa,
-  prepareMfa,
-  verifyMfa,
-  type MfaPreparation,
-} from "@/lib/auth/mfa";
 import { requestPasswordReset } from "@/lib/auth/password-reset";
 
-type Options = { product?: LoginProduct };
-type PendingMfa = { destination: LoginDestination; preparation: MfaPreparation };
+type Options = {
+  product?: LoginProduct;
+  enableQuickSignIn?: boolean;
+};
 
-export function useLoginController({ product = "auto" }: Options = {}) {
+function quickSignInKey(product: LoginProduct) {
+  return `castodia.quick-sign-in.${product}`;
+}
+
+function browserSupportsPasskeys() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.PublicKeyCredential !== "undefined"
+  );
+}
+
+export function useLoginController({
+  product = "auto",
+  enableQuickSignIn = false,
+}: Options = {}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+  const [quickSigningIn, setQuickSigningIn] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
-  const [pendingMfa, setPendingMfa] = useState<PendingMfa | null>(null);
-  const [mfaCode, setMfaCode] = useState("");
-  const [verifyingMfa, setVerifyingMfa] = useState(false);
+  const [quickSignInEnabled, setQuickSignInEnabled] = useState(false);
+
+  const quickSignInStorageKey = useMemo(
+    () => quickSignInKey(product),
+    [product],
+  );
+
+  useEffect(() => {
+    if (!enableQuickSignIn || !browserSupportsPasskeys()) {
+      setQuickSignInEnabled(false);
+      return;
+    }
+
+    setQuickSignInEnabled(
+      window.localStorage.getItem(quickSignInStorageKey) === "enabled",
+    );
+  }, [enableQuickSignIn, quickSignInStorageKey]);
+
+  async function offerQuickSignIn() {
+    if (!enableQuickSignIn || !browserSupportsPasskeys()) return;
+    if (window.localStorage.getItem(quickSignInStorageKey) === "enabled") return;
+
+    const accepted = window.confirm(
+      "Use Face ID or Touch ID for faster sign-in next time? Only enable this on a device you trust and do not share with other staff.",
+    );
+
+    if (!accepted) return;
+
+    try {
+      await registerCastodiaPasskey();
+      window.localStorage.setItem(quickSignInStorageKey, "enabled");
+      setQuickSignInEnabled(true);
+    } catch (error) {
+      // Quick sign-in is optional. A cancelled or unavailable biometric prompt
+      // must never prevent a successful password sign-in.
+      console.warn("Quick sign-in setup was not completed:", error);
+    }
+  }
 
   async function login() {
-    if (loggingIn) return;
+    if (loggingIn || quickSigningIn) return;
     setLoggingIn(true);
     try {
       const result = await authenticateCastodiaUser(email, password, product);
-      if (result.status === "mfa_required") {
-        const preparation = await prepareMfa(result.enrollmentRequired);
-        setPendingMfa({ destination: result.destination, preparation });
-        setMfaCode("");
-        return;
-      }
+      await offerQuickSignIn();
+      setPassword("");
       router.replace(result.destination);
       router.refresh();
     } catch (error) {
@@ -50,34 +93,20 @@ export function useLoginController({ product = "auto" }: Options = {}) {
     }
   }
 
-  async function submitMfa() {
-    if (!pendingMfa || verifyingMfa) return;
-    setVerifyingMfa(true);
+  async function quickSignIn() {
+    if (loggingIn || quickSigningIn) return;
+    setQuickSigningIn(true);
     try {
-      await verifyMfa(pendingMfa.preparation, mfaCode);
-      const destination = pendingMfa.destination;
-      setPendingMfa(null);
-      setMfaCode("");
-      router.replace(destination);
+      const result = await authenticateCastodiaWithPasskey(product);
+      router.replace(result.destination);
       router.refresh();
     } catch (error) {
-      console.error("MFA verification failed:", error);
-      alert(error instanceof Error ? error.message : "Unable to verify your authentication code.");
+      console.error("Quick sign-in failed:", error);
+      alert(
+        "Face ID / Touch ID sign-in could not be completed. You can still sign in with your password.",
+      );
     } finally {
-      setVerifyingMfa(false);
-    }
-  }
-
-  async function cancelMfaAndSignOut() {
-    if (verifyingMfa) return;
-    try {
-      await cancelMfa();
-    } catch (error) {
-      console.error("MFA sign-out failed:", error);
-    } finally {
-      setPendingMfa(null);
-      setMfaCode("");
-      setPassword("");
+      setQuickSigningIn(false);
     }
   }
 
@@ -99,16 +128,13 @@ export function useLoginController({ product = "auto" }: Options = {}) {
     email,
     password,
     loggingIn,
+    quickSigningIn,
+    quickSignInEnabled,
     sendingReset,
-    pendingMfa,
-    mfaCode,
-    verifyingMfa,
     setEmail,
     setPassword,
-    setMfaCode,
     login,
-    submitMfa,
-    cancelMfaAndSignOut,
+    quickSignIn,
     forgotPassword,
   };
 }
