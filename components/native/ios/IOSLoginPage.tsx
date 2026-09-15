@@ -13,9 +13,12 @@ export type IOSLoginViewProps = {
   password: string;
   loggingIn: boolean;
   sendingReset: boolean;
+  quickSignInEnabled?: boolean;
+  quickSigningIn?: boolean;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onLogin: () => Promise<void>;
+  onQuickSignIn?: () => Promise<void>;
   onForgotPassword: () => Promise<void>;
 };
 
