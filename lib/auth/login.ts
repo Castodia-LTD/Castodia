@@ -27,11 +27,13 @@ export async function resolveCastodiaDestination(
   if (userError) throw new Error(userError.message);
   if (!user) throw new Error("Unable to load your account.");
 
+  const userId = user.id;
+
   if (product === "family" || product === "auto") {
     const { data: familyRows, error: familyError } = await supabase
       .from("family_users")
       .select("id")
-      .eq("auth_user_id", user.id)
+      .eq("auth_user_id", userId)
       .eq("is_active", true)
       .limit(1);
 
@@ -44,7 +46,7 @@ export async function resolveCastodiaDestination(
       return {
         status: "authenticated",
         destination: CASTODIA_PRODUCTS.family.home,
-        userId: user.id,
+        userId,
       };
     }
 
@@ -54,7 +56,7 @@ export async function resolveCastodiaDestination(
   const { data: profileRows, error: profileError } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("id", userId)
     .limit(1);
 
   if (profileError) {
@@ -100,7 +102,7 @@ export async function resolveCastodiaDestination(
   }
 
   function authenticated(destination: LoginDestination): CastodiaLoginResult {
-    return { status: "authenticated", destination, userId: user.id };
+    return { status: "authenticated", destination, userId };
   }
 
   async function rejectProductAccess(productName: string): Promise<never> {
