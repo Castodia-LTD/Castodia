@@ -1,6 +1,5 @@
 "use client";
 
-import { MfaChallengePage } from "@/components/auth/MfaChallengePage";
 import { WebLoginPage } from "@/components/auth/WebLoginPage";
 import { AppShell } from "@/components/layout/AppShell";
 import { IOSLoginPage } from "@/components/native/ios/IOSLoginPage";
@@ -25,6 +24,7 @@ export default function LoginPage() {
       isIOS && nativeProduct
         ? nativeProduct
         : "auto",
+    enableQuickSignIn: isIOS && Boolean(nativeProduct),
   });
 
   if (
@@ -32,19 +32,6 @@ export default function LoginPage() {
     (isIOS && !nativeProductLoaded)
   ) {
     return <main className="min-h-dvh bg-[#063b40]" />;
-  }
-
-  if (login.pendingMfa) {
-    return (
-      <MfaChallengePage
-        preparation={login.pendingMfa.preparation}
-        code={login.mfaCode}
-        verifying={login.verifyingMfa}
-        onCodeChange={login.setMfaCode}
-        onVerify={login.submitMfa}
-        onCancel={login.cancelMfaAndSignOut}
-      />
-    );
   }
 
   const props = {
@@ -79,6 +66,9 @@ export default function LoginPage() {
       <IOSLoginPage
         {...props}
         product={nativeProduct}
+        quickSignInEnabled={login.quickSignInEnabled}
+        quickSigningIn={login.quickSigningIn}
+        onQuickSignIn={login.quickSignIn}
       />
     );
   }
