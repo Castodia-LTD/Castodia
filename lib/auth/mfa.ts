@@ -37,21 +37,6 @@ export async function prepareMfa(
     };
   }
 
-  const { data: factors, error: factorError } =
-    await supabase.auth.mfa.listFactors();
-
-  if (factorError) throw new Error(factorError.message);
-
-  for (const factor of factors.totp) {
-    if (factor.status === "unverified") {
-      const { error: unenrollError } = await supabase.auth.mfa.unenroll({
-        factorId: factor.id,
-      });
-
-      if (unenrollError) throw new Error(unenrollError.message);
-    }
-  }
-
   const { data, error } = await supabase.auth.mfa.enroll({
     factorType: "totp",
     friendlyName: "Castodia Authenticator",
