@@ -9,83 +9,22 @@ export type LoginDestination =
   | typeof CASTODIA_PRODUCTS.care.managerHome
   | typeof CASTODIA_PRODUCTS.care.supportHome;
 
-export type CastodiaLoginResult =
-  | {
-      status: "authenticated";
-      destination: LoginDestination;
-    }
-  | {
-      status: "mfa_required";
-      destination: LoginDestination;
-      enrollmentRequired: boolean;
-    };
+export type CastodiaLoginResult = {
+  status: "authenticated";
+  destination: LoginDestination;
+  userId: string;
+};
 
-type ProfessionalRole =
-  | "castodia_owner"
-  | "castodia_admin"
-  | "manager"
-  | "support"
-  | string;
-
-function requiresMfa(role: ProfessionalRole): boolean {
-  return (
-    role === "castodia_owner" ||
-    role === "castodia_admin" ||
-    role === "manager"
-  );
-}
-
-async function finishProfessionalLogin(
-  destination: LoginDestination,
-  role: ProfessionalRole,
-): Promise<CastodiaLoginResult> {
-  if (!requiresMfa(role)) {
-    return { status: "authenticated", destination };
-  }
-
-  const supabase = createClient();
-  const { data: aal, error: aalError } =
-    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
-  if (aalError) throw new Error(aalError.message);
-
-  if (aal.currentLevel === "aal2") {
-    return { status: "authenticated", destination };
-  }
-
-  const { data: factors, error: factorError } =
-    await supabase.auth.mfa.listFactors();
-
-  if (factorError) throw new Error(factorError.message);
-
-  const hasVerifiedTotp = factors.totp.some(
-    (factor) => factor.status === "verified",
-  );
-
-  return {
-    status: "mfa_required",
-    destination,
-    enrollmentRequired: !hasVerifiedTotp,
-  };
-}
-
-export async function authenticateCastodiaUser(
-  email: string,
-  password: string,
+export async function resolveCastodiaDestination(
   product: LoginProduct = "auto",
 ): Promise<CastodiaLoginResult> {
   const supabase = createClient();
   const {
-    data: signInData,
-    error: signInError,
-  } = await supabase.auth.signInWithPassword({
-    email: email.trim().toLowerCase(),
-    password,
-  });
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (signInError) throw new Error(signInError.message);
-
-  const user = signInData.user;
+  if (userError) throw new Error(userError.message);
   if (!user) throw new Error("Unable to load your account.");
 
   if (product === "family" || product === "auto") {
@@ -105,6 +44,7 @@ export async function authenticateCastodiaUser(
       return {
         status: "authenticated",
         destination: CASTODIA_PRODUCTS.family.home,
+        userId: user.id,
       };
     }
 
@@ -130,17 +70,11 @@ export async function authenticateCastodiaUser(
 
   if (product === "care") {
     if (role === "manager") {
-      return finishProfessionalLogin(
-        CASTODIA_PRODUCTS.care.managerHome,
-        role,
-      );
+      return authenticated(CASTODIA_PRODUCTS.care.managerHome);
     }
 
     if (role === "support") {
-      return finishProfessionalLogin(
-        CASTODIA_PRODUCTS.care.supportHome,
-        role,
-      );
+      return authenticated(CASTODIA_PRODUCTS.care.supportHome);
     }
 
     return rejectProductAccess("CastodiaCare");
@@ -148,7 +82,7 @@ export async function authenticateCastodiaUser(
 
   if (product === "core") {
     if (role === "castodia_owner" || role === "castodia_admin") {
-      return finishProfessionalLogin(CASTODIA_PRODUCTS.core.home, role);
+      return authenticated(CASTODIA_PRODUCTS.core.home);
     }
     return rejectProductAccess("CastodiaCore");
   }
@@ -156,23 +90,52 @@ export async function authenticateCastodiaUser(
   switch (role) {
     case "castodia_owner":
     case "castodia_admin":
-      return finishProfessionalLogin(CASTODIA_PRODUCTS.core.home, role);
+      return authenticated(CASTODIA_PRODUCTS.core.home);
     case "manager":
-      return finishProfessionalLogin(
-        CASTODIA_PRODUCTS.care.managerHome,
-        role,
-      );
+      return authenticated(CASTODIA_PRODUCTS.care.managerHome);
     case "support":
-      return finishProfessionalLogin(
-        CASTODIA_PRODUCTS.care.supportHome,
-        role,
-      );
+      return authenticated(CASTODIA_PRODUCTS.care.supportHome);
     default:
       return rejectProductAccess("Castodia");
+  }
+
+  function authenticated(destination: LoginDestination): CastodiaLoginResult {
+    return { status: "authenticated", destination, userId: user.id };
   }
 
   async function rejectProductAccess(productName: string): Promise<never> {
     await supabase.auth.signOut();
     throw new Error(`This account does not have access to ${productName}.`);
   }
+}
+
+export async function authenticateCastodiaUser(
+  email: string,
+  password: string,
+  product: LoginProduct = "auto",
+): Promise<CastodiaLoginResult> {
+  const supabase = createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
+
+  if (signInError) throw new Error(signInError.message);
+  return resolveCastodiaDestination(product);
+}
+
+export async function authenticateCastodiaWithPasskey(
+  product: LoginProduct = "auto",
+): Promise<CastodiaLoginResult> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signInWithPasskey();
+
+  if (error) throw new Error(error.message);
+  return resolveCastodiaDestination(product);
+}
+
+export async function registerCastodiaPasskey(): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.registerPasskey();
+  if (error) throw new Error(error.message);
 }
