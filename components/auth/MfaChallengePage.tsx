@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 
 import type { MfaPreparation } from "@/lib/auth/mfa";
@@ -44,9 +45,12 @@ export function MfaChallengePage({
 
         {preparation.mode === "enroll" ? (
           <div className="mt-7 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <img
+            <Image
               src={preparation.qrCode}
               alt="QR code for adding Castodia to your authenticator app"
+              width={208}
+              height={208}
+              unoptimized
               className="mx-auto h-52 w-52 rounded-xl bg-white p-2"
             />
 
