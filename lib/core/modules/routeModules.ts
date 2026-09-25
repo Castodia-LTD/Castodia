@@ -21,6 +21,7 @@ const routeModules: RouteModule[] = [
   { prefix: "/care/support/handovers", moduleKey: "handovers" },
   { prefix: "/care/support/reporting/safeguarding", moduleKey: "safeguarding" },
   { prefix: "/care/support/service-users", moduleKey: "people" },
+  { prefix: "/family", moduleKey: "family_portal" },
   { prefix: "/family/growth", moduleKey: "family_growth" },
 ];
 
@@ -36,20 +37,31 @@ const personSubRouteModules: Array<{ segment: string; moduleKey: ModuleKey }> = 
   { segment: "/wellbeing-indicators", moduleKey: "wellbeing_indicators" },
 ];
 
-export function moduleKeyForPath(pathname: string): ModuleKey | null {
-  const personRoute = pathname.match(/^\/care\/(manager|support)\/service-users\/[^/]+(\/.*)?$/);
+export function moduleKeysForPath(pathname: string): ModuleKey[] {
+  const keys: ModuleKey[] = [];
+
+  for (const { prefix, moduleKey } of routeModules) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
+      keys.push(moduleKey);
+    }
+  }
+
+  const personRoute = pathname.match(
+    /^\/care\/(manager|support)\/service-users\/[^/]+(\/.*)?$/,
+  );
 
   if (personRoute?.[2]) {
     const suffix = personRoute[2];
     const match = personSubRouteModules.find(
       ({ segment }) => suffix === segment || suffix.startsWith(`${segment}/`),
     );
-    if (match) return match.moduleKey;
+    if (match) keys.push(match.moduleKey);
   }
 
-  const match = routeModules.find(
-    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  return Array.from(new Set(keys));
+}
 
-  return match?.moduleKey ?? null;
+export function moduleKeyForPath(pathname: string): ModuleKey | null {
+  const keys = moduleKeysForPath(pathname);
+  return keys.at(-1) ?? null;
 }
