@@ -16,6 +16,7 @@ type Props = {
   onNavigate?: () => void;
   onLogout: () => void;
   loggingOut: boolean;
+  showGrowth?: boolean;
 };
 
 export function FamilySidebar({
@@ -25,6 +26,7 @@ export function FamilySidebar({
   onNavigate,
   onLogout,
   loggingOut,
+  showGrowth = true,
 }: Props) {
   return (
     <div className="relative flex h-full flex-col overflow-hidden px-5 py-6">
@@ -40,7 +42,7 @@ export function FamilySidebar({
       </div>
 
       <nav className="relative z-10 mt-8 flex flex-1 flex-col gap-2" aria-label="Family navigation">
-        {navigation.map((item) => {
+        {navigation.filter((item) => item.href !== "/family/growth" || showGrowth).map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || (item.href !== "/family" && pathname.startsWith(`${item.href}/`));
           return (
