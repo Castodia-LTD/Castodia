@@ -84,6 +84,7 @@ export default function FamilyAppShell({ children }: Props) {
               onNavigate={shell.closeMobileMenu}
               onLogout={() => void shell.logout()}
               loggingOut={shell.loggingOut}
+              showGrowth={showGrowth}
             />
           </aside>
         </div>
