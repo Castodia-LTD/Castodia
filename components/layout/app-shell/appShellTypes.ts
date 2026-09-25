@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
+import type { ModuleKey } from "@/lib/core/modules/availableModules";
+
 export type AppShellIcon =
   | "dashboard"
   | "home"
@@ -21,6 +23,7 @@ export type AppShellLink = {
   label: string;
   icon: AppShellIcon;
   exact?: boolean;
+  featureKey?: ModuleKey;
 };
 
 export type AppShellPortal =

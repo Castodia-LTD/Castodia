@@ -3,6 +3,10 @@
 import { Menu, X } from "lucide-react";
 
 import { useFamilyShellController } from "@/hooks/family/useFamilyShellController";
+import { useOrganisationModules } from "@/hooks/core/useOrganisationModules";
+import { moduleDefinitionByKey } from "@/lib/core/modules/availableModules";
+import { moduleKeysForPath } from "@/lib/core/modules/routeModules";
+import { FeatureUnavailable } from "@/components/layout/FeatureUnavailable";
 
 import { FamilyBrand } from "./FamilyBrand";
 import { FamilyLoadingScreen } from "./FamilyLoadingScreen";
@@ -14,9 +18,22 @@ type Props = {
 
 export default function FamilyAppShell({ children }: Props) {
   const shell = useFamilyShellController();
+  const moduleState = useOrganisationModules(Boolean(shell.familyUser));
 
-  if (shell.loading) return <FamilyLoadingScreen />;
+  if (shell.loading || moduleState.loading) return <FamilyLoadingScreen />;
   if (!shell.familyUser) return null;
+
+  const blockedModule = moduleKeysForPath(shell.pathname).find(
+    (moduleKey) => !moduleState.isEnabled(moduleKey),
+  );
+  const showGrowth = moduleState.isEnabled("family_growth");
+  const pageContent = blockedModule ? (
+    <FeatureUnavailable
+      featureName={moduleDefinitionByKey.get(blockedModule)?.label ?? "This feature"}
+    />
+  ) : (
+    children
+  );
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] text-[#34423b]">
@@ -27,6 +44,7 @@ export default function FamilyAppShell({ children }: Props) {
           relationship={shell.familyUser.relationship}
           onLogout={() => void shell.logout()}
           loggingOut={shell.loggingOut}
+          showGrowth={showGrowth}
         />
       </aside>
 
@@ -66,6 +84,7 @@ export default function FamilyAppShell({ children }: Props) {
               onNavigate={shell.closeMobileMenu}
               onLogout={() => void shell.logout()}
               loggingOut={shell.loggingOut}
+              showGrowth={showGrowth}
             />
           </aside>
         </div>
@@ -92,7 +111,7 @@ export default function FamilyAppShell({ children }: Props) {
           <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-40 h-[430px] w-[430px] rounded-full bg-[#d9dfcd]/35 blur-3xl" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-48 left-1/4 h-[420px] w-[420px] rounded-full bg-[#d6c1a6]/20 blur-3xl" />
           <div className="relative mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 xl:px-12 xl:py-10">
-            {children}
+            {pageContent}
           </div>
         </main>
       </div>

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getOrganisationTimelineConfiguration } from "@/lib/care/timelines/getOrganisationTimelineConfiguration";
 import {
   availableTimelineCategories,
   AvailableTimelineCategory,
 } from "@/lib/care/timelines/availableTimelineCategories";
+import { useOrganisationModules } from "@/hooks/core/useOrganisationModules";
+import { modulesForTimelineOption } from "@/lib/core/modules/timelineModules";
 
 type Props = {
   organisationId: string;
@@ -23,6 +25,22 @@ export default function EntryCategoryTiles({
   const [categories, setCategories] = useState<AvailableTimelineCategory[]>(
     availableTimelineCategories
   );
+  const moduleState = useOrganisationModules();
+
+  const visibleCategories = useMemo(
+    () =>
+      categories
+        .map((category) => ({
+          ...category,
+          options: category.options.filter((option) =>
+            modulesForTimelineOption(option.key).every((moduleKey) =>
+              moduleState.isEnabled(moduleKey),
+            ),
+          ),
+        }))
+        .filter((category) => category.options.length > 0),
+    [categories, moduleState],
+  );
 
   useEffect(() => {
     async function loadCategories() {
@@ -37,7 +55,7 @@ export default function EntryCategoryTiles({
     }
   }, [organisationId]);
 
-  const selectedCategory = categories.find(
+  const selectedCategory = visibleCategories.find(
     (category) => category.key === selectedCategoryId
   );
 
@@ -96,7 +114,7 @@ export default function EntryCategoryTiles({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {categories.map((category) => {
+        {visibleCategories.map((category) => {
           const isIncident = category.key === "incident";
 
           return (
