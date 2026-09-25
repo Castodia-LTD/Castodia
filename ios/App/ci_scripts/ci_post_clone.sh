@@ -30,10 +30,14 @@ npm ci --include=dev --no-audit --no-fund
 test -f ios/App/App/capacitor.config.json
 test -d ios/App/App/public
 
+castodia_version="$(node -p 'require("./package.json").version')"
+project_file="ios/App/App.xcodeproj/project.pbxproj"
+/usr/bin/sed -E -i '' "s/MARKETING_VERSION = [^;]+;/MARKETING_VERSION = ${castodia_version};/g" "$project_file"
+echo "Set CastodiaCare Castodia OS version to ${castodia_version}."
+
 if [ -n "${CI_BUILD_NUMBER:-}" ]; then
-  project_file="ios/App/App.xcodeproj/project.pbxproj"
   /usr/bin/sed -E -i '' "s/CURRENT_PROJECT_VERSION = [^;]+;/CURRENT_PROJECT_VERSION = ${CI_BUILD_NUMBER};/g" "$project_file"
-  echo "Set CastodiaCare build number to ${CI_BUILD_NUMBER}."
+  echo "Set CastodiaCare Apple build number to ${CI_BUILD_NUMBER}."
 fi
 
 echo "Capacitor iOS project is ready for Xcode Cloud."
