@@ -7,6 +7,8 @@ import { usePathname } from "next/navigation";
 import { CastodiaCard } from "@/components/castodia";
 import { createClient } from "@/lib/supabase/client";
 import { ExpandableProfilePhoto } from "@/components/care/shared/ExpandableProfilePhoto";
+import { useOrganisationModules } from "@/hooks/core/useOrganisationModules";
+import type { ModuleKey } from "@/lib/core/modules/availableModules";
 
 const PHOTO_BUCKET = "service-user-photos";
 
@@ -21,6 +23,7 @@ type HubTab = {
   label: string;
   path: string;
   managerOnly?: boolean;
+  featureKey: ModuleKey;
 };
 
 type Props = {
@@ -35,15 +38,15 @@ type Props = {
 };
 
 const tabs: HubTab[] = [
-  { label: "Growth", path: "growth" },
-  { label: "Medication", path: "medication" },
-  { label: "Care Plans", path: "care-plans" },
-  { label: "Risk Register", path: "risk-assessments" },
-  { label: "Body Maps", path: "body-maps" },
-  { label: "Memories", path: "memories" },
-  { label: "Mental Capacity", path: "mental-capacity" },
-  { label: "Reviews", path: "reviews" },
-  { label: "Wellbeing Indicators", path: "wellbeing-indicators", managerOnly: true },
+  { label: "Growth", path: "growth", featureKey: "growth" },
+  { label: "Medication", path: "medication", featureKey: "medication" },
+  { label: "Care Plans", path: "care-plans", featureKey: "care_plans" },
+  { label: "Risk Register", path: "risk-assessments", featureKey: "risk_assessments" },
+  { label: "Body Maps", path: "body-maps", featureKey: "body_maps" },
+  { label: "Memories", path: "memories", featureKey: "memories" },
+  { label: "Mental Capacity", path: "mental-capacity", featureKey: "mental_capacity" },
+  { label: "Reviews", path: "reviews", featureKey: "reviews" },
+  { label: "Wellbeing Indicators", path: "wellbeing-indicators", featureKey: "wellbeing_indicators", managerOnly: true },
 ];
 
 export default function ServiceUserHubHeader({
@@ -58,6 +61,7 @@ export default function ServiceUserHubHeader({
 }: Props) {
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
+  const moduleState = useOrganisationModules();
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(Boolean(photoPath));
@@ -83,7 +87,9 @@ export default function ServiceUserHubHeader({
     pathname.startsWith(`${editHref}/`);
 
   const visibleTabs = tabs.filter(
-    (tab) => !tab.managerOnly || portal === "manager",
+    (tab) =>
+      (!tab.managerOnly || portal === "manager") &&
+      (moduleState.loading || moduleState.isEnabled(tab.featureKey)),
   );
 
   useEffect(() => {
