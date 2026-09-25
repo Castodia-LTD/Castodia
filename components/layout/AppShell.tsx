@@ -1,10 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 import { ReportIssueModal } from "@/components/issues/ReportIssueModal";
 import { IOSAppShell } from "@/components/native/ios/IOSAppShell";
+import { useOrganisationModules } from "@/hooks/core/useOrganisationModules";
+import { moduleDefinitionByKey } from "@/lib/core/modules/availableModules";
+import { moduleKeysForPath } from "@/lib/core/modules/routeModules";
 
+import { FeatureUnavailable } from "./FeatureUnavailable";
 import { AppShellDesktopSidebar } from "./app-shell/AppShellDesktopSidebar";
 import { AppShellMobile } from "./app-shell/AppShellMobile";
 import type { AppShellLink, AppShellPortal } from "./app-shell/appShellTypes";
@@ -23,12 +28,46 @@ type Props = {
 };
 
 export function AppShell({ children, links = [], portal }: Props) {
+  const pathname = usePathname();
   const shell = useAppShellController({ links, portal });
+  const shouldLoadModules = portal === "care-manager" || portal === "care-support";
+  const moduleState = useOrganisationModules(shouldLoadModules);
+
+  const visibleLinks = useMemo(() => {
+    if (!shouldLoadModules) return links;
+    if (moduleState.loading) return [];
+
+    return links.filter(
+      (link) => !link.featureKey || moduleState.isEnabled(link.featureKey),
+    );
+  }, [links, moduleState, shouldLoadModules]);
+
+  const blockedModule = useMemo(() => {
+    if (!shouldLoadModules || moduleState.loading) return null;
+
+    return moduleKeysForPath(pathname).find(
+      (moduleKey) => !moduleState.isEnabled(moduleKey),
+    ) ?? null;
+  }, [moduleState, pathname, shouldLoadModules]);
+
+  const pageContent = moduleState.loading && shouldLoadModules ? (
+    <div className="flex min-h-[420px] items-center justify-center text-sm font-medium text-slate-500">
+      Loading Castodia...
+    </div>
+  ) : blockedModule ? (
+    <FeatureUnavailable
+      featureName={
+        moduleDefinitionByKey.get(blockedModule)?.label ?? "This feature"
+      }
+    />
+  ) : (
+    children
+  );
 
   if (!shell.nativePlatformLoaded) return null;
 
   if (!shell.isAuthenticatedShell) {
-    return <div className="min-h-dvh w-full">{children}</div>;
+    return <div className="min-h-dvh w-full">{pageContent}</div>;
   }
 
   if (shell.isIOS) {
@@ -46,7 +85,7 @@ export function AppShell({ children, links = [], portal }: Props) {
           onOpenIssue={shell.actions.openIssue}
           onLogout={() => void shell.actions.logout()}
         >
-          {children}
+          {pageContent}
         </IOSAppShell>
 
         {shell.portal.canReportIssue ? (
@@ -62,7 +101,7 @@ export function AppShell({ children, links = [], portal }: Props) {
   return (
     <div className="flex min-h-dvh w-full bg-[#f7f9fb] text-slate-950">
       <AppShellDesktopSidebar
-        links={links}
+        links={visibleLinks}
         name={shell.profile.name}
         photoUrl={shell.profile.photoUrl}
         initials={shell.profile.initials}
@@ -84,7 +123,7 @@ export function AppShell({ children, links = [], portal }: Props) {
 
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <AppShellMobile
-          links={links}
+          links={visibleLinks}
           portalHome={shell.portal.home}
           portalName={shell.portal.name}
           name={shell.profile.name}
@@ -107,7 +146,7 @@ export function AppShell({ children, links = [], portal }: Props) {
         />
 
         <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden bg-[#fbfcfd] px-4 pb-[calc(82px+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-0 xl:px-10">
-          {children}
+          {pageContent}
         </main>
       </div>
 
