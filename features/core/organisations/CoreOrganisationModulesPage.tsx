@@ -17,6 +17,42 @@ type OrganisationModule = ModuleDefinition & {
   isConfigured: boolean;
 };
 
+async function getAccessToken() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Your CastodiaCore session has expired.");
+  }
+
+  return session.access_token;
+}
+
+async function fetchOrganisationModules(organisationId: string) {
+  const accessToken = await getAccessToken();
+  const response = await fetch(
+    `/api/core/organisations/${organisationId}/modules`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    },
+  );
+
+  const payload = (await response.json()) as {
+    modules?: OrganisationModule[];
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(payload.error || "Unable to load modules.");
+  }
+
+  return payload.modules ?? [];
+}
+
 export default function CoreOrganisationModulesPage({
   organisationId,
 }: {
@@ -38,44 +74,12 @@ export default function CoreOrganisationModulesPage({
     [modules],
   );
 
-  async function getAccessToken() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      throw new Error("Your CastodiaCore session has expired.");
-    }
-
-    return session.access_token;
-  }
-
-  async function loadModules() {
+  async function reloadModules() {
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const accessToken = await getAccessToken();
-      const response = await fetch(
-        `/api/core/organisations/${organisationId}/modules`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          cache: "no-store",
-        },
-      );
-
-      const payload = (await response.json()) as {
-        modules?: OrganisationModule[];
-        error?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(payload.error || "Unable to load modules.");
-      }
-
-      setModules(payload.modules ?? []);
+      setModules(await fetchOrganisationModules(organisationId));
     } catch (error) {
       setModules([]);
       setErrorMessage(
@@ -87,7 +91,27 @@ export default function CoreOrganisationModulesPage({
   }
 
   useEffect(() => {
-    void loadModules();
+    let cancelled = false;
+
+    void fetchOrganisationModules(organisationId)
+      .then((nextModules) => {
+        if (!cancelled) setModules(nextModules);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setModules([]);
+          setErrorMessage(
+            error instanceof Error ? error.message : "Unable to load modules.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [organisationId]);
 
   async function toggleModule(moduleKey: ModuleKey, enabled: boolean) {
@@ -128,7 +152,7 @@ export default function CoreOrganisationModulesPage({
       setErrorMessage(
         error instanceof Error ? error.message : "Unable to update module.",
       );
-      await loadModules();
+      await reloadModules();
     } finally {
       setSavingKey(null);
     }
