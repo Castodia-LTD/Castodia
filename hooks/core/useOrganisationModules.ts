@@ -7,54 +7,69 @@ import { supabase } from "@/lib/supabase";
 
 type ModuleState = Partial<Record<ModuleKey, boolean>>;
 
+async function fetchOrganisationModules(): Promise<ModuleState> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return {};
+  }
+
+  const response = await fetch("/api/modules", {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load feature availability.");
+  }
+
+  const payload = (await response.json()) as { modules?: ModuleState };
+  return payload.modules ?? {};
+}
+
 export function useOrganisationModules(enabled = true) {
   const [modules, setModules] = useState<ModuleState>({});
-  const [loading, setLoading] = useState(enabled);
+  const [loading, setLoading] = useState(true);
 
-  const loadModules = useCallback(async () => {
-    if (!enabled) {
-      setModules({});
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    if (!enabled) return;
 
-    setLoading(true);
+    let cancelled = false;
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      setModules({});
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/modules", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        cache: "no-store",
+    void fetchOrganisationModules()
+      .then((nextModules) => {
+        if (!cancelled) setModules(nextModules);
+      })
+      .catch((error) => {
+        console.error("Unable to load organisation modules:", error);
+        if (!cancelled) setModules({});
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
 
-      if (!response.ok) {
-        throw new Error("Unable to load feature availability.");
-      }
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
 
-      const payload = (await response.json()) as { modules?: ModuleState };
-      setModules(payload.modules ?? {});
+  const reload = useCallback(async () => {
+    if (!enabled) return;
+
+    setLoading(true);
+    try {
+      setModules(await fetchOrganisationModules());
     } catch (error) {
-      console.error("Unable to load organisation modules:", error);
+      console.error("Unable to reload organisation modules:", error);
       setModules({});
     } finally {
       setLoading(false);
     }
   }, [enabled]);
-
-  useEffect(() => {
-    void loadModules();
-  }, [loadModules]);
 
   const isEnabled = useCallback(
     (moduleKey: ModuleKey) => modules[moduleKey] !== false,
@@ -65,6 +80,6 @@ export function useOrganisationModules(enabled = true) {
     modules,
     loading,
     isEnabled,
-    reload: loadModules,
+    reload,
   };
 }
