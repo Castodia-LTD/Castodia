@@ -40,8 +40,31 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Test
-        run: npm test
+      - name: Run database-independent security tests
+        run: npx vitest run tests/security
+
+  integration:
+    name: Integration tests (dedicated test database)
+    if: vars.CASTODIA_ENABLE_INTEGRATION_TESTS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run integration tests against non-production Supabase
+        run: npx vitest run tests/integration
+        env:
+          CASTODIA_ALLOW_TEST_DATABASE: YES
+          NEXT_PUBLIC_SUPABASE_URL: \${{ secrets.CASTODIA_TEST_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: \${{ secrets.CASTODIA_TEST_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: \${{ secrets.CASTODIA_TEST_SUPABASE_SERVICE_ROLE_KEY }}
 
   build:
     name: Production build
