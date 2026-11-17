@@ -71,10 +71,11 @@ export default function DomiciliaryRequirementsPage({ personId }: { personId: st
         activity_code: activity, required_staff: staffCount, duration_minutes: duration,
         earliest_start: startTime, latest_start: startTime, weekdays: days, requirements_notes: sourceNotes.trim() || null,
       });
-      if (saveError) throw saveError;
-      setTitle(""); setSourceNotes(""); await reload();
-      setNotice("Requirement saved as unverified. A manager must confirm source evidence before scheduling.");
-    } catch (e) { setError(e instanceof Error ? e.message : "Unable to save requirement"); }
+      if (saveError) throw new Error([saveError.message, saveError.details, saveError.hint, saveError.code].filter(Boolean).join(" · "));
+      setTitle(""); setSourceNotes("");
+      try { await reload(); setNotice("Requirement saved as unverified. A manager must confirm source evidence before scheduling."); }
+      catch { setNotice("Requirement saved, but the list could not refresh. Reload the page to view it."); }
+    } catch (e) { setError(e instanceof Error ? e.message : String(e) || "Unable to save requirement"); }
     finally { setBusy(false); }
   }
   async function verifyRequirement(id: string) {
