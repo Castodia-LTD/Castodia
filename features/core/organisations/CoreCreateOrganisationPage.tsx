@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2 } from "lucide-react";
+import { Building2, House, CarFront, Building } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CastodiaPageShell } from "@/components/castodia";
 import { availableModules } from "@/lib/core/modules/availableModules";
@@ -12,12 +12,18 @@ export default function CoreCreateOrganisationPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [usesHouses, setUsesHouses] = useState(true);
+  const [serviceTypes, setServiceTypes] = useState<string[]>(["supported_living"]);
+  const usesHouses = serviceTypes.some((type) => type !== "domiciliary");
   const [saving, setSaving] = useState(false);
 
   async function createOrganisation() {
     if (!name.trim()) {
       alert("Please enter an organisation name.");
+      return;
+    }
+
+    if (serviceTypes.length === 0) {
+      alert("Select at least one care service.");
       return;
     }
 
@@ -41,6 +47,22 @@ export default function CoreCreateOrganisationPage() {
     }
 
     const organisationId = organisation.id;
+
+    // Service configuration is the source of truth for the new multi-service model.
+    // Legacy uses_houses is retained for existing house-based screens.
+    const { error: serviceError } = await supabase
+      .from("care_services")
+      .insert(serviceTypes.map((type) => ({
+        organisation_id: organisationId,
+        name: type === "supported_living" ? "Supported Living" : type === "domiciliary" ? "Domiciliary Care" : "Residential Care",
+        care_model: type,
+      })));
+
+    if (serviceError) {
+      alert("Organisation created, but service setup failed: " + serviceError.message);
+      setSaving(false);
+      return;
+    }
 
     const moduleRows = availableModules.map((module) => ({
       organisation_id: organisationId,
@@ -125,26 +147,32 @@ export default function CoreCreateOrganisationPage() {
             />
           </div>
 
-          <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div>
-              <p className="font-bold text-slate-950">Uses houses</p>
-              <p className="mt-1 text-sm text-slate-600">
-                Enable this if the organisation groups service users by houses.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setUsesHouses((value) => !value)}
-              className={
-                usesHouses
-                  ? "min-w-20 rounded-full bg-emerald-500 px-4 py-2 text-sm font-bold text-white"
-                  : "min-w-20 rounded-full bg-slate-300 px-4 py-2 text-sm font-bold text-slate-700"
-              }
-            >
-              {usesHouses ? "Yes" : "No"}
-            </button>
-          </label>
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-bold text-slate-700">Which care services does this provider operate?</legend>
+            <p className="text-sm text-slate-600">Select all that apply. Each service will have its own staff and manager workspace, while sharing Castodia's person-centred records.</p>
+            {([
+              { key: "supported_living", label: "Supported Living", description: "House-based support and existing Castodia workflows.", Icon: House },
+              { key: "domiciliary", label: "Domiciliary Care", description: "Scheduled home visits, day planners and visit-based rotas.", Icon: CarFront },
+              { key: "residential", label: "Residential Care", description: "Residential home shifts, residents and handovers.", Icon: Building },
+            ] as const).map(({ key, label, description, Icon }) => {
+              const selected = serviceTypes.includes(key);
+              return (
+                <label key={key} className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition-colors ${selected ? "border-cyan-500 bg-cyan-50" : "border-slate-200 bg-white"}`}>
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => setServiceTypes((current) => selected ? current.filter((type) => type !== key) : [...current, key])}
+                    className="h-5 w-5 accent-cyan-600"
+                  />
+                  <Icon size={24} className="shrink-0 text-cyan-700" />
+                  <span>
+                    <span className="block font-bold text-slate-950">{label}</span>
+                    <span className="block text-sm text-slate-600">{description}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </fieldset>
 
           <button
             type="button"
