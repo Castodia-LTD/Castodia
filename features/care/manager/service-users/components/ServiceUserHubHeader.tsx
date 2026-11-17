@@ -23,7 +23,7 @@ type HubTab = {
   label: string;
   path: string;
   managerOnly?: boolean;
-  featureKey: ModuleKey;
+  featureKey?: ModuleKey;
 };
 
 type Props = {
@@ -38,6 +38,7 @@ type Props = {
 };
 
 const tabs: HubTab[] = [
+  { label: "Support Package", path: "support-package", managerOnly: true },
   { label: "Growth", path: "growth", featureKey: "growth" },
   { label: "Medication", path: "medication", featureKey: "medication" },
   { label: "Care Plans", path: "care-plans", featureKey: "care_plans" },
@@ -89,7 +90,7 @@ export default function ServiceUserHubHeader({
   const visibleTabs = tabs.filter(
     (tab) =>
       (!tab.managerOnly || portal === "manager") &&
-      (moduleState.loading || moduleState.isEnabled(tab.featureKey)),
+      (moduleState.loading || (!tab.featureKey || moduleState.isEnabled(tab.featureKey))),
   );
 
   useEffect(() => {
