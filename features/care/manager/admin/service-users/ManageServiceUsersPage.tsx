@@ -20,6 +20,7 @@ export default function AdminServiceUsersPage() {
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [houseName, setHouseName] = useState("");
+  const [careModel, setCareModel] = useState<"supported_living" | "domiciliary" | "residential">("supported_living");
 
   async function getCurrentOrganisationId() {
     const {
@@ -55,6 +56,7 @@ export default function AdminServiceUsersPage() {
         surname,
         gender,
         house_name,
+        care_model,
         photo_url,
         key_notes,
         allergies,
@@ -94,6 +96,7 @@ export default function AdminServiceUsersPage() {
     surname: cleanSurname,
     full_name: `${cleanFirstName} ${cleanSurname}`,
     house_name: houseName.trim() || null,
+    care_model: careModel,
     organisation_id: organisationId,
     is_active: true,
     continence_care_enabled: false,
@@ -109,6 +112,7 @@ export default function AdminServiceUsersPage() {
     setFirstName("");
     setSurname("");
     setHouseName("");
+    setCareModel("supported_living");
 
     await loadServiceUsers();
   }
@@ -128,6 +132,7 @@ export default function AdminServiceUsersPage() {
         surname: editing.surname.trim(),
         gender: editing.gender || null,
         house_name: editing.house_name?.trim() || null,
+        care_model: editing.care_model,
         photo_url: editing.photo_url?.trim() || null,
         key_notes: editing.key_notes?.trim() || null,
         allergies: editing.allergies?.trim() || null,
@@ -184,7 +189,7 @@ export default function AdminServiceUsersPage() {
     >
       <CastodiaSection title="Create Service User">
         <CastodiaCard>
-          <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_1fr_auto] md:items-end">
             <div>
               <label className="text-sm font-medium text-slate-700">
                 First name
@@ -221,6 +226,15 @@ export default function AdminServiceUsersPage() {
               />
             </div>
 
+            <div>
+              <label htmlFor="new-person-care-model" className="text-sm font-medium text-slate-700">Care service</label>
+              <select id="new-person-care-model" value={careModel} onChange={(event) => setCareModel(event.target.value as typeof careModel)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900">
+                <option value="supported_living">Supported Living</option>
+                <option value="domiciliary">Domiciliary Care</option>
+                <option value="residential">Residential Care</option>
+              </select>
+            </div>
+
             <CastodiaButton onClick={createServiceUser}>
               Create
             </CastodiaButton>
@@ -248,6 +262,7 @@ export default function AdminServiceUsersPage() {
                       {serviceUser.first_name} {serviceUser.surname}
                     </h2>
 
+                    <p className="mt-1 text-xs font-semibold text-cyan-700">{serviceUser.care_model === "domiciliary" ? "Domiciliary Care" : serviceUser.care_model === "residential" ? "Residential Care" : "Supported Living"}</p>
                     {serviceUser.house_name && (
                       <p className="mt-1 text-sm text-slate-500">
                         {serviceUser.house_name}
