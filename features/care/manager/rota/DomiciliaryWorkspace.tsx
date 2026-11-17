@@ -96,7 +96,7 @@ export default function DomiciliaryWorkspace() {
     <CastodiaPageShell title="Domiciliary scheduling" description="A single view of visit requirements, person-centred safety checks and staffing readiness. Draft requirements are never treated as safe allocations." maxWidth="wide">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-slate-500"><CalendarDays className="h-4 w-4 text-cyan-700" /> Manager workspace <ChevronRight className="h-4 w-4" /> Domiciliary care</div>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-cyan-300 disabled:opacity-50"><RefreshCw className="h-4 w-4" /> Refresh sources</button>
+        <div className="flex flex-wrap items-center gap-2"><Link href="/care/manager/rota/domiciliary/builder" className="inline-flex items-center rounded-xl bg-cyan-800 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-900">Open rota builder</Link><button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-cyan-300 disabled:opacity-50"><RefreshCw className="h-4 w-4" /> Refresh sources</button></div>
       </div>
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}. The workspace will not display stale data as confirmed.</div>}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
