@@ -1,5 +1,5 @@
-import ServiceUserPage from "@/features/care/shared/service-users/ServiceUserPage";
+import ManagerPeopleLandingPage from "@/features/care/manager/service-users/ManagerPeopleLandingPage";
 
 export default function Page() {
-  return <ServiceUserPage portal="manager" />;
+  return <ManagerPeopleLandingPage />;
 }
