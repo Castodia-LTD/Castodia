@@ -68,6 +68,14 @@ export default function EditServiceUserModal({
           <option value="Female">Female</option>
           </select>
         </div>
+        <div className="space-y-2">
+          <label htmlFor="edit-person-care-model" className="text-sm font-medium text-slate-300">Care service</label>
+          <select id="edit-person-care-model" value={editing.care_model} onChange={(e) => updateField("care_model", e.target.value as ServiceUser["care_model"])} className="w-full rounded-2xl border border-white/10 bg-slate-900 p-4 text-white">
+            <option value="supported_living">Supported Living</option>
+            <option value="domiciliary">Domiciliary Care</option>
+            <option value="residential">Residential Care</option>
+          </select>
+        </div>
         <input
           value={editing.house_name || ""}
           onChange={(e) => updateField("house_name", e.target.value)}
