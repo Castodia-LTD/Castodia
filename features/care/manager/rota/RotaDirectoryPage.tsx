@@ -8,7 +8,14 @@ import { CastodiaCard, CastodiaPageShell } from "@/components/castodia";
 import { supabase } from "@/lib/supabase";
 import type { RotaPerson } from "@/features/care/shared/rota/types";
 
-export default function RotaDirectoryPage() {
+type CareModel = "supported_living" | "domiciliary" | "residential";
+const titles: Record<CareModel, string> = {
+  supported_living: "Supported Living",
+  domiciliary: "Domiciliary Care",
+  residential: "Residential Care",
+};
+
+export default function RotaDirectoryPage({ careModel = "supported_living" }: { careModel?: CareModel }) {
   const [people, setPeople] = useState<RotaPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +43,7 @@ export default function RotaDirectoryPage() {
           .select("id, full_name, house_name")
           .eq("organisation_id", profile.organisation_id)
           .eq("is_active", true)
+          .eq("care_model", careModel)
           .order("full_name");
         if (peopleError) throw peopleError;
         if (!cancelled) setPeople((data ?? []) as RotaPerson[]);
@@ -48,12 +56,12 @@ export default function RotaDirectoryPage() {
 
     void loadPeople();
     return () => { cancelled = true; };
-  }, []);
+  }, [careModel]);
 
   return (
     <CastodiaPageShell
-      title="Rotas"
-      description="Choose a person to build and manage their rota. Staff My rota views are populated automatically from these assignments."
+      title={`${titles[careModel]} Rotas`}
+      description={`Choose a person receiving ${titles[careModel].toLowerCase()} support to manage their rota. Staff My rota views are populated automatically from these assignments.`}
       maxWidth="wide"
     >
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>}
@@ -63,7 +71,7 @@ export default function RotaDirectoryPage() {
       ) : people.length === 0 ? (
         <CastodiaCard className="p-10 text-center">
           <UserRound className="mx-auto h-8 w-8 text-slate-300" />
-          <p className="mt-3 font-semibold text-slate-800">No active service users found</p>
+          <p className="mt-3 font-semibold text-slate-800">No active people in this care service</p>
           <p className="mt-1 text-sm text-slate-500">Active people will appear here when they are available to this organisation.</p>
         </CastodiaCard>
       ) : (

@@ -4,6 +4,7 @@ export type ServiceUser = {
   surname: string;
   gender: string | null;
   house_name: string | null;
+  care_model: "supported_living" | "domiciliary" | "residential";
   photo_url: string | null;
   key_notes: string | null;
   allergies: string | null;
