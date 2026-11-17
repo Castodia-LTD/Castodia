@@ -64,6 +64,7 @@ export default function ServiceUserHubHeader({
   const supabase = useMemo(() => createClient(), []);
   const moduleState = useOrganisationModules();
 
+  const [careModel, setCareModel] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(Boolean(photoPath));
 
@@ -92,6 +93,16 @@ export default function ServiceUserHubHeader({
       (!tab.managerOnly || portal === "manager") &&
       (moduleState.loading || (!tab.featureKey || moduleState.isEnabled(tab.featureKey))),
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    setCareModel(null);
+    void supabase.from("service_users").select("care_model").eq("id", id).maybeSingle()
+      .then(({ data, error }) => {
+        if (!cancelled && !error) setCareModel(data?.care_model ?? null);
+      });
+    return () => { cancelled = true; };
+  }, [id, supabase]);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,6 +193,11 @@ export default function ServiceUserHubHeader({
                   </h1>
 
                   <div className="mt-2 flex flex-wrap gap-2">
+                    {careModel && (
+                      <span className="rounded-full bg-cyan-100 px-3 py-1.5 text-xs font-semibold text-cyan-800 ring-1 ring-cyan-200">
+                        {careModel === "domiciliary" ? "Domiciliary Care" : careModel === "residential" ? "Residential Care" : careModel === "supported_living" ? "Supported Living" : "Care service unavailable"}
+                      </span>
+                    )}
                     <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-100">
                       {houseName || "No house assigned"}
                     </span>
