@@ -38,8 +38,8 @@ type Props = {
 };
 
 const tabs: HubTab[] = [
-  { label: "Support Package", path: "support-package", managerOnly: true },
   { label: "Growth", path: "growth", featureKey: "growth" },
+  { label: "Support Package", path: "support-package", managerOnly: true },
   { label: "Medication", path: "medication", featureKey: "medication" },
   { label: "Care Plans", path: "care-plans", featureKey: "care_plans" },
   { label: "Risk Register", path: "risk-assessments", featureKey: "risk_assessments" },

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { CastodiaPageShell, castodiaTheme } from "@/components/castodia";
 
 type Person = { id:string;full_name:string;care_model:string };
 type Package = { service_user_id:string;commissioned_hours_weekly:number|null;commissioner:string|null };
@@ -35,20 +36,20 @@ export default function FinanceCareHoursPage(){
  const pkgs=new Map(packages.map(p=>[p.service_user_id,p]));
  const totalMinutes=visible.reduce((n,e)=>n+(e.recorded_minutes||0),0);
  const pending=visible.filter(e=>e.verification_status!=="verified").length;
- const input="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800";
- return <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
- <header><p className="text-sm font-semibold text-cyan-700">Finance</p><h1 className="text-3xl font-bold text-slate-950">Care Hours Register</h1><p className="mt-1 text-sm text-slate-600">Organisation-wide care delivery records. Verification and charging remain separate processes.</p></header>
- <div className="grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
+ const input=castodiaTheme.input.base;
+ return <CastodiaPageShell title="Care Hours Register" description="Organisation-wide care delivery records. Verification and charging remain separate processes." maxWidth="wide">
+ 
+ <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
  <label className="text-xs font-semibold">From<input aria-label="From date" type="date" value={from} onChange={e=>setFrom(e.target.value)} className={"mt-1 w-full "+input}/></label>
  <label className="text-xs font-semibold">To<input aria-label="To date" type="date" value={to} onChange={e=>setTo(e.target.value)} className={"mt-1 w-full "+input}/></label>
  <label className="text-xs font-semibold">Service<select value={model} onChange={e=>setModel(e.target.value)} className={"mt-1 w-full "+input}><option value="all">All services</option>{Object.entries(modelNames).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label>
  <label className="text-xs font-semibold">Person<select value={person} onChange={e=>setPerson(e.target.value)} className={"mt-1 w-full "+input}><option value="all">All people</option>{people.filter(p=>model==="all"||p.care_model===model).map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></label>
  <label className="text-xs font-semibold">Verification<select value={status} onChange={e=>setStatus(e.target.value)} className={"mt-1 w-full "+input}><option value="all">All statuses</option>{["pending","verified","estimated","disputed"].map(s=><option key={s} value={s}>{s}</option>)}</select></label>
  </div>
- <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border bg-white p-5"><p className="text-sm text-slate-500">Records</p><p className="text-2xl font-bold">{visible.length}</p></div><div className="rounded-xl border bg-white p-5"><p className="text-sm text-slate-500">Recorded time (hour-based entries)</p><p className="text-2xl font-bold">{hours(totalMinutes)} hrs</p></div><div className="rounded-xl border bg-white p-5"><p className="text-sm text-slate-500">Not verified</p><p className="text-2xl font-bold">{pending}</p></div></div>
+ <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Records</p><p className="text-2xl font-bold">{visible.length}</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Recorded time (hour-based entries)</p><p className="text-2xl font-bold">{hours(totalMinutes)} hrs</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">Not verified</p><p className="text-2xl font-bold">{pending}</p></div></div>
  {error&&<p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
- <section className="overflow-hidden rounded-xl border bg-white"><div className="border-b p-4"><h2 className="text-lg font-semibold">Delivery records</h2><p className="text-xs text-slate-500">Residential placement days and sleep-ins are shown as units, not converted to care hours.</p></div>
+ <section className={castodiaTheme.table.wrapper}><div className="border-b p-4"><h2 className="text-lg font-semibold">Delivery records</h2><p className="text-xs text-slate-500">Residential placement days and sleep-ins are shown as units, not converted to care hours.</p></div>
  <div className="overflow-x-auto"><table className="w-full min-w-[920px] text-left text-sm"><thead className="bg-slate-50"><tr>{["Date","Person","Service","Care unit","Recorded","Scheduled","Actual","Verification","Source"].map(h=><th className="p-3" key={h}>{h}</th>)}</tr></thead><tbody>{visible.map(e=><tr className="border-t" key={e.id}><td className="p-3">{e.care_date}</td><td className="p-3"><Link className="font-medium text-cyan-700 hover:underline" href={`/care/manager/service-users/${e.service_user_id}/support-package`}>{names.get(e.service_user_id)||"Unknown"}</Link><p className="text-xs text-slate-500">{pkgs.get(e.service_user_id)?.commissioner||""}</p></td><td className="p-3">{modelNames[e.care_model]||e.care_model}</td><td className="p-3">{e.unit_type.replaceAll("_"," ")}</td><td className="p-3">{e.recorded_minutes==null?"—":e.unit_type==="placement_day"?"Placement day":`${hours(e.recorded_minutes)} hrs`}</td><td className="p-3">{fmt(e.scheduled_start)} – {fmt(e.scheduled_end)}</td><td className="p-3">{fmt(e.actual_start)} – {fmt(e.actual_end)}</td><td className="p-3 capitalize">{e.verification_status}</td><td className="p-3">{e.source.replaceAll("_"," ")}</td></tr>)}{!loading&&visible.length===0&&<tr><td colSpan={9} className="p-8 text-center text-slate-500">No records for the selected filters. Care delivery integrations are not connected yet.</td></tr>}</tbody></table></div>{loading&&<p className="p-5 text-sm">Loading care hours…</p>}</section>
- <section className="rounded-xl border bg-white p-5"><h2 className="text-lg font-semibold">Invoicing</h2><p className="mt-1 text-sm text-slate-600">Future phase: verified delivery records, contract-specific charging rules, invoice generation and credit notes. No invoices are created from this screen.</p></section>
- </main>;
+ <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-semibold">Invoicing</h2><p className="mt-1 text-sm text-slate-600">Future phase: verified delivery records, contract-specific charging rules, invoice generation and credit notes. No invoices are created from this screen.</p></section>
+ </CastodiaPageShell>;
 }
