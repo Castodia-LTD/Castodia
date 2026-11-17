@@ -27,6 +27,11 @@ export const careManagerNavigation: AppShellLink[] = [
     featureKey: "people",
   },
   {
+    href: "/care/manager/finance",
+    label: "Finance",
+    icon: "dashboard",
+  },
+  {
     href: "/care/manager/staff",
     label: "Staff",
     icon: "staff",
