@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { CastodiaCard, CastodiaPageShell, castodiaTheme } from "@/components/castodia";
+import { CastodiaPageShell, castodiaTheme } from "@/components/castodia";
 type Package = { commissioned_hours_weekly:string; assessed_hours_weekly:string; support_level:string; funding_source:string; commissioner:string; package_start:string; next_review:string; personal_care:boolean; regulated_activity_notes:string; support_details:string };
 type Hour = { id:string;care_date:string;care_model:string;unit_type:string;scheduled_start:string|null;scheduled_end:string|null;actual_start:string|null;actual_end:string|null;recorded_minutes:number|null;verification_status:string;source:string };
 const empty:Package={commissioned_hours_weekly:"",assessed_hours_weekly:"",support_level:"",funding_source:"",commissioner:"",package_start:"",next_review:"",personal_care:false,regulated_activity_notes:"",support_details:""};
