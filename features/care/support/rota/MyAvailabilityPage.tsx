@@ -21,7 +21,7 @@ export default function MyAvailabilityPage() {
   const [weekday, setWeekday] = useState(1);
   const [start, setStart] = useState("08:00");
   const [end, setEnd] = useState("18:00");
-  const [validFrom, setValidFrom] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const [validFrom, setValidFrom] = useState(() => (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })());
   const [validUntil, setValidUntil] = useState("");
   const [exceptionDate, setExceptionDate] = useState("");
   const [exceptionType, setExceptionType] = useState<"available" | "unavailable">("unavailable");
