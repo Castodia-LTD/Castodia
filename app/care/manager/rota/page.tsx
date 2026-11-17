@@ -16,7 +16,7 @@ const services = [
     description: "Visit-based scheduling and travel-aware staff allocation.",
     href: "/care/manager/rota/domiciliary",
     icon: HousePlus,
-    available: false,
+    available: true,
   },
   {
     title: "Residential Care",
