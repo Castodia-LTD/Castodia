@@ -115,14 +115,14 @@ export function assessTeam(
 ) {
   const assessments = workers.map(w => assessWorker(visit, preferences, w, date));
   const distinct = new Set(workers.map(w => w.id)).size === workers.length;
-  const covered = distinct && workers.length >= visit.requiredStaff &&
+  const covered = visit.verified && visit.activities.length > 0 && visit.requiredStaff >= 1 && distinct && workers.length === visit.requiredStaff &&
     assessments.every(a => a.status === "eligible") &&
     visit.teamCompetencies.every(code => workers.some(w =>
       w.evidence.some(e => e.code === code && evidenceCurrent(e, visit.personId, date))
     ));
   const reasons: string[] = [];
   if (!distinct) reasons.push("Duplicate worker allocation");
-  if (workers.length < visit.requiredStaff) reasons.push("Insufficient staffing positions filled");
+  if (workers.length !== visit.requiredStaff) reasons.push("Staffing positions do not match the required number");
   for (const code of visit.teamCompetencies) {
     if (!workers.some(w => w.evidence.some(e => e.code === code && evidenceCurrent(e, visit.personId, date))))
       reasons.push(`Team competency not covered: ${code}`);
