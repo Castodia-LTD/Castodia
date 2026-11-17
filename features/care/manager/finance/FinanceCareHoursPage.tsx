@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { CastodiaCard, CastodiaPageShell, castodiaTheme } from "@/components/castodia";
+import { CastodiaPageShell, castodiaTheme } from "@/components/castodia";
 
 type Person = { id:string;full_name:string;care_model:string };
 type Package = { service_user_id:string;commissioned_hours_weekly:number|null;commissioner:string|null };
