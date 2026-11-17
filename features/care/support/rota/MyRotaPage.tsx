@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Home, Moon, Sun, UserRound } from "lucide-react";
 
 import { CastodiaCard, CastodiaPageShell } from "@/components/castodia";
@@ -79,6 +80,7 @@ export default function MyRotaPage() {
         </div>
       }
     >
+      <div className="flex justify-end"><Link href="/care/support/rota/availability" className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100"><CalendarDays className="h-4 w-4" /> Manage my availability</Link></div>
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>}
 
       {loading ? (
