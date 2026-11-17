@@ -137,7 +137,7 @@ export default function DomiciliaryWorkspace() {
             </div>
           </CastodiaCard>
         </section>
-        <aside className="space-y-4">
+        <aside className="space-y-4">\n          <Link href="/care/manager/rota/domiciliary/availability" className="flex items-center justify-between rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm font-semibold text-cyan-900 hover:bg-cyan-100">Review staff availability requests <ChevronRight className="h-5 w-5" /></Link>
           <CastodiaCard className="p-5">
             <div className="flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-amber-600" /><h2 className="font-semibold text-slate-900">Readiness checks</h2></div>
             <p className="mt-2 text-sm text-slate-500">These signals highlight records needing attention. They do not certify worker eligibility.</p>
