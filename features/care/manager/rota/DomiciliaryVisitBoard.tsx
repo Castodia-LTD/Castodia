@@ -9,7 +9,7 @@ import { expandVisits, type VisitTemplate, type VisitOccurrence } from "@/featur
 
 type Person = { id: string; full_name: string };
 type Staff = { id: string; full_name: string | null; is_active: boolean | null };
-type Requirement = { id: string; service_user_id: string; title: string; activity_code: string; required_staff: number; duration_minutes: number; weekdays: number[]; valid_from: string; valid_until: string | null; earliest_start: string | null; verified_at: string | null; all_staff_competencies: string[]; team_competencies: string[] };
+type Requirement = { id: string; service_user_id: string; title: string; activity_code: string; required_staff: number; duration_minutes: number; weekdays: number[]; valid_from: string; valid_until: string | null; earliest_start: string | null; verified_at: string | null; lifecycle_status: "active" | "paused" | "removed"; all_staff_competencies: string[]; team_competencies: string[] };
 type Shift = { id: string; service_user_id: string; shift_date: string; start_time: string; end_time: string; notes: string | null; status: string; rota_shift_assignments: { staff_user_id: string; assignment_type: string }[] };
 type Availability = { staff_id: string; weekday: number; start_time: string; end_time: string; valid_from: string; valid_until: string | null; status: string };
 type Exception = { staff_id: string; exception_date: string; start_time: string | null; end_time: string | null; available: boolean; status: string };
@@ -54,7 +54,7 @@ export default function DomiciliaryVisitBoard() {
       const results=await Promise.all([
         supabase.from("service_users").select("id,full_name").eq("organisation_id",org).eq("care_model","domiciliary").eq("is_active",true),
         supabase.from("profiles").select("id,full_name,is_active").eq("organisation_id",org).in("role",["support","manager"]),
-        supabase.from("domiciliary_activity_requirements").select("id,service_user_id,title,activity_code,required_staff,duration_minutes,weekdays,valid_from,valid_until,earliest_start,verified_at,all_staff_competencies,team_competencies").eq("organisation_id",org),
+        supabase.from("domiciliary_activity_requirements").select("id,service_user_id,title,activity_code,required_staff,duration_minutes,weekdays,valid_from,valid_until,earliest_start,verified_at,lifecycle_status,all_staff_competencies,team_competencies").eq("organisation_id",org),
         supabase.from("rota_shifts").select("id,service_user_id,shift_date,start_time,end_time,notes,status,rota_shift_assignments(staff_user_id,assignment_type)").eq("organisation_id",org).eq("shift_date",date).eq("status","planned"),
         supabase.from("staff_recurring_availability").select("staff_id,weekday,start_time,end_time,valid_from,valid_until,status").eq("organisation_id",org).eq("status","approved"),
         supabase.from("staff_availability_exceptions").select("staff_id,exception_date,start_time,end_time,available,status").eq("organisation_id",org).eq("exception_date",date).eq("status","approved"),
@@ -76,7 +76,7 @@ export default function DomiciliaryVisitBoard() {
   const personMap=useMemo(()=>new Map(people.map(x=>[x.id,x])),[people]);
   const requirementMap=useMemo(()=>new Map(requirements.map(x=>[x.id,x])),[requirements]);
   const visits=useMemo(()=>{
-    const templates:VisitTemplate[]=requirements.filter(x=>personMap.has(x.service_user_id)).map(x=>({id:x.id,personId:x.service_user_id,activityCodes:[x.activity_code],weekdays:x.weekdays,startDate:x.valid_from,endDate:x.valid_until,startTime:time(x.earliest_start??"09:00"),durationMinutes:x.duration_minutes,requiredStaff:x.required_staff}));
+    const templates:VisitTemplate[]=requirements.filter(x=>x.lifecycle_status==="active" && personMap.has(x.service_user_id)).map(x=>({id:x.id,personId:x.service_user_id,activityCodes:[x.activity_code],weekdays:x.weekdays,startDate:x.valid_from,endDate:x.valid_until,startTime:time(x.earliest_start??"09:00"),durationMinutes:x.duration_minutes,requiredStaff:x.required_staff}));
     try{return expandVisits(templates,date,date);}catch{return [] as VisitOccurrence[];}
   },[requirements,personMap,date]);
   const shiftFor=(visit:VisitOccurrence)=>shifts.find(x=>x.service_user_id===visit.personId && x.notes?.includes(`[Castodia visit:${visit.key}]`));
